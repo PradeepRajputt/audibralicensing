@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSession, signIn } from 'next-auth/react';
 import { Loader2, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 function DashboardHeader() {
   const { data: session } = useSession();
@@ -17,9 +16,13 @@ function DashboardHeader() {
         <SidebarTrigger />
         <h1 className="text-xl font-semibold">Creator Dashboard</h1>
         <div className="ml-auto flex items-center gap-4">
+          <Button onClick={() => signIn('google')} size="sm" variant="outline" className={session ? 'hidden' : 'flex'}>
+            <LogIn />
+            Sign In to View Live Data
+          </Button>
           <Avatar className="h-9 w-9">
             <AvatarImage src={session?.user?.image ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
-            <AvatarFallback>{session?.user?.name?.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{session?.user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
           </Avatar>
         </div>
     </header>
@@ -31,7 +34,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   if (status === 'loading') {
     return (
@@ -41,28 +44,9 @@ export default function DashboardLayout({
     );
   }
 
-  if (status === 'unauthenticated') {
-    return (
-       <div className="flex items-center justify-center min-h-screen bg-background p-4">
-          <Card className="w-full max-w-md text-center">
-            <CardHeader>
-              <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                <LogIn className="w-12 h-12 text-primary" />
-              </div>
-              <CardTitle className="mt-4 text-2xl">Access Your Dashboard</CardTitle>
-              <CardDescription>
-                Please sign in with your Google account to continue.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => signIn('google')}>
-                Sign In with Google
-              </Button>
-            </CardContent>
-          </Card>
-      </div>
-    );
-  }
+  // NOTE: The unauthenticated check has been removed to allow development of the UI
+  // with mock data, bypassing the need for a live Google login for now.
+  // The actual pages will now use mock data if the session is not present.
 
   return (
     <SidebarProvider>
