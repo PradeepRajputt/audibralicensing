@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2 } from "lucide-react";
 import { approveReactivationRequest, denyReactivationRequest } from './actions';
@@ -79,55 +78,50 @@ export default function ReactivationRequestsPage() {
       </CardHeader>
       <CardContent>
         {requests.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Creator</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Request Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {requests.map((request) => (
-                <TableRow key={request.creatorId}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={request.avatar} data-ai-hint="profile picture" />
-                        <AvatarFallback>{request.displayName?.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{request.displayName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{request.email}</TableCell>
-                  <TableCell>{new Date(request.requestDate).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAction('approve', request)}
-                        disabled={!!loadingAction}
-                      >
-                        {loadingAction === `approve-${request.creatorId}` ? <Loader2 className="animate-spin" /> : <Check />}
-                        Approve
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleAction('deny', request)}
-                        disabled={!!loadingAction}
-                      >
-                         {loadingAction === `deny-${request.creatorId}` ? <Loader2 className="animate-spin" /> : <X />}
-                        Deny
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="space-y-4">
+            {requests.map((request) => (
+              <div key={request.creatorId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-lg border p-4">
+                <div className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={request.avatar} data-ai-hint="profile picture" />
+                    <AvatarFallback>{request.displayName?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{request.displayName}</p>
+                    <p className="text-sm text-muted-foreground">{request.email}</p>
+                    <p className="text-sm text-muted-foreground sm:hidden mt-1">
+                        Requested on {new Date(request.requestDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-muted-foreground hidden sm:block">
+                    Requested on {new Date(request.requestDate).toLocaleDateString()}
+                  </p>
+                  <div className="flex justify-end gap-2 ml-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAction('approve', request)}
+                      disabled={!!loadingAction}
+                    >
+                      {loadingAction === `approve-${request.creatorId}` ? <Loader2 className="animate-spin" /> : <Check />}
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleAction('deny', request)}
+                      disabled={!!loadingAction}
+                    >
+                        {loadingAction === `deny-${request.creatorId}` ? <Loader2 className="animate-spin" /> : <X />}
+                      Deny
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="text-center py-10 text-muted-foreground">
             <p>There are no pending reactivation requests.</p>
