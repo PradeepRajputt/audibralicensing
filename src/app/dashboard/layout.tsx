@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSession, signIn } from 'next-auth/react';
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, LogIn, Youtube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function DashboardHeader() {
@@ -16,14 +16,18 @@ function DashboardHeader() {
         <SidebarTrigger />
         <h1 className="text-xl font-semibold">Creator Dashboard</h1>
         <div className="ml-auto flex items-center gap-4">
-          <Button onClick={() => signIn('google')} size="sm" variant="outline" className={session ? 'hidden' : 'flex'}>
-            <LogIn />
-            Sign In to View Live Data
-          </Button>
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={session?.user?.image ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
-            <AvatarFallback>{session?.user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
-          </Avatar>
+          {!session && (
+            <Button onClick={() => signIn('google')} size="sm">
+              <Youtube className="mr-2 h-5 w-5" />
+              Sign In with Google
+            </Button>
+          )}
+          {session && (
+            <Avatar className="h-9 w-9">
+              <AvatarImage src={session.user?.image ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
+              <AvatarFallback>{session.user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
+            </Avatar>
+          )}
         </div>
     </header>
   );
@@ -43,10 +47,6 @@ export default function DashboardLayout({
       </div>
     );
   }
-
-  // NOTE: The unauthenticated check has been removed to allow development of the UI
-  // with mock data, bypassing the need for a live Google login for now.
-  // The actual pages will now use mock data if the session is not present.
 
   return (
     <SidebarProvider>

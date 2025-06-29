@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Activity, ShieldCheck, Youtube, Link as LinkIcon } from "lucide-react";
-import { useSession } from 'next-auth/react';
+import { Activity, ShieldCheck, Youtube, Link as LinkIcon, LogIn } from "lucide-react";
+import { useSession, signIn } from 'next-auth/react';
 import { getDashboardData } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -20,25 +20,23 @@ export default function CreatorDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (status !== 'authenticated') {
-      setIsLoading(false);
-      return;
-    }
-
-    async function fetchData() {
+    // We only fetch data if the user is authenticated.
+    if (status === 'authenticated') {
       setIsLoading(true);
-      const dashboardData = await getDashboardData();
-      setData(dashboardData);
-      setIsLoading(false);
+      getDashboardData().then(dashboardData => {
+        setData(dashboardData);
+        setIsLoading(false);
+      });
+    } else if (status === 'unauthenticated') {
+        setIsLoading(false);
     }
-    fetchData();
   }, [status]);
 
-  if (isLoading) {
+  if (isLoading || status === 'loading') {
     return <DashboardSkeleton />;
   }
   
-  if (!session || !data?.analytics) {
+  if (!session || !data) {
     return <ConnectAccountPrompt />;
   }
 
@@ -159,14 +157,15 @@ function ConnectAccountPrompt() {
         <Card className="text-center w-full max-w-lg mx-auto">
             <CardHeader>
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <LinkIcon className="w-12 h-12 text-primary" />
+                    <LogIn className="w-12 h-12 text-primary" />
                 </div>
-                <CardTitle className="mt-4">Connect Your YouTube Account</CardTitle>
-                <CardDescription>To view your dashboard, you need to connect your YouTube account first.</CardDescription>
+                <CardTitle className="mt-4">Connect Your Account</CardTitle>
+                <CardDescription>To view your dashboard and see real-time data, please sign in with your Google account.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button asChild>
-                    <Link href="/dashboard/settings">Go to Settings</Link>
+                <Button onClick={() => signIn('google')}>
+                    <Youtube className="mr-2 h-5 w-5" />
+                    Sign in with Google
                 </Button>
             </CardContent>
         </Card>

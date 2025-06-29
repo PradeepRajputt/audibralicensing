@@ -5,37 +5,32 @@ import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Users, Eye, Video, Link as LinkIcon } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { Users, Eye, Video, Link as LinkIcon, LogIn, Youtube } from 'lucide-react';
+import { useSession, signIn } from 'next-auth/react';
 import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-
 
 type AnalyticsData = Awaited<ReturnType<typeof getDashboardData>>['analytics'];
 
 export default function AnalyticsPage() {
   const { data: session, status } = useSession();
-  const [data, setData] = useState<AnalyticsData>(null);
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (status !== 'authenticated') {
-      setIsLoading(false);
-      return;
-    }
-
-    async function fetchData() {
+    if (status === 'authenticated') {
       setIsLoading(true);
-      const { analytics } = await getDashboardData();
-      setData(analytics);
+      getDashboardData().then(dashboardData => {
+        setData(dashboardData?.analytics ?? null);
+        setIsLoading(false);
+      });
+    } else if (status === 'unauthenticated') {
       setIsLoading(false);
     }
-    fetchData();
   }, [status]);
 
-  if (isLoading) {
+  if (isLoading || status === 'loading') {
     return <AnalyticsSkeleton />;
   }
 
@@ -144,14 +139,15 @@ function ConnectAccountPrompt() {
         <Card className="text-center w-full max-w-lg mx-auto">
             <CardHeader>
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <LinkIcon className="w-12 h-12 text-primary" />
+                    <LogIn className="w-12 h-12 text-primary" />
                 </div>
-                <CardTitle className="mt-4">Connect Your YouTube Account</CardTitle>
-                <CardDescription>To view your analytics, you need to connect your YouTube account first.</CardDescription>
+                <CardTitle className="mt-4">Connect Your Account</CardTitle>
+                <CardDescription>To view your analytics, please sign in with your Google account.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button asChild>
-                    <Link href="/dashboard/settings">Go to Settings</Link>
+                <Button onClick={() => signIn('google')}>
+                    <Youtube className="mr-2 h-5 w-5" />
+                    Sign in with Google
                 </Button>
             </CardContent>
         </Card>
