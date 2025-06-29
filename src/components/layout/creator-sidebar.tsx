@@ -9,15 +9,17 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, LayoutDashboard, Youtube, ScanSearch, FileText, Settings, LogOut } from 'lucide-react';
+import { Shield, LayoutDashboard, Youtube, ScanSearch, FileText, Settings, LogOut, FileVideo, ShieldAlert } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/analytics', label: 'YouTube Analytics', icon: Youtube },
-  { href: '/dashboard/monitoring', label: 'Content Monitoring', icon: ScanSearch },
-  { href: '/dashboard/strikes', label: 'Copyright Strikes', icon: FileText },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: Youtube },
+  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
+  { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
+  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
+  { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
 ];
 
 export function CreatorSidebar() {
@@ -37,7 +39,7 @@ export function CreatorSidebar() {
             <SidebarMenuItem key={item.href}>
               <Link href={item.href} legacyBehavior passHref>
                 <SidebarMenuButton
-                  isActive={pathname === item.href}
+                  isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
                   tooltip={item.label}
                 >
                   <item.icon />
