@@ -40,7 +40,7 @@ export function CreatorSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)}
+                isActive={pathname === item.href}
                 tooltip={item.label}
               >
                 <Link href={item.href} prefetch={false}>
