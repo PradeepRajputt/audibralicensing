@@ -1,63 +1,55 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2 } from "lucide-react";
-import { approveStrikeRequest, denyStrikeRequest } from './actions';
+import type { Report } from '@/lib/reports-store';
+import { getPendingStrikeRequests, updateReportStatus } from '@/lib/reports-store';
 
-// Mock data for strike requests. In a real app, this would be fetched from Firestore.
-const initialStrikes = [
-  {
-    strikeId: "strike_1",
-    creatorName: "Sample Creator",
-    infringingUrl: "https://infringing-site.com/stolen-video-1",
-    originalUrl: "https://youtube.com/watch?v=original-1",
-    requestDate: "2024-06-10",
-  },
-  {
-    strikeId: "strike_2",
-    creatorName: "Alice Vlogs",
-    infringingUrl: "https://youtube.com/watch?v=reuploaded",
-    originalUrl: "https://youtube.com/watch?v=original-2",
-    requestDate: "2024-06-09",
-  },
-];
-
-type StrikeRequest = typeof initialStrikes[0];
 
 export default function StrikeRequestsPage() {
   const { toast } = useToast();
-  const [strikes, setStrikes] = useState(initialStrikes);
+  const [strikes, setStrikes] = useState<Report[]>([]);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const handleAction = async (action: 'approve' | 'deny', strike: StrikeRequest) => {
-    setLoadingAction(`${action}-${strike.strikeId}`);
-    
-    let result;
-    if (action === 'approve') {
-      result = await approveStrikeRequest(strike.strikeId);
-    } else {
-      result = await denyStrikeRequest(strike.strikeId);
-    }
+  function loadStrikes() {
+      setStrikes(getPendingStrikeRequests());
+  }
 
-    if (result.success) {
+  useEffect(() => {
+    loadStrikes();
+
+    // Listen for storage changes to update the list in real-time if another tab makes a change
+    window.addEventListener('storage', loadStrikes);
+    return () => {
+      window.removeEventListener('storage', loadStrikes);
+    };
+  }, []);
+
+
+  const handleAction = (action: 'approve' | 'deny', strikeId: string) => {
+    setLoadingAction(`${action}-${strikeId}`);
+    
+    if (action === 'approve') {
+      updateReportStatus(strikeId, 'approved');
       toast({
         title: "Action Successful",
-        description: result.message,
+        description: 'Strike request has been approved and takedown initiated.',
       });
-      // Remove the strike from the list after action
-      setStrikes(prev => prev.filter(s => s.strikeId !== strike.strikeId));
     } else {
+      updateReportStatus(strikeId, 'rejected');
       toast({
-        variant: "destructive",
-        title: "Action Failed",
-        description: result.message || "An unknown error occurred.",
+        title: "Action Successful",
+        description: 'Strike request has been denied.',
       });
     }
-
+    
+    // Refresh the list from our simulated database
+    loadStrikes();
     setLoadingAction(null);
   }
 
@@ -76,44 +68,40 @@ export default function StrikeRequestsPage() {
               <TableRow>
                 <TableHead>Creator</TableHead>
                 <TableHead>Infringing URL</TableHead>
-                <TableHead>Original URL</TableHead>
+                <TableHead>Reason</TableHead>
                 <TableHead>Request Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {strikes.map((strike) => (
-                <TableRow key={strike.strikeId}>
+                <TableRow key={strike.id}>
                   <TableCell className="font-medium">{strike.creatorName}</TableCell>
                    <TableCell>
-                    <a href={strike.infringingUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
-                        {strike.infringingUrl}
+                    <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
+                        {strike.suspectUrl}
                     </a>
                   </TableCell>
-                   <TableCell>
-                     <a href={strike.originalUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
-                        {strike.originalUrl}
-                    </a>
-                  </TableCell>
-                  <TableCell>{new Date(strike.requestDate).toLocaleDateString()}</TableCell>
+                   <TableCell className="truncate max-w-xs">{strike.reason}</TableCell>
+                  <TableCell>{new Date(strike.submitted).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleAction('approve', strike)}
+                        onClick={() => handleAction('approve', strike.id)}
                         disabled={!!loadingAction}
                       >
-                        {loadingAction === `approve-${strike.strikeId}` ? <Loader2 className="animate-spin" /> : <Check />}
+                        {loadingAction === `approve-${strike.id}` ? <Loader2 className="animate-spin" /> : <Check />}
                         Approve
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleAction('deny', strike)}
+                        onClick={() => handleAction('deny', strike.id)}
                         disabled={!!loadingAction}
                       >
-                         {loadingAction === `deny-${strike.strikeId}` ? <Loader2 className="animate-spin" /> : <X />}
+                         {loadingAction === `deny-${strike.id}` ? <Loader2 className="animate-spin" /> : <X />}
                         Deny
                       </Button>
                     </div>
