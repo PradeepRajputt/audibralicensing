@@ -22,6 +22,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { submitManualReportAction } from "./actions";
 
 const formSchema = z.object({
   platform: z.string({ required_error: "Please select a platform." }),
@@ -51,17 +52,23 @@ export default function SubmitReportPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    console.log("Submitting manual report:", values);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const result = await submitManualReportAction(values);
 
-    toast({
-      title: "Report Submitted",
-      description: "Your report has been received and is now under review.",
-    });
+    if (result.success) {
+      toast({
+        title: "Report Submitted",
+        description: result.message,
+      });
+      form.reset();
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: result.message,
+        });
+    }
     
-    form.reset();
     setIsLoading(false);
   }
 
