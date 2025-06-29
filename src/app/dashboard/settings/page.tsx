@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -19,6 +20,7 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Youtube, Instagram } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, { message: "Display name must be at least 2 characters." }),
@@ -44,8 +46,62 @@ export default function SettingsPage() {
         });
     }
 
+    const [avatarUrl, setAvatarUrl] = React.useState("https://placehold.co/128x128.png");
+    const [isUploading, setIsUploading] = React.useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setAvatarUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const handleUpload = () => {
+        // In a real app, you'd upload the file to a storage service
+        // and save the URL to the user's profile in Firestore.
+        setIsUploading(true);
+        setTimeout(() => {
+            toast({
+                title: "Picture Updated",
+                description: "Your new profile picture has been saved (simulated).",
+            });
+            setIsUploading(false);
+        }, 1500);
+    }
+
+
     return (
         <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Profile Picture</CardTitle>
+                    <CardDescription>Update your profile picture. Recommended size: 256x256px.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center gap-6">
+                        <Avatar className="w-24 h-24">
+                            <AvatarImage src={avatarUrl} alt="User Avatar" data-ai-hint="profile picture" />
+                            <AvatarFallback>CN</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-2">
+                             <Input 
+                                id="picture" 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                onChange={handleFileChange}
+                                accept="image/png, image/jpeg"
+                            />
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Picture</Button>
+                            <Button onClick={handleUpload} disabled={avatarUrl.startsWith('https://placehold.co') || isUploading}>
+                                {isUploading ? 'Uploading...' : 'Update Picture'}
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle>Profile Information</CardTitle>
