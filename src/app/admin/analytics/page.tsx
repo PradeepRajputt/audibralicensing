@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
+import { BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Bar } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Users, ScanSearch, UserPlus } from 'lucide-react';
