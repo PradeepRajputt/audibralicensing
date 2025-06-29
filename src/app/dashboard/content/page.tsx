@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlusCircle, FileVideo, Globe, Youtube } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 const protectedContent = [
   {
@@ -55,9 +56,11 @@ export default function ProtectedContentPage() {
                 A list of your content that CreatorShield is actively monitoring.
             </CardDescription>
         </div>
-        <Button>
-            <PlusCircle className="mr-2" />
-            Add New Content
+        <Button asChild>
+            <Link href="/dashboard/content/new">
+                <PlusCircle className="mr-2" />
+                Add New Content
+            </Link>
         </Button>
       </CardHeader>
       <CardContent>
