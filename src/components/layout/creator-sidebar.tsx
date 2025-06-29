@@ -43,7 +43,7 @@ export function CreatorSidebar() {
                 isActive={item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)}
                 tooltip={item.label}
               >
-                <Link href={item.href}>
+                <Link href={item.href} prefetch={false}>
                   <item.icon />
                   <span>{item.label}</span>
                 </Link>
@@ -60,7 +60,7 @@ export function CreatorSidebar() {
               isActive={pathname === '/dashboard/settings'}
               tooltip="Settings"
             >
-              <Link href="/dashboard/settings">
+              <Link href="/dashboard/settings" prefetch={false}>
                 <Settings />
                 <span>Settings</span>
               </Link>
@@ -68,7 +68,7 @@ export function CreatorSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href="/">
+              <Link href="/" prefetch={false}>
                 <LogOut />
                 <span>Logout</span>
               </Link>
