@@ -5,6 +5,7 @@ import { CreatorSidebar } from '@/components/layout/creator-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserProvider, useUser } from '@/context/user-context';
 import { SuspensionNotice } from '@/components/layout/suspension-notice';
+import { Loader2 } from 'lucide-react';
 
 function DashboardHeader() {
   const { avatarUrl } = useUser();
@@ -24,7 +25,16 @@ function DashboardHeader() {
 
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { status } = useUser();
+  const { status, isHydrated } = useUser();
+
+  if (!isHydrated) {
+    // Render a loading skeleton to prevent hydration mismatch while we check the user's status.
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
 
   if (status === 'suspended') {
     return <SuspensionNotice />;

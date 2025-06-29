@@ -11,6 +11,7 @@ interface UserContextType {
   setDisplayName: (name: string) => void;
   status: UserStatus;
   setStatus: (status: UserStatus) => void;
+  isHydrated: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -19,6 +20,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [avatarUrl, setAvatarUrl] = useState("https://placehold.co/128x128.png");
   const [displayName, setDisplayName] = useState("Sample Creator");
   const [status, setStatusState] = useState<UserStatus>('active');
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     // This runs only on the client, after hydration, to avoid mismatches.
@@ -26,6 +28,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (storedStatus && ['active', 'suspended', 'deactivated'].includes(storedStatus)) {
       setStatusState(storedStatus);
     }
+    setIsHydrated(true);
   }, []);
 
   const setStatus = (newStatus: UserStatus) => {
@@ -35,7 +38,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('user_status', newStatus);
   };
 
-  const value = { avatarUrl, setAvatarUrl, displayName, setDisplayName, status, setStatus };
+  const value = { avatarUrl, setAvatarUrl, displayName, setDisplayName, status, setStatus, isHydrated };
 
   return (
     <UserContext.Provider value={value}>
