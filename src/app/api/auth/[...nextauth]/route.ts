@@ -4,10 +4,25 @@ import type { JWT } from 'next-auth/jwt';
 import GoogleProvider from 'next-auth/providers/google';
 import { google } from 'googleapis';
 
+// --- STARTUP VALIDATION ---
+// This is the critical fix. We check for the required environment variables when the server starts.
+// If they are missing, we throw a clear error instead of letting the server crash later.
+if (!process.env.GOOGLE_CLIENT_ID) {
+  throw new Error('Missing GOOGLE_CLIENT_ID in .env file');
+}
+if (!process.env.GOOGLE_CLIENT_SECRET) {
+  throw new Error('Missing GOOGLE_CLIENT_SECRET in .env file');
+}
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('Missing NEXTAUTH_SECRET in .env file');
+}
+// --- END STARTUP VALIDATION ---
+
+
 // This oAuth2Client will be used to refresh the access token.
 const oAuth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID || '',
-  process.env.GOOGLE_CLIENT_SECRET || ''
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET
 );
 
 /**
@@ -51,8 +66,8 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
           prompt: 'consent',
