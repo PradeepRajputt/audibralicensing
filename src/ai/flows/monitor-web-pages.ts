@@ -14,6 +14,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { fetchWebPageContent } from '@/ai/tools/web-scraper';
 
 /**
  * Input schema for the monitorWebPagesForCopyrightInfringements function.
@@ -52,14 +53,17 @@ export async function monitorWebPagesForCopyrightInfringements(
  */
 const monitorWebPagesPrompt = ai.definePrompt({
   name: 'monitorWebPagesPrompt',
+  tools: [fetchWebPageContent],
   input: {schema: MonitorWebPagesInputSchema},
   output: {schema: MonitorWebPagesOutputSchema},
   prompt: `You are an AI agent specializing in detecting copyright infringements on web pages.
 
   Your task is to analyze the content of a given web page and identify any potential copyright infringements
   based on the provided creator content.
+  
+  First, use the fetchWebPageContent tool to get the content of the web page at the given URL. Then, compare the fetched content with the creator's content.
 
-  Provide a detailed report of your findings, including specific examples of potential infringements.
+  Provide a detailed report of your findings, including specific examples of potential infringements. If no content could be fetched from the URL, state that in your report.
 
   Web Page URL: {{{url}}}
   Creator Content: {{{creatorContent}}}
@@ -81,4 +85,3 @@ const monitorWebPagesFlow = ai.defineFlow(
     return output!;
   }
 );
-
