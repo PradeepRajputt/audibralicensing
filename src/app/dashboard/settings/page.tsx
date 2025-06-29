@@ -59,15 +59,13 @@ type PlatformId = typeof platformData[number]['id'];
 
 export default function SettingsPage() {
     const { toast } = useToast();
-    const { avatarUrl, setAvatarUrl, displayName, setDisplayName } = useUser();
+    const { avatarUrl, setAvatarUrl, displayName, setDisplayName, youtubeId, setYoutubeId } = useUser();
     
     // State to manage which platform is active
-    const [activePlatform, setActivePlatform] = React.useState<PlatformId | null>('youtube');
+    const [activePlatform, setActivePlatform] = React.useState<PlatformId | null>(null);
     
     // State to store details of connected accounts
-    const [connectedAccounts, setConnectedAccounts] = React.useState<Partial<Record<PlatformId, { account: string }>>>({
-        youtube: { account: 'MyAwesomeVlogs' }
-    });
+    const [connectedAccounts, setConnectedAccounts] = React.useState<Partial<Record<PlatformId, { account: string }>>>({});
 
     // State to manage the connection dialog
     const [dialogState, setDialogState] = React.useState<{
@@ -75,6 +73,17 @@ export default function SettingsPage() {
         platform: typeof platformData[number] | null;
         inputValue: string;
     }>({ open: false, platform: null, inputValue: '' });
+
+    React.useEffect(() => {
+        // Sync local state with context on initial load and when context changes
+        if (youtubeId) {
+            setConnectedAccounts({ youtube: { account: youtubeId } });
+            setActivePlatform('youtube');
+        } else {
+            setConnectedAccounts({});
+            setActivePlatform(null);
+        }
+    }, [youtubeId]);
 
 
     const form = useForm<z.infer<typeof profileFormSchema>>({
@@ -120,7 +129,7 @@ export default function SettingsPage() {
     
     const handlePlatformToggle = (platformId: PlatformId, isChecked: boolean) => {
         if (!isChecked) {
-            // A platform becomes inactive only when another is activated.
+            // A user cannot un-check an active switch. It deactivates when another is activated or by using the Disconnect button.
             return;
         }
 
@@ -134,7 +143,6 @@ export default function SettingsPage() {
                 description: `You are now monitoring ${platform?.name}.`,
             });
         } else {
-            // If not connected, open the dialog to get details.
             if (platform) {
                 setDialogState({ open: true, platform, inputValue: '' });
             }
@@ -151,9 +159,11 @@ export default function SettingsPage() {
             ...prev,
             [platform.id]: { account: inputValue }
         }));
-
-        // Set the new platform as active
         setActivePlatform(platform.id);
+
+        if (platform.id === 'youtube') {
+            setYoutubeId(inputValue);
+        }
 
         toast({
             title: "Platform Connected",
@@ -162,6 +172,29 @@ export default function SettingsPage() {
 
         // Close and reset the dialog
         setDialogState({ open: false, platform: null, inputValue: '' });
+    };
+
+    const handleDisconnect = (platformId: PlatformId) => {
+        const platform = platformData.find(p => p.id === platformId);
+        
+        setConnectedAccounts(prev => {
+            const newAccounts = { ...prev };
+            delete newAccounts[platformId];
+            return newAccounts;
+        });
+
+        if (activePlatform === platformId) {
+            setActivePlatform(null);
+        }
+
+        if (platformId === 'youtube') {
+            setYoutubeId(null);
+        }
+
+        toast({
+            title: "Platform Disconnected",
+            description: `${platform?.name} has been disconnected.`
+        });
     };
 
 
@@ -256,11 +289,16 @@ export default function SettingsPage() {
                                     </p>
                                 </div>
                             </div>
-                            <Switch
-                                checked={activePlatform === platform.id}
-                                onCheckedChange={(isChecked) => handlePlatformToggle(platform.id, isChecked)}
-                                aria-label={`Toggle ${platform.name} connection`}
-                             />
+                            <div className="flex items-center gap-2">
+                                <Switch
+                                    checked={activePlatform === platform.id}
+                                    onCheckedChange={(isChecked) => handlePlatformToggle(platform.id, isChecked)}
+                                    aria-label={`Toggle ${platform.name} connection`}
+                                 />
+                                 {connectedAccounts[platform.id] && (
+                                    <Button variant="ghost" size="sm" onClick={() => handleDisconnect(platform.id)}>Disconnect</Button>
+                                 )}
+                             </div>
                         </div>
                     ))}
                 </CardContent>

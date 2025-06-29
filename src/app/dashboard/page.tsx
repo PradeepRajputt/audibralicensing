@@ -1,34 +1,45 @@
+
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Activity, ShieldCheck, Youtube } from "lucide-react";
+import { Activity, ShieldCheck, Youtube, Link as LinkIcon } from "lucide-react";
+import { useUser } from '@/context/user-context';
+import { getDashboardData } from './actions';
+import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
-const recentActivities = [
-  {
-    type: "New Infringement Detected",
-    details: "On website 'example.com/stolen-video'",
-    status: "Action Required",
-    date: "2 hours ago",
-    variant: "destructive"
-  },
-  {
-    type: "YouTube Scan Complete",
-    details: "Channel 'MyAwesomeVlogs' scanned.",
-    status: "No Issues",
-    date: "1 day ago",
-    variant: "default"
-  },
-  {
-    type: "Strike Submitted",
-    details: "Claim #CS-12345 to YouTube.",
-    status: "Pending",
-    date: "2 days ago",
-    variant: "secondary"
-  },
-];
-
+type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export default function CreatorDashboardPage() {
+  const { youtubeId, isHydrated } = useUser();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Only fetch data once the user context has been hydrated from local storage
+    if (!isHydrated) return;
+
+    async function fetchData() {
+      setIsLoading(true);
+      const dashboardData = await getDashboardData(youtubeId);
+      setData(dashboardData);
+      setIsLoading(false);
+    }
+    fetchData();
+  }, [youtubeId, isHydrated]);
+
+  if (isLoading || !isHydrated) {
+    return <DashboardSkeleton />;
+  }
+
+  if (!data || !data.analytics) {
+    return <ConnectAccountPrompt />;
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -40,9 +51,9 @@ export default function CreatorDashboardPage() {
             <Youtube className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234,567</div>
+            <div className="text-2xl font-bold">{data.analytics.views.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              Across all your videos
             </p>
           </CardContent>
         </Card>
@@ -79,33 +90,83 @@ export default function CreatorDashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>A log of recent automated scans and actions.</CardDescription>
+          <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentActivities.map((activity, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{activity.type}</TableCell>
-                  <TableCell>{activity.details}</TableCell>
-                  <TableCell>
-                    <Badge variant={activity.variant as any}>{activity.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{activity.date}</TableCell>
+           {data.activity.length > 0 ? (
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                {data.activity.map((activity, index) => (
+                    <TableRow key={index}>
+                    <TableCell className="font-medium">{activity.type}</TableCell>
+                    <TableCell>{activity.details}</TableCell>
+                    <TableCell>
+                        <Badge variant={activity.variant as any}>{activity.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{activity.date}</TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+           ) : (
+            <div className="text-center py-10 text-muted-foreground">
+                <p>No recent activity to display.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
   )
+}
+
+function DashboardSkeleton() {
+    return (
+        <div className="space-y-6 animate-pulse">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-full max-w-md mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function ConnectAccountPrompt() {
+    return (
+        <Card className="text-center w-full max-w-lg mx-auto">
+            <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                    <LinkIcon className="w-12 h-12 text-primary" />
+                </div>
+                <CardTitle className="mt-4">Connect Your YouTube Account</CardTitle>
+                <CardDescription>To view your dashboard, you need to connect your YouTube account first.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    );
 }
