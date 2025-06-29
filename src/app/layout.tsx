@@ -20,7 +20,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-body antialiased" suppressHydrationWarning>
+      <body className="font-body antialiased">
         {children}
         <Toaster />
       </body>
