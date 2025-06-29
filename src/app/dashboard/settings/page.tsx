@@ -1,3 +1,4 @@
+
 'use client'
 
 import * as React from "react"
@@ -14,6 +15,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -32,14 +41,16 @@ const platformData = [
   {
     id: 'youtube',
     name: 'YouTube',
-    account: 'MyAwesomeVlogs',
     icon: <Youtube className="w-8 h-8 text-red-600" />,
+    inputLabel: 'YouTube Channel ID',
+    inputPlaceholder: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw',
   },
   {
     id: 'instagram',
     name: 'Instagram',
-    account: 'InstaVlogs',
     icon: <Instagram className="w-8 h-8 text-pink-500" />,
+    inputLabel: 'Instagram Username',
+    inputPlaceholder: '@username',
   },
 ] as const;
 
@@ -48,7 +59,22 @@ type PlatformId = typeof platformData[number]['id'];
 export default function SettingsPage() {
     const { toast } = useToast();
     const { avatarUrl, setAvatarUrl, displayName, setDisplayName } = useUser();
+    
+    // State to manage which platform is active
     const [activePlatform, setActivePlatform] = React.useState<PlatformId | null>('youtube');
+    
+    // State to store details of connected accounts
+    const [connectedAccounts, setConnectedAccounts] = React.useState<Partial<Record<PlatformId, { account: string }>>>({
+        youtube: { account: 'MyAwesomeVlogs' }
+    });
+
+    // State to manage the connection dialog
+    const [dialogState, setDialogState] = React.useState<{
+        open: boolean;
+        platform: typeof platformData[number] | null;
+        inputValue: string;
+    }>({ open: false, platform: null, inputValue: '' });
+
 
     const form = useForm<z.infer<typeof profileFormSchema>>({
         resolver: zodResolver(profileFormSchema),
@@ -92,13 +118,49 @@ export default function SettingsPage() {
     }
     
     const handlePlatformToggle = (platformId: PlatformId, isChecked: boolean) => {
-        if (isChecked) {
+        if (!isChecked) {
+            // A platform becomes inactive only when another is activated.
+            return;
+        }
+
+        const isConnected = !!connectedAccounts[platformId];
+        const platform = platformData.find(p => p.id === platformId);
+
+        if (isConnected) {
             setActivePlatform(platformId);
             toast({
-                title: "Platform Connection Updated",
-                description: `You are now connected with ${platformData.find(p => p.id === platformId)?.name}.`,
+                title: "Platform Switched",
+                description: `You are now monitoring ${platform?.name}.`,
             });
+        } else {
+            // If not connected, open the dialog to get details.
+            if (platform) {
+                setDialogState({ open: true, platform, inputValue: '' });
+            }
         }
+    };
+
+    const handleConnectPlatform = () => {
+        if (!dialogState.platform || !dialogState.inputValue) return;
+
+        const { platform, inputValue } = dialogState;
+
+        // Save the connected account details
+        setConnectedAccounts(prev => ({
+            ...prev,
+            [platform.id]: { account: inputValue }
+        }));
+
+        // Set the new platform as active
+        setActivePlatform(platform.id);
+
+        toast({
+            title: "Platform Connected",
+            description: `${platform.name} has been successfully connected.`
+        });
+
+        // Close and reset the dialog
+        setDialogState({ open: false, platform: null, inputValue: '' });
     };
 
 
@@ -187,7 +249,9 @@ export default function SettingsPage() {
                                 <div>
                                     <h3 className="font-semibold">{platform.name}</h3>
                                     <p className="text-sm text-muted-foreground">
-                                        {activePlatform === platform.id ? platform.account : 'Not connected'}
+                                        {connectedAccounts[platform.id] 
+                                            ? `Connected as ${connectedAccounts[platform.id]?.account}` 
+                                            : 'Not connected'}
                                     </p>
                                 </div>
                             </div>
@@ -224,6 +288,37 @@ export default function SettingsPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Connection Dialog */}
+            <Dialog 
+                open={dialogState.open} 
+                onOpenChange={(isOpen) => !isOpen && setDialogState({ open: false, platform: null, inputValue: '' })}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Connect to {dialogState.platform?.name}</DialogTitle>
+                        <DialogDescription>
+                            Please provide your {dialogState.platform?.name} details to begin monitoring.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="platform-detail" className="text-right">
+                                {dialogState.platform?.inputLabel}
+                            </Label>
+                            <Input
+                                id="platform-detail"
+                                placeholder={dialogState.platform?.inputPlaceholder}
+                                value={dialogState.inputValue}
+                                onChange={(e) => setDialogState(prev => ({...prev, inputValue: e.target.value}))}
+                                className="col-span-3"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" onClick={handleConnectPlatform} disabled={!dialogState.inputValue}>Connect Account</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
