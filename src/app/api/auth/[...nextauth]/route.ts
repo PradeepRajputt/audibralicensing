@@ -1,55 +1,56 @@
 
-import NextAuth, { type NextAuthOptions, type JWT } from 'next-auth';
+import NextAuth, { type NextAuthOptions } from 'next-auth';
+import type { JWT } from 'next-auth/jwt';
 import GoogleProvider from 'next-auth/providers/google';
 import { google } from 'googleapis';
 
-/**
- * Takes a token, and returns a new token with updated
- * `accessToken` and `accessTokenExpires`. If an error occurs,
- * returns the old token and an error property
- */
-async function refreshAccessToken(token: JWT) {
-  try {
-    const url =
-      "https://oauth2.googleapis.com/token?" +
-      new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID || '',
-        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-        grant_type: "refresh_token",
-        refresh_token: token.refreshToken as string,
-      });
+// Configure the Google OAuth2 client
+const oAuth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.NEXTAUTH_URL
+    ? `${process.env.NEXTAUTH_URL}/api/auth/callback/google`
+    : 'http://localhost:9002/api/auth/callback/google'
+);
 
-    const response = await fetch(url, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      method: "POST",
+/**
+ * Uses the googleapis library to refresh the access token.
+ * This is a more robust method than manual fetching.
+ */
+async function refreshAccessToken(token: JWT): Promise<JWT> {
+  if (!token.refreshToken) {
+    console.error('No refresh token available for refreshing.');
+    return { ...token, error: 'RefreshAccessTokenError' };
+  }
+
+  try {
+    // Use the oAuth2Client to refresh the token
+    oAuth2Client.setCredentials({
+      refresh_token: token.refreshToken,
     });
 
-    const refreshedTokens = await response.json();
-
-    if (!response.ok) {
-      throw refreshedTokens;
+    const { credentials } = await oAuth2Client.refreshAccessToken();
+    
+    // Check if we received the new credentials
+    if (!credentials || !credentials.access_token || !credentials.expiry_date) {
+        throw new Error("Failed to refresh access token, credentials missing.");
     }
 
     return {
       ...token,
-      accessToken: refreshedTokens.access_token,
-      // The new response will have an `expires_in` field (duration in seconds)
-      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
-      // The refresh token might be rotated. If not, fall back to the old one.
-      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
+      accessToken: credentials.access_token,
+      accessTokenExpires: credentials.expiry_date,
+      refreshToken: credentials.refresh_token ?? token.refreshToken, // Use new refresh token if provided
+      error: undefined,
     };
   } catch (error) {
-    console.error("Error refreshing access token", error);
-
+    console.error('Error refreshing access token:', error);
     return {
       ...token,
-      error: "RefreshAccessTokenError" as const,
+      error: 'RefreshAccessTokenError',
     };
   }
 }
-
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -74,41 +75,41 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        // account.expires_at is the absolute time in seconds when the token expires.
-        // We need to convert it to milliseconds.
-        token.accessTokenExpires = (account.expires_at as number) * 1000;
-        
+        token.accessTokenExpires = account.expires_at ? account.expires_at * 1000 : undefined;
+
         // Fetch YouTube channel ID only on initial sign in
-        try {
-          const auth = new google.auth.OAuth2();
-          auth.setCredentials({ access_token: account.access_token });
-          const youtube = google.youtube({ version: 'v3', auth });
-          const response = await youtube.channels.list({
-            mine: true,
-            part: ['id'],
-          });
-          const channelId = response.data.items?.[0]?.id;
-          if (channelId) {
-            token.youtubeChannelId = channelId;
-          }
-        } catch (error) {
-            console.error("Error fetching YouTube channel ID:", error);
+        if (account.access_token) {
+            try {
+              // Use the configured oAuth2Client
+              oAuth2Client.setCredentials({ access_token: account.access_token });
+              const youtube = google.youtube({ version: 'v3', auth: oAuth2Client });
+              const response = await youtube.channels.list({
+                mine: true,
+                part: ['id'],
+              });
+              const channelId = response.data.items?.[0]?.id;
+              if (channelId) {
+                token.youtubeChannelId = channelId;
+              }
+            } catch (error) {
+                console.error("Error fetching YouTube channel ID:", error);
+                // Don't block sign-in if this fails, just log it.
+            }
         }
         return token;
       }
 
       // Return previous token if the access token has not expired yet
-      if (Date.now() < (token.accessTokenExpires as number)) {
+      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
         return token;
       }
 
       // Access token has expired, try to update it
+      console.log('Access token has expired, refreshing...');
       return refreshAccessToken(token);
     },
     async session({ session, token }) {
-      if (token.accessToken) {
-        session.accessToken = token.accessToken;
-      }
+      session.accessToken = token.accessToken;
       if (token.youtubeChannelId) {
         session.user.youtubeChannelId = token.youtubeChannelId;
       }
@@ -121,4 +122,3 @@ export const authOptions: NextAuthOptions = {
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
-    
