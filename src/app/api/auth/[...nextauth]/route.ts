@@ -35,8 +35,10 @@ async function refreshAccessToken(token: JWT) {
     return {
       ...token,
       accessToken: refreshedTokens.access_token,
+      // The new response will have an `expires_in` field (duration in seconds)
       accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
-      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fall back to old refresh token
+      // The refresh token might be rotated. If not, fall back to the old one.
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken,
     };
   } catch (error) {
     console.error("Error refreshing access token", error);
@@ -72,7 +74,9 @@ export const authOptions: NextAuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        token.accessTokenExpires = Date.now() + (account.expires_at as number) * 1000;
+        // account.expires_at is the absolute time in seconds when the token expires.
+        // We need to convert it to milliseconds.
+        token.accessTokenExpires = (account.expires_at as number) * 1000;
         
         // Fetch YouTube channel ID only on initial sign in
         try {
@@ -117,3 +121,4 @@ export const authOptions: NextAuthOptions = {
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
+    
