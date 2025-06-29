@@ -17,6 +17,7 @@ if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('Missing NEXTAUTH_SECRET in .env file');
 }
 if (!process.env.NEXTAUTH_URL) {
+  // This is crucial for deployment, so NextAuth knows its public URL
   throw new Error('Missing NEXTAUTH_URL in .env file');
 }
 // --- END STARTUP VALIDATION ---
