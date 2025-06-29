@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { format } from "date-fns"
+import { format, sub, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
 
@@ -24,9 +25,61 @@ export function DateRangePicker({
   date,
   onDateChange
 }: DateRangePickerProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const presets = [
+    { name: "last_7_days", label: "Last 7 days" },
+    { name: "last_30_days", label: "Last 30 days" },
+    { name: "this_month", label: "This month" },
+    { name: "last_month", label: "Last month" },
+    { name: "this_year", label: "This year" },
+  ];
+
+  const handlePresetClick = (presetName: string) => {
+    const now = new Date();
+    let from: Date | undefined;
+    let to: Date | undefined = now;
+    
+    switch (presetName) {
+        case "last_7_days":
+            from = sub(now, { days: 6 });
+            break;
+        case "last_30_days":
+            from = sub(now, { days: 29 });
+            break;
+        case "this_month":
+            from = startOfMonth(now);
+            break;
+        case "last_month":
+            const lastMonth = sub(now, { months: 1 });
+            from = startOfMonth(lastMonth);
+            to = endOfMonth(lastMonth);
+            break;
+        case "this_year":
+            from = startOfYear(now);
+            break;
+        default:
+            return;
+    }
+    
+    onDateChange({ from, to });
+    setIsOpen(false);
+  }
+
+  const handleDateSelect = (selectedDate: DateRange | undefined) => {
+    onDateChange(selectedDate);
+    // Close the popover only when a full range is selected
+    if (selectedDate?.from && selectedDate?.to) {
+      if (selectedDate.from.getTime() !== selectedDate.to.getTime()) {
+         setIsOpen(false);
+      }
+    }
+  }
+
+
   return (
     <div className={cn("grid gap-2", className)}>
-      <Popover>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             id="date"
@@ -51,13 +104,21 @@ export function DateRangePicker({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent className="w-auto p-0 flex" align="end">
+          <div className="flex flex-col space-y-1 p-2 border-r">
+            <span className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Presets</span>
+            {presets.map((preset) => (
+                <Button key={preset.name} variant="ghost" size="sm" className="justify-start" onClick={() => handlePresetClick(preset.name)}>
+                    {preset.label}
+                </Button>
+            ))}
+          </div>
           <Calendar
             initialFocus
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={onDateChange}
+            onSelect={handleDateSelect}
             numberOfMonths={2}
           />
         </PopoverContent>
