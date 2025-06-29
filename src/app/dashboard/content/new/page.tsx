@@ -3,7 +3,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import type { z } from "zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,8 +20,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { addProtectedContentAction, formSchema } from "./actions";
+import { addProtectedContentAction } from "./actions";
 import Link from 'next/link';
+
+const formSchema = z.object({
+  title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
+  contentType: z.enum(['video', 'audio', 'text', 'image']),
+  platform: z.enum(['youtube', 'vimeo', 'web']),
+  videoURL: z.string().url({ message: 'Please enter a valid URL.' }).optional().or(z.literal('')),
+  tags: z.string().optional(),
+});
 
 export default function AddContentPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -113,7 +121,7 @@ export default function AddContentPage() {
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select the original platform" />
-                        </SelectTrigger>
+                        </Trigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="youtube">YouTube</SelectItem>

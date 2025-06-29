@@ -11,7 +11,7 @@ import { redirect } from 'next/navigation';
 
 const MOCK_CREATOR_ID = 'user_creator_123';
 
-export const formSchema = z.object({
+const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
   contentType: z.enum(['video', 'audio', 'text', 'image']),
   platform: z.enum(['youtube', 'vimeo', 'web']),
