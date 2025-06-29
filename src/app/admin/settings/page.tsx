@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,8 +15,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
-const settingsFormSchema = z.object({
+
+const profileFormSchema = z.object({
+  displayName: z.string().min(2, { message: "Display name must be at least 2 characters." }),
+  email: z.string().email(),
+});
+
+const platformSettingsFormSchema = z.object({
   allowRegistrations: z.boolean().default(true),
   strikeThreshold: z.coerce.number().min(1).max(10),
   notificationEmail: z.string().email({ message: "Please enter a valid email." }),
@@ -30,8 +38,23 @@ export default function AdminSettingsPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
-    const form = useForm<z.infer<typeof settingsFormSchema>>({
-        resolver: zodResolver(settingsFormSchema),
+    // State for profile settings
+    const [avatarUrl, setAvatarUrl] = useState("https://placehold.co/128x128.png");
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Form for profile information
+    const profileForm = useForm<z.infer<typeof profileFormSchema>>({
+        resolver: zodResolver(profileFormSchema),
+        defaultValues: {
+            displayName: "Admin User",
+            email: "admin@creatorshield.com",
+        },
+    });
+
+    // Form for platform settings
+    const platformForm = useForm<z.infer<typeof platformSettingsFormSchema>>({
+        resolver: zodResolver(platformSettingsFormSchema),
         defaultValues: {
             allowRegistrations: true,
             strikeThreshold: 3,
@@ -41,15 +64,51 @@ export default function AdminSettingsPage() {
             matchThreshold: [85],
         },
     });
+    
+    // --- Profile Handlers ---
 
-    function onSubmit(data: z.infer<typeof settingsFormSchema>) {
-        setIsLoading(true);
-        console.log("Simulating saving settings:", data);
-        
-        // Simulate an API call
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setAvatarUrl(URL.createObjectURL(file));
+        }
+    };
+
+    const handleUpload = () => {
+        setIsUploading(true);
         setTimeout(() => {
             toast({
-                title: "Settings Saved",
+                title: "Picture Updated",
+                description: "Your new profile picture has been saved (simulated).",
+            });
+            setIsUploading(false);
+        }, 1500);
+    }
+
+    function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
+        console.log("Updating admin profile:", values);
+        toast({
+            title: "Profile Updated",
+            description: "Your profile information has been saved.",
+        });
+    }
+
+    function onPasswordChangeClick() {
+        toast({
+            title: "Forgot Password",
+            description: "In a real app, a password reset email would be sent.",
+        });
+    }
+
+    // --- Platform Settings Handler ---
+
+    function onPlatformSubmit(data: z.infer<typeof platformSettingsFormSchema>) {
+        setIsLoading(true);
+        console.log("Simulating saving platform settings:", data);
+        
+        setTimeout(() => {
+            toast({
+                title: "Platform Settings Saved",
                 description: "Your changes have been successfully saved.",
             });
             setIsLoading(false);
@@ -57,16 +116,110 @@ export default function AdminSettingsPage() {
     }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
        <div className="space-y-2">
             <h1 className="text-2xl font-bold">Admin Settings</h1>
             <p className="text-muted-foreground">
-                Manage platform-wide settings and configurations.
+                Manage your personal account and platform-wide configurations.
             </p>
         </div>
 
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Separator />
+        
+        <h2 className="text-xl font-semibold">My Profile</h2>
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Profile Picture</CardTitle>
+                    <CardDescription>Update your profile picture.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center gap-6">
+                        <Avatar className="w-24 h-24">
+                            <AvatarImage src={avatarUrl} alt="Admin Avatar" data-ai-hint="profile picture" />
+                            <AvatarFallback>AD</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-2">
+                             <Input 
+                                id="picture" 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                onChange={handleFileChange}
+                                accept="image/png, image/jpeg"
+                            />
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Picture</Button>
+                            <Button onClick={handleUpload} disabled={avatarUrl.startsWith('https://placehold.co') || isUploading}>
+                                {isUploading ? 'Uploading...' : 'Update Picture'}
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Profile Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Form {...profileForm}>
+                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                            <FormField
+                                control={profileForm.control}
+                                name="displayName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Display Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Your Name" {...field} className="max-w-xs" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={profileForm.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                            <Input type="email" {...field} disabled className="max-w-xs" />
+                                        </FormControl>
+                                        <FormDescription>Your email address cannot be changed.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit">Update Profile</Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+            
+             <Card>
+                <CardHeader>
+                    <CardTitle>Security</CardTitle>
+                </CardHeader>
+                <CardContent>
+                     <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="font-medium">Password</h3>
+                            <p className="text-sm text-muted-foreground">Change your account password.</p>
+                        </div>
+                        <Button variant="outline" onClick={onPasswordChangeClick}>Change Password</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+
+        <Separator />
+
+        <h2 className="text-xl font-semibold">Platform Settings</h2>
+
+        <Form {...platformForm}>
+            <form onSubmit={platformForm.handleSubmit(onPlatformSubmit)} className="space-y-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>General Settings</CardTitle>
@@ -74,7 +227,7 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <FormField
-                            control={form.control}
+                            control={platformForm.control}
                             name="allowRegistrations"
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -94,7 +247,7 @@ export default function AdminSettingsPage() {
                             )}
                         />
                          <FormField
-                            control={form.control}
+                            control={platformForm.control}
                             name="strikeThreshold"
                             render={({ field }) => (
                                 <FormItem>
@@ -119,7 +272,7 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                        <FormField
-                            control={form.control}
+                            control={platformForm.control}
                             name="notificationEmail"
                             render={({ field }) => (
                                 <FormItem>
@@ -138,7 +291,7 @@ export default function AdminSettingsPage() {
                             <FormLabel>Receive alerts for:</FormLabel>
                             <div className="space-y-2 mt-2">
                                 <FormField
-                                    control={form.control}
+                                    control={platformForm.control}
                                     name="notifyOnStrikes"
                                     render={({ field }) => (
                                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -150,7 +303,7 @@ export default function AdminSettingsPage() {
                                     )}
                                 />
                                 <FormField
-                                    control={form.control}
+                                    control={platformForm.control}
                                     name="notifyOnReactivations"
                                     render={({ field }) => (
                                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -173,7 +326,7 @@ export default function AdminSettingsPage() {
                     </CardHeader>
                     <CardContent>
                         <FormField
-                            control={form.control}
+                            control={platformForm.control}
                             name="matchThreshold"
                             render={({ field }) => (
                                 <FormItem>
@@ -200,7 +353,7 @@ export default function AdminSettingsPage() {
                 <div className="flex justify-start">
                     <Button type="submit" disabled={isLoading}>
                          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
+                        Save Platform Changes
                     </Button>
                 </div>
             </form>
