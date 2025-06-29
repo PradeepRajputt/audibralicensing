@@ -12,6 +12,13 @@ import { approveReactivationRequest, denyReactivationRequest } from './actions';
 // Mock data for reactivation requests. In a real app, this would be fetched from Firestore.
 const initialRequests = [
   {
+    creatorId: "user_creator_wlallah",
+    displayName: "Online Wlallah",
+    email: "onlinewlallah99@gmail.com",
+    avatar: "https://placehold.co/128x128.png",
+    requestDate: "2024-06-12",
+  },
+  {
     creatorId: "user_creator_789",
     displayName: "Bob Builds",
     email: "bob@example.com",
