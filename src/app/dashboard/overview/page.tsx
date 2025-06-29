@@ -1,12 +1,14 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScanSearch, FileText, ShieldCheck, Clock, Home } from "lucide-react";
+import { ScanSearch, FileText, ShieldCheck, Clock } from "lucide-react";
 import Link from 'next/link';
-import { useUser } from "@/context/user-context";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // A representative list of timezones
 const timezones = [
@@ -20,11 +22,13 @@ const timezones = [
 ];
 
 export default function OverviewPage() {
-  const { avatarUrl, displayName } = useUser();
+  const { data: session } = useSession();
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState('UTC');
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     // This effect runs only on the client, avoiding hydration mismatch
     const timer = setInterval(() => {
       const timeString = new Date().toLocaleTimeString('en-US', {
@@ -41,13 +45,16 @@ export default function OverviewPage() {
     return () => clearInterval(timer);
   }, [selectedTimezone]);
 
+  const displayName = session?.user?.name ?? 'Creator';
+  const avatarUrl = session?.user?.image ?? "https://placehold.co/128x128.png";
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
             <AvatarImage src={avatarUrl} alt="User Avatar" data-ai-hint="profile picture" />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
             <h1 className="text-3xl font-bold">Welcome back, {displayName}!</h1>
@@ -71,7 +78,7 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold text-center">
-                    {currentTime || 'Loading...'}
+                    {isClient ? (currentTime || 'Loading...') : <Skeleton className="h-8 w-32 mx-auto" />}
                 </div>
             </CardContent>
         </Card>

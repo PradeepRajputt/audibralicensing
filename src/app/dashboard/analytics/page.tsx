@@ -6,7 +6,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Users, Eye, Video, Link as LinkIcon } from 'lucide-react';
-import { useUser } from '@/context/user-context';
+import { useSession } from 'next-auth/react';
 import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -16,33 +16,30 @@ import Link from 'next/link';
 type AnalyticsData = Awaited<ReturnType<typeof getDashboardData>>['analytics'];
 
 export default function AnalyticsPage() {
-  const { youtubeId, isHydrated } = useUser();
+  const { data: session, status } = useSession();
   const [data, setData] = useState<AnalyticsData>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Only fetch data once the user context has been hydrated from local storage
-    if (!isHydrated) return;
+    if (status !== 'authenticated') {
+      setIsLoading(false);
+      return;
+    }
 
     async function fetchData() {
-      if (!youtubeId) {
-        setData(null);
-        setIsLoading(false);
-        return;
-      }
       setIsLoading(true);
-      const { analytics } = await getDashboardData(youtubeId);
+      const { analytics } = await getDashboardData();
       setData(analytics);
       setIsLoading(false);
     }
     fetchData();
-  }, [youtubeId, isHydrated]);
+  }, [status]);
 
-  if (isLoading || !isHydrated) {
+  if (isLoading) {
     return <AnalyticsSkeleton />;
   }
 
-  if (!data) {
+  if (!session || !data) {
     return <ConnectAccountPrompt />;
   }
   
@@ -81,7 +78,7 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold truncate">{data.mostViewedVideo.title}</div>
-            <p className="text-xs text-muted-foreground">{data.mostViewedVideo.views.toLocaleString()} views</p>
+            <p className="text-xs text-muted-foreground">{typeof data.mostViewedVideo.views === 'number' ? data.mostViewedVideo.views.toLocaleString() : data.mostViewedVideo.views} views</p>
           </CardContent>
         </Card>
       </div>
@@ -90,7 +87,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Monthly Views</CardTitle>
-            <CardDescription>Total views for the last 6 months.</CardDescription>
+            <CardDescription>Total views for the last 6 months (simulated).</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig}>
@@ -107,7 +104,7 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Subscriber Growth</CardTitle>
-            <CardDescription>Subscriber count over the last 6 months.</CardDescription>
+            <CardDescription>Subscriber count over the last 6 months (simulated).</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig}>

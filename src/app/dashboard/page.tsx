@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Activity, ShieldCheck, Youtube, Link as LinkIcon } from "lucide-react";
-import { useUser } from '@/context/user-context';
+import { useSession } from 'next-auth/react';
 import { getDashboardData } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -15,28 +15,30 @@ import { Button } from '@/components/ui/button';
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export default function CreatorDashboardPage() {
-  const { youtubeId, isHydrated } = useUser();
+  const { data: session, status } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Only fetch data once the user context has been hydrated from local storage
-    if (!isHydrated) return;
+    if (status !== 'authenticated') {
+      setIsLoading(false);
+      return;
+    }
 
     async function fetchData() {
       setIsLoading(true);
-      const dashboardData = await getDashboardData(youtubeId);
+      const dashboardData = await getDashboardData();
       setData(dashboardData);
       setIsLoading(false);
     }
     fetchData();
-  }, [youtubeId, isHydrated]);
+  }, [status]);
 
-  if (isLoading || !isHydrated) {
+  if (isLoading) {
     return <DashboardSkeleton />;
   }
-
-  if (!data || !data.analytics) {
+  
+  if (!session || !data?.analytics) {
     return <ConnectAccountPrompt />;
   }
 
