@@ -69,6 +69,12 @@ export async function triggerFastApiForNewReport(report: ManualReport) {
  * This function is intended to be called by a webhook from our FastAPI service.
  */
 export async function processViolationFromFastApi(violationData: Omit<Violation, 'matchId' | 'detectedAt'> & { creatorEmail: string }) {
+  if (!db) {
+    const message = "Firebase is not configured. Cannot process violation.";
+    console.error(message);
+    return { success: false, error: message };
+  }
+  
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
     console.error('SendGrid environment variables are not fully configured.');
     // Still save to DB even if email fails
@@ -116,6 +122,12 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
  * This is designed to be run by a scheduled cron job.
  */
 export async function updateAllUserAnalytics() {
+  if (!db) {
+    const message = "Firebase is not configured. Cannot update analytics.";
+    console.error(message);
+    return { success: false, updated: 0, total: 0, error: message };
+  }
+
   const usersRef = collection(db, 'users');
   // Find all users who have a youtubeId
   const q = query(usersRef, where('youtubeId', '!=', null));
@@ -123,7 +135,7 @@ export async function updateAllUserAnalytics() {
 
   if (querySnapshot.empty) {
     console.log('No users with YouTube IDs found to update.');
-    return { success: true, updated: 0 };
+    return { success: true, updated: 0, total: querySnapshot.size };
   }
   
   let updatedCount = 0;

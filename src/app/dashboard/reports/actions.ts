@@ -17,6 +17,12 @@ const formSchema = z.object({
 });
 
 export async function submitManualReportAction(values: z.infer<typeof formSchema>) {
+  if (!db) {
+    const message = "Firebase is not configured. Please add your Firebase environment variables to the .env file.";
+    console.error(message);
+    return { success: false, message };
+  }
+
   try {
     const newReportData: Omit<ManualReport, 'reportId'> = {
       creatorId: MOCK_CREATOR_ID,
