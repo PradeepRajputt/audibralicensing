@@ -1,11 +1,12 @@
 {
   "hosting": {
-    "public": "build",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "apphosting": {
+          "backendId": "shieldview-5ns5s",
+          "region": "us-central1"
+        }
       }
     ]
   }
