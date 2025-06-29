@@ -14,7 +14,7 @@ const initialRequests = [
   {
     creatorId: "user_creator_wlallah",
     displayName: "Online Wlallah",
-    email: "onlinewlallah99@gmail.com",
+    email: "guddumis003@gmail.com",
     avatar: "https://placehold.co/128x128.png",
     requestDate: "2024-06-12",
   },
