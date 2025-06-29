@@ -179,8 +179,7 @@ export async function updateAllUserAnalytics() {
 export async function sendReactivationApprovalEmail({ to, name }: { to: string; name:string }) {
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
     console.warn(`SendGrid not configured. Skipping reactivation approval email to ${to}.`);
-    // For simulation, we'll just log it and pretend it succeeded.
-    return { success: true };
+    return { success: true, simulated: true };
   }
 
   const msg = {
@@ -201,10 +200,10 @@ export async function sendReactivationApprovalEmail({ to, name }: { to: string; 
   try {
     await sgMail.send(msg);
     console.log(`Sent reactivation approval email to ${to}`);
-    return { success: true };
+    return { success: true, simulated: false };
   } catch (error) {
     console.error(`Error sending reactivation approval email to ${to}:`, error);
-    return { success: false, error: (error as Error).message };
+    return { success: false, simulated: false, error: (error as Error).message };
   }
 }
 
@@ -214,9 +213,7 @@ export async function sendReactivationApprovalEmail({ to, name }: { to: string; 
 export async function sendReactivationDenialEmail({ to, name }: { to: string; name: string }) {
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
     console.warn(`SendGrid not configured. Skipping reactivation denial email to ${to}.`);
-    // In a real app, you might want to throw an error or return a specific status.
-    // For simulation, we'll just log it and pretend it succeeded.
-    return { success: true };
+    return { success: true, simulated: true };
   }
 
   const msg = {
@@ -237,9 +234,9 @@ export async function sendReactivationDenialEmail({ to, name }: { to: string; na
   try {
     await sgMail.send(msg);
     console.log(`Sent reactivation denial email to ${to}`);
-    return { success: true };
+    return { success: true, simulated: false };
   } catch (error) {
     console.error(`Error sending reactivation denial email to ${to}:`, error);
-    return { success: false, error: (error as Error).message };
+    return { success: false, simulated: false, error: (error as Error).message };
   }
 }

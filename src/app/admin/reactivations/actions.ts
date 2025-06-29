@@ -20,7 +20,13 @@ export async function approveReactivationRequest(creatorId: string, creatorEmail
   // e.g., await updateDoc(doc(db, 'users', creatorId), { status: 'active' });
   revalidatePath('/admin/reactivations');
   revalidatePath('/admin/users');
-  return { success: true, message: `Creator has been reactivated. An email has been sent to ${creatorName}.` };
+
+  let message = `Creator has been reactivated. An email has been sent to ${creatorName}.`;
+  if (emailResult.simulated) {
+    message = `Creator has been reactivated. Email sending was simulated as SendGrid is not configured.`;
+  }
+
+  return { success: true, message };
 }
 
 /**
@@ -38,5 +44,11 @@ export async function denyReactivationRequest(creatorId: string, creatorEmail: s
   // In a real app, you might update the user's status to 'permanently_denied'
   // or delete the reactivation request document.
   revalidatePath('/admin/reactivations');
-  return { success: true, message: `Denial email sent to ${creatorName}.` };
+  
+  let message = `Denial email sent to ${creatorName}.`;
+  if (emailResult.simulated) {
+    message = `Denial email sending was simulated for ${creatorName} as SendGrid is not configured.`;
+  }
+
+  return { success: true, message };
 }
