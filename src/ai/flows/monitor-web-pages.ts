@@ -1,9 +1,10 @@
+
 'use server';
 
 /**
  * @fileOverview This file defines a Genkit flow for monitoring web pages for potential copyright infringements.
  *
- * The flow takes a URL and creator content as input, uses AI to scan the web page for copyright infringements,
+ * The flow takes a URL and creator content (text, image, or video) as input, uses AI to scan the web page,
  * and returns a report of potential infringements.
  *
  * @file         src/ai/flows/monitor-web-pages.ts
@@ -21,7 +22,13 @@ import { fetchWebPageContent } from '@/ai/tools/web-scraper';
  */
 const MonitorWebPagesInputSchema = z.object({
   url: z.string().describe('The URL of the web page to monitor.'),
-  creatorContent: z.string().describe('The content created by the user (videos and text).'),
+  creatorContent: z.string().optional().describe('The text content created by the user.'),
+  photoDataUri: z
+    .string()
+    .optional()
+    .describe(
+      "A photo or video of the user's content, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 
 export type MonitorWebPagesInput = z.infer<typeof MonitorWebPagesInputSchema>;
@@ -59,14 +66,25 @@ const monitorWebPagesPrompt = ai.definePrompt({
   prompt: `You are an AI agent specializing in detecting copyright infringements on web pages.
 
   Your task is to analyze the content of a given web page and identify any potential copyright infringements
-  based on the provided creator content.
+  based on the provided creator content. The creator's content might be text, an image, or a video.
   
   First, use the fetchWebPageContent tool to get the content of the web page at the given URL. Then, compare the fetched content with the creator's content.
+
+  If text content is provided, compare the text on the page to the provided text.
+  If media content (image/video) is provided, visually scan the page for that media.
 
   Provide a detailed report of your findings, including specific examples of potential infringements. If no content could be fetched from the URL, state that in your report.
 
   Web Page URL: {{{url}}}
-  Creator Content: {{{creatorContent}}}
+  
+  {{#if creatorContent}}
+  Creator's Text Content for comparison: {{{creatorContent}}}
+  {{/if}}
+
+  {{#if photoDataUri}}
+  Creator's Media for comparison: {{media url=photoDataUri}}
+  {{/if}}
+
   Report:
   `,
 });
