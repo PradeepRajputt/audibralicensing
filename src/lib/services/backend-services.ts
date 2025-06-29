@@ -173,6 +173,40 @@ export async function updateAllUserAnalytics() {
   return { success: true, updated: updatedCount, total: querySnapshot.size };
 }
 
+/**
+ * Sends an email to a creator informing them that their reactivation request was approved.
+ */
+export async function sendReactivationApprovalEmail({ to, name }: { to: string; name:string }) {
+  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+    console.warn(`SendGrid not configured. Skipping reactivation approval email to ${to}.`);
+    // For simulation, we'll just log it and pretend it succeeded.
+    return { success: true };
+  }
+
+  const msg = {
+    to,
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: 'Your CreatorShield Account has been Reactivated',
+    html: `
+      <h1>Account Reactivated</h1>
+      <p>Hi ${name},</p>
+      <p>Welcome back! Your request to reactivate your account has been approved.</p>
+      <p>You can now log in to your CreatorShield dashboard.</p>
+      <br/>
+      <p>Thanks,</p>
+      <p>The CreatorShield Team</p>
+    `,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Sent reactivation approval email to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`Error sending reactivation approval email to ${to}:`, error);
+    return { success: false, error: (error as Error).message };
+  }
+}
 
 /**
  * Sends an email to a creator informing them that their reactivation request was denied.

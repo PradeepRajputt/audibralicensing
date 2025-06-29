@@ -39,7 +39,7 @@ export default function ReactivationRequestsPage() {
     
     let result;
     if (action === 'approve') {
-      result = await approveReactivationRequest(request.creatorId);
+      result = await approveReactivationRequest(request.creatorId, request.email, request.displayName);
     } else {
       result = await denyReactivationRequest(request.creatorId, request.email, request.displayName);
     }

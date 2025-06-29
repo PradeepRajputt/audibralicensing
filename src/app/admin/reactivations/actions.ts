@@ -1,19 +1,26 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { sendReactivationDenialEmail } from '@/lib/services/backend-services';
+import { sendReactivationDenialEmail, sendReactivationApprovalEmail } from '@/lib/services/backend-services';
 
 /**
- * Simulates approving a creator's reactivation request.
+ * Simulates approving a creator's reactivation request and sends a notification email.
  * In a real app, this would update the user's status in Firestore.
  */
-export async function approveReactivationRequest(creatorId: string) {
+export async function approveReactivationRequest(creatorId: string, creatorEmail: string, creatorName: string) {
   console.log(`Simulating approval for creator: ${creatorId}`);
+
+  const emailResult = await sendReactivationApprovalEmail({ to: creatorEmail, name: creatorName });
+
+  if (!emailResult.success) {
+    return { success: false, message: 'Failed to send approval email. Please try again.' };
+  }
+
   // In a real app, you would update the user document in Firestore here.
   // e.g., await updateDoc(doc(db, 'users', creatorId), { status: 'active' });
   revalidatePath('/admin/reactivations');
   revalidatePath('/admin/users');
-  return { success: true, message: 'Creator has been reactivated.' };
+  return { success: true, message: `Creator has been reactivated. An email has been sent to ${creatorName}.` };
 }
 
 /**
