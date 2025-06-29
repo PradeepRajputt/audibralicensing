@@ -1,18 +1,22 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScanSearch, FileText, ShieldCheck } from "lucide-react";
 import Link from 'next/link';
+import { useUser } from "@/context/user-context";
 
 export default function OverviewPage() {
+  const { avatarUrl, displayName } = useUser();
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4">
         <Avatar className="h-16 w-16">
-          <AvatarImage src="https://placehold.co/128x128.png" alt="User Avatar" data-ai-hint="profile picture" />
+          <AvatarImage src={avatarUrl} alt="User Avatar" data-ai-hint="profile picture" />
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
         <div>
-          <h1 className="text-3xl font-bold">Welcome back, Sample Creator!</h1>
+          <h1 className="text-3xl font-bold">Welcome back, {displayName}!</h1>
           <p className="text-muted-foreground">What would you like to accomplish today?</p>
         </div>
       </div>

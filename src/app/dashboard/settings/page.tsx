@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch"
 import { Youtube, Instagram } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { useUser } from "@/context/user-context"
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, { message: "Display name must be at least 2 characters." }),
@@ -29,24 +30,28 @@ const profileFormSchema = z.object({
 
 export default function SettingsPage() {
     const { toast } = useToast();
+    const { avatarUrl, setAvatarUrl, displayName, setDisplayName } = useUser();
 
     const form = useForm<z.infer<typeof profileFormSchema>>({
         resolver: zodResolver(profileFormSchema),
         defaultValues: {
-            displayName: "Sample Creator",
+            displayName: displayName,
             email: "creator@example.com",
         },
     });
 
+    React.useEffect(() => {
+        form.reset({ displayName });
+    }, [displayName, form]);
+
     function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
-        console.log(values);
+        setDisplayName(values.displayName);
         toast({
             title: "Profile Updated",
             description: "Your profile information has been saved.",
         });
     }
 
-    const [avatarUrl, setAvatarUrl] = React.useState("https://placehold.co/128x128.png");
     const [isUploading, setIsUploading] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
