@@ -115,37 +115,35 @@ export default function StrikeDetailsPage({ params }: { params: { strikeId: stri
              </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-            <div className="grid gap-2 md:grid-cols-2">
-                <div className="flex items-center gap-3">
-                    <User className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                        <p className="text-sm text-muted-foreground">Creator Name</p>
-                        <p className="font-medium">{strike.creatorName}</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-muted-foreground" />
-                    <div>
-                        <p className="text-sm text-muted-foreground">Submission Date</p>
-                        <p className="font-medium">{new Date(strike.submitted).toLocaleString()}</p>
-                    </div>
+        <CardContent className="space-y-6 pt-6">
+            <div className="flex items-center gap-4">
+                <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <div>
+                    <p className="text-sm text-muted-foreground">Creator Name</p>
+                    <p className="font-medium">{strike.creatorName}</p>
                 </div>
             </div>
-            <div className="flex items-center gap-3">
-                <LinkIcon className="w-5 h-5 text-muted-foreground" />
+            <div className="flex items-center gap-4">
+                <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <div>
+                    <p className="text-sm text-muted-foreground">Submission Date</p>
+                    <p className="font-medium">{new Date(strike.submitted).toLocaleString()}</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-4">
+                <LinkIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                 <div>
                     <p className="text-sm text-muted-foreground">Infringing URL</p>
-                    <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline truncate block">
+                    <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline break-all">
                         {strike.suspectUrl}
                     </a>
                 </div>
             </div>
-            <div className="flex items-start gap-3">
-                <FileText className="w-5 h-5 text-muted-foreground mt-1" />
+            <div className="flex items-start gap-4">
+                <FileText className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
                 <div>
                     <p className="text-sm text-muted-foreground">Reason for Submission</p>
-                    <p className="font-medium">{strike.reason}</p>
+                    <p className="font-medium whitespace-pre-wrap">{strike.reason}</p>
                 </div>
             </div>
         </CardContent>
