@@ -111,13 +111,13 @@ export default function AdminAnalyticsPage() {
 
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
+                    <CardHeader className="flex flex-row items-start justify-between gap-4">
                         <div>
                             <CardTitle>User Growth</CardTitle>
                             <CardDescription>New creator sign-ups over the selected period.</CardDescription>
                         </div>
                         <Select value={userGrowthChartType} onValueChange={(value: ChartType) => setUserGrowthChartType(value)}>
-                            <SelectTrigger className="w-[120px]">
+                            <SelectTrigger className="w-[120px] flex-shrink-0">
                                 <SelectValue placeholder="Chart Type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -129,18 +129,18 @@ export default function AdminAnalyticsPage() {
                     <CardContent>
                         <ChartContainer config={chartConfig} className="h-[250px] w-full">
                             {userGrowthChartType === 'bar' ? (
-                                <BarChart accessibilityLayer data={filteredData}>
+                                <BarChart accessibilityLayer data={filteredData} barCategoryGap="20%">
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                    <YAxis />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
+                                    <YAxis tickMargin={10} />
                                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                     <Bar dataKey="signups" fill="var(--color-signups)" radius={4} />
                                 </BarChart>
                             ) : (
                                 <LineChart accessibilityLayer data={filteredData}>
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                    <YAxis />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
+                                    <YAxis tickMargin={10} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Line type="monotone" dataKey="signups" stroke="var(--color-signups)" strokeWidth={2} dot={false} />
                                 </LineChart>
@@ -149,13 +149,13 @@ export default function AdminAnalyticsPage() {
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
+                    <CardHeader className="flex flex-row items-start justify-between gap-4">
                         <div>
                             <CardTitle>Platform Activity</CardTitle>
                             <CardDescription>Automated scans performed per day.</CardDescription>
                         </div>
                         <Select value={platformActivityChartType} onValueChange={(value: ChartType) => setPlatformActivityChartType(value)}>
-                            <SelectTrigger className="w-[120px]">
+                            <SelectTrigger className="w-[120px] flex-shrink-0">
                                 <SelectValue placeholder="Chart Type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -169,16 +169,16 @@ export default function AdminAnalyticsPage() {
                             {platformActivityChartType === 'line' ? (
                                 <LineChart accessibilityLayer data={filteredData}>
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                    <YAxis />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
+                                    <YAxis tickMargin={10} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Line type="monotone" dataKey="scans" stroke="var(--color-scans)" strokeWidth={2} dot={false} />
                                 </LineChart>
                             ) : (
-                                <BarChart accessibilityLayer data={filteredData}>
+                                <BarChart accessibilityLayer data={filteredData} barCategoryGap="20%">
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                    <YAxis />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
+                                    <YAxis tickMargin={10} />
                                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                     <Bar dataKey="scans" fill="var(--color-scans)" radius={4} />
                                 </BarChart>
