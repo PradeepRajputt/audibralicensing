@@ -1,7 +1,53 @@
 
-import NextAuth, { type NextAuthOptions } from 'next-auth';
+import NextAuth, { type NextAuthOptions, type JWT } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { google } from 'googleapis';
+
+/**
+ * Takes a token, and returns a new token with updated
+ * `accessToken` and `accessTokenExpires`. If an error occurs,
+ * returns the old token and an error property
+ */
+async function refreshAccessToken(token: JWT) {
+  try {
+    const url =
+      "https://oauth2.googleapis.com/token?" +
+      new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        grant_type: "refresh_token",
+        refresh_token: token.refreshToken as string,
+      });
+
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      method: "POST",
+    });
+
+    const refreshedTokens = await response.json();
+
+    if (!response.ok) {
+      throw refreshedTokens;
+    }
+
+    return {
+      ...token,
+      accessToken: refreshedTokens.access_token,
+      accessTokenExpires: Date.now() + refreshedTokens.expires_in * 1000,
+      refreshToken: refreshedTokens.refresh_token ?? token.refreshToken, // Fall back to old refresh token
+    };
+  } catch (error) {
+    console.error("Error refreshing access token", error);
+
+    return {
+      ...token,
+      error: "RefreshAccessTokenError" as const,
+    };
+  }
+}
+
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -22,10 +68,13 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, account }) {
-      if (account?.access_token) {
+      // Initial sign in
+      if (account) {
         token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.accessTokenExpires = Date.now() + (account.expires_at as number) * 1000;
         
-        // Fetch YouTube channel ID after successful login
+        // Fetch YouTube channel ID only on initial sign in
         try {
           const auth = new google.auth.OAuth2();
           auth.setCredentials({ access_token: account.access_token });
@@ -41,8 +90,16 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
             console.error("Error fetching YouTube channel ID:", error);
         }
+        return token;
       }
-      return token;
+
+      // Return previous token if the access token has not expired yet
+      if (Date.now() < (token.accessTokenExpires as number)) {
+        return token;
+      }
+
+      // Access token has expired, try to update it
+      return refreshAccessToken(token);
     },
     async session({ session, token }) {
       if (token.accessToken) {
@@ -51,6 +108,7 @@ export const authOptions: NextAuthOptions = {
       if (token.youtubeChannelId) {
         session.user.youtubeChannelId = token.youtubeChannelId;
       }
+      session.error = token.error;
       return session;
     },
   },
