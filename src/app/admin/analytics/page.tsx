@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Users, ScanSearch, UserPlus } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Mock data generation
 const generateMockData = () => {
@@ -26,11 +28,16 @@ const generateMockData = () => {
 
 const allData = generateMockData();
 
+type ChartType = 'bar' | 'line';
+
 export default function AdminAnalyticsPage() {
     const [date, setDate] = React.useState<DateRange | undefined>({
         from: subDays(new Date(), 29),
         to: new Date(),
     });
+
+    const [userGrowthChartType, setUserGrowthChartType] = React.useState<ChartType>('bar');
+    const [platformActivityChartType, setPlatformActivityChartType] = React.useState<ChartType>('line');
 
     const filteredData = React.useMemo(() => {
         if (!date?.from) return [];
@@ -104,36 +111,78 @@ export default function AdminAnalyticsPage() {
 
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>User Growth</CardTitle>
-                        <CardDescription>New creator sign-ups over the selected period.</CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>User Growth</CardTitle>
+                            <CardDescription>New creator sign-ups over the selected period.</CardDescription>
+                        </div>
+                        <Select value={userGrowthChartType} onValueChange={(value: ChartType) => setUserGrowthChartType(value)}>
+                            <SelectTrigger className="w-[120px]">
+                                <SelectValue placeholder="Chart Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="bar">Bar Chart</SelectItem>
+                                <SelectItem value="line">Line Chart</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                            <BarChart accessibilityLayer data={filteredData}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis />
-                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                                <Bar dataKey="signups" fill="var(--color-signups)" radius={4} />
-                            </BarChart>
+                            {userGrowthChartType === 'bar' ? (
+                                <BarChart accessibilityLayer data={filteredData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
+                                    <YAxis />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="signups" fill="var(--color-signups)" radius={4} />
+                                </BarChart>
+                            ) : (
+                                <LineChart accessibilityLayer data={filteredData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
+                                    <YAxis />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Line type="monotone" dataKey="signups" stroke="var(--color-signups)" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            )}
                         </ChartContainer>
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Platform Activity</CardTitle>
-                        <CardDescription>Automated scans performed per day.</CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>Platform Activity</CardTitle>
+                            <CardDescription>Automated scans performed per day.</CardDescription>
+                        </div>
+                        <Select value={platformActivityChartType} onValueChange={(value: ChartType) => setPlatformActivityChartType(value)}>
+                            <SelectTrigger className="w-[120px]">
+                                <SelectValue placeholder="Chart Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="line">Line Chart</SelectItem>
+                                <SelectItem value="bar">Bar Chart</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                            <LineChart accessibilityLayer data={filteredData}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis />
-                                <ChartTooltip content={<ChartTooltipContent />} />
-                                <Line type="monotone" dataKey="scans" stroke="var(--color-scans)" strokeWidth={2} dot={false} />
-                            </LineChart>
+                            {platformActivityChartType === 'line' ? (
+                                <LineChart accessibilityLayer data={filteredData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
+                                    <YAxis />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Line type="monotone" dataKey="scans" stroke="var(--color-scans)" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            ) : (
+                                <BarChart accessibilityLayer data={filteredData}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
+                                    <YAxis />
+                                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                    <Bar dataKey="scans" fill="var(--color-scans)" radius={4} />
+                                </BarChart>
+                            )}
                         </ChartContainer>
                     </CardContent>
                 </Card>
