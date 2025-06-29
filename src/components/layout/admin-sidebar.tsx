@@ -9,14 +9,15 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, LayoutDashboard, Users, ShieldAlert, Settings, LogOut } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/users', label: 'User Management', icon: Users },
-  { href: '/admin/strikes', label: 'Strike Requests', icon: ShieldAlert },
+  { href: '/admin/users', label: 'Creator Management', icon: Users },
+  { href: '/admin/strikes', label: 'Strike Requests', icon: Gavel },
+  { href: '/admin/reactivations', label: 'Reactivation Requests', icon: UserCheck },
 ];
 
 export function AdminSidebar() {

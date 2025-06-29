@@ -172,3 +172,40 @@ export async function updateAllUserAnalytics() {
 
   return { success: true, updated: updatedCount, total: querySnapshot.size };
 }
+
+
+/**
+ * Sends an email to a creator informing them that their reactivation request was denied.
+ */
+export async function sendReactivationDenialEmail({ to, name }: { to: string; name: string }) {
+  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+    console.warn(`SendGrid not configured. Skipping reactivation denial email to ${to}.`);
+    // In a real app, you might want to throw an error or return a specific status.
+    // For simulation, we'll just log it and pretend it succeeded.
+    return { success: true };
+  }
+
+  const msg = {
+    to,
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: 'Update on your CreatorShield Account',
+    html: `
+      <h1>CreatorShield Account Reactivation</h1>
+      <p>Hi ${name},</p>
+      <p>Thank you for your request to reactivate your account.</p>
+      <p>After a review, we have decided not to reactivate your account at this time. This decision is final.</p>
+      <br/>
+      <p>Regards,</p>
+      <p>The CreatorShield Team</p>
+    `,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Sent reactivation denial email to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error(`Error sending reactivation denial email to ${to}:`, error);
+    return { success: false, error: (error as Error).message };
+  }
+}

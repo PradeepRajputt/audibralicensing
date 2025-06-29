@@ -1,3 +1,4 @@
+'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { ShieldBan, Trash2, Youtube, Instagram, Globe } from "lucide-react";
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast";
 
 // Mock user data. In a real application, this would be fetched from Firestore.
 const users = [
@@ -49,6 +62,17 @@ const platformIcons = {
 
 export default function UserDetailsPage({ params }: { params: { userId: string } }) {
   const user = users.find(u => u.uid === params.userId);
+  const { toast } = useToast();
+
+  const handleDeactivate = () => {
+    // In a real app, this would trigger a server action to update the user's status in Firestore.
+    // For now, we just show a toast.
+    toast({
+      title: "Creator Deactivated",
+      description: `${user?.displayName} has been deactivated. They will be logged out and will need to request reactivation to log in again.`,
+    });
+  }
+
 
   if (!user) {
     return (
@@ -132,10 +156,29 @@ export default function UserDetailsPage({ params }: { params: { userId: string }
           </div>
           <div className="flex items-center justify-between p-4 border-destructive/50 rounded-lg bg-destructive/10">
             <div>
-              <h3 className="font-semibold text-destructive">Delete Creator</h3>
-              <p className="text-sm text-muted-foreground">Permanently delete this creator and all associated data.</p>
+              <h3 className="font-semibold text-destructive">Deactivate Creator</h3>
+              <p className="text-sm text-muted-foreground">This will log the creator out. They must request reactivation to log in again.</p>
             </div>
-            <Button variant="destructive"><Trash2 className="mr-2" /> Delete</Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive"><Trash2 className="mr-2" /> Deactivate</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure you want to deactivate {user?.displayName}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action will immediately log the creator out of their account.
+                    If they attempt to log in again, they will be required to submit a reactivation request for your approval.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeactivate}>
+                    Yes, Deactivate Creator
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       </Card>
