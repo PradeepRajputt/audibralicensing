@@ -9,12 +9,13 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck, BarChart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart },
   { href: '/admin/users', label: 'Creator Management', icon: Users },
   { href: '/admin/strikes', label: 'Strike Requests', icon: Gavel },
   { href: '/admin/reactivations', label: 'Reactivation Requests', icon: UserCheck },
