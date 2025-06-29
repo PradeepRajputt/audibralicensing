@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserProvider, useUser } from '@/context/user-context';
+import { SuspensionNotice } from '@/components/layout/suspension-notice';
 
 function DashboardHeader() {
   const { avatarUrl } = useUser();
@@ -21,6 +22,28 @@ function DashboardHeader() {
   );
 }
 
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { status } = useUser();
+
+  if (status === 'suspended') {
+    return <SuspensionNotice />;
+  }
+
+  return (
+    <SidebarProvider>
+      <CreatorSidebar />
+      <SidebarInset>
+        <DashboardHeader />
+        <main className="p-4 md:p-6">
+            {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
+
+
 export default function DashboardLayout({
   children,
 }: {
@@ -28,15 +51,7 @@ export default function DashboardLayout({
 }) {
   return (
     <UserProvider>
-      <SidebarProvider>
-        <CreatorSidebar />
-        <SidebarInset>
-          <DashboardHeader />
-          <main className="p-4 md:p-6">
-              {children}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
+      <DashboardContent>{children}</DashboardContent>
     </UserProvider>
   );
 }

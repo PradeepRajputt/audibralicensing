@@ -1,10 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ShieldBan, Trash2, Youtube, Instagram, Globe } from "lucide-react";
+import { ShieldBan, Trash2, Youtube, Instagram, Globe, ShieldCheck, Loader2 } from "lucide-react";
 import Link from 'next/link';
 import {
   AlertDialog,
@@ -18,6 +19,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
+import { suspendCreator, liftSuspension } from './actions';
+
 
 // Mock user data. In a real application, this would be fetched from Firestore.
 const users = [
@@ -30,6 +33,7 @@ const users = [
     avatar: "https://placehold.co/128x128.png",
     platformsConnected: ["youtube", "web"],
     youtubeId: "UC-lHJZR3Gqxm24_Vd_AJ5Yw",
+    status: "active", // Added status
   },
   {
     uid: "user_creator_456",
@@ -40,6 +44,7 @@ const users = [
     avatar: "https://placehold.co/128x128.png",
     platformsConnected: ["youtube", "instagram"],
     youtubeId: "UC-sample-channel-id",
+    status: "active",
   },
   {
     uid: "user_creator_789",
@@ -49,6 +54,7 @@ const users = [
     joinDate: "2024-03-10",
     avatar: "https://placehold.co/128x128.png",
     platformsConnected: ["web"],
+    status: "active",
   },
 ];
 
@@ -59,18 +65,67 @@ const platformIcons = {
     tiktok: <div className="h-6 w-6" /> // Placeholder for TikTok
 } as const;
 
+type UserStatus = 'active' | 'suspended' | 'deactivated';
 
 export default function UserDetailsPage({ params }: { params: { userId: string } }) {
   const user = users.find(u => u.uid === params.userId);
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState< 'suspend' | 'deactivate' | null>(null);
+  const [creatorStatus, setCreatorStatus] = useState<UserStatus>('active');
 
+  useEffect(() => {
+    // On mount, read the status from localStorage to keep UI in sync across pages
+    if (user && user.uid === 'user_creator_123') { // Only sync for the main mock user for demo
+        const storedStatus = localStorage.getItem('user_status') as UserStatus;
+        if (storedStatus) {
+            setCreatorStatus(storedStatus);
+        }
+    }
+  }, [user]);
+  
   const handleDeactivate = () => {
-    // In a real app, this would trigger a server action to update the user's status in Firestore.
-    // For now, we just show a toast.
+    setIsLoading('deactivate');
+    if (user?.uid === 'user_creator_123') {
+        localStorage.setItem('user_status', 'deactivated');
+        setCreatorStatus('deactivated');
+    }
     toast({
       title: "Creator Deactivated",
       description: `${user?.displayName} has been deactivated. They will be logged out and will need to request reactivation to log in again.`,
     });
+    setIsLoading(null);
+  }
+
+  const handleSuspend = async () => {
+    if (!user) return;
+    setIsLoading('suspend');
+    const result = await suspendCreator(user.uid);
+    if (result.success) {
+        toast({ title: "Action Successful", description: result.message });
+        if (user.uid === 'user_creator_123') { // Only for the main mock user
+            localStorage.setItem('user_status', 'suspended');
+            setCreatorStatus('suspended');
+        }
+    } else {
+        toast({ variant: 'destructive', title: "Action Failed", description: result.message });
+    }
+    setIsLoading(null);
+  }
+
+  const handleLiftSuspension = async () => {
+    if (!user) return;
+    setIsLoading('suspend');
+    const result = await liftSuspension(user.uid);
+     if (result.success) {
+        toast({ title: "Action Successful", description: result.message });
+        if (user.uid === 'user_creator_123') { // Only for the main mock user
+            localStorage.setItem('user_status', 'active');
+            setCreatorStatus('active');
+        }
+    } else {
+        toast({ variant: 'destructive', title: "Action Failed", description: result.message });
+    }
+    setIsLoading(null);
   }
 
 
@@ -147,12 +202,22 @@ export default function UserDetailsPage({ params }: { params: { userId: string }
           <CardDescription>Perform administrative actions on this creator account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-yellow-200/50 rounded-lg bg-yellow-50/10">
+          <div className="flex items-center justify-between p-4 border border-yellow-200/50 rounded-lg bg-yellow-50/10 dark:bg-yellow-500/10">
             <div>
               <h3 className="font-semibold">Suspend Creator</h3>
-              <p className="text-sm text-muted-foreground">Temporarily disable the creator's account and access.</p>
+              <p className="text-sm text-muted-foreground">Temporarily disable account for 24 hours.</p>
             </div>
-            <Button variant="outline"><ShieldBan className="mr-2" /> Suspend</Button>
+            {creatorStatus === 'suspended' ? (
+                <Button variant="outline" onClick={handleLiftSuspension} disabled={isLoading === 'suspend'}>
+                    {isLoading === 'suspend' ? <Loader2 className="mr-2 animate-spin" /> : <ShieldCheck className="mr-2" />}
+                    Lift Suspension
+                </Button>
+            ) : (
+                <Button variant="outline" onClick={handleSuspend} disabled={isLoading === 'suspend' || creatorStatus === 'deactivated'}>
+                    {isLoading === 'suspend' ? <Loader2 className="mr-2 animate-spin" /> : <ShieldBan className="mr-2" />}
+                    Suspend
+                </Button>
+            )}
           </div>
           <div className="flex items-center justify-between p-4 border-destructive/50 rounded-lg bg-destructive/10">
             <div>
@@ -161,7 +226,14 @@ export default function UserDetailsPage({ params }: { params: { userId: string }
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive"><Trash2 className="mr-2" /> Deactivate</Button>
+                <Button variant="destructive" disabled={isLoading === 'deactivate' || creatorStatus === 'deactivated'}>
+                    {creatorStatus === 'deactivated' ? 'Deactivated' : (
+                        <>
+                            {isLoading === 'deactivate' ? <Loader2 className="mr-2 animate-spin" /> : <Trash2 className="mr-2" />}
+                            Deactivate
+                        </>
+                    )}
+                </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
