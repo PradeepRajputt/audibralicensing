@@ -31,7 +31,7 @@ export function AdminSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu className="gap-2">
+        <SidebarMenu className="gap-4">
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
@@ -49,7 +49,7 @@ export function AdminSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu className="gap-2">
+        <SidebarMenu className="gap-4">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild

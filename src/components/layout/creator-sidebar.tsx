@@ -9,12 +9,13 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, LayoutDashboard, Youtube, ScanSearch, FileText, Settings, LogOut, FileVideo, ShieldAlert } from 'lucide-react';
+import { Shield, LayoutDashboard, Youtube, ScanSearch, FileText, Settings, LogOut, FileVideo, ShieldAlert, Activity, Home } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/overview', label: 'Overview', icon: Home },
+  { href: '/dashboard', label: 'Activity Feed', icon: Activity },
   { href: '/dashboard/analytics', label: 'Analytics', icon: Youtube },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
@@ -34,7 +35,7 @@ export function CreatorSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu className="gap-2">
+        <SidebarMenu className="gap-4">
           {menuItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
@@ -54,7 +55,7 @@ export function CreatorSidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu className="gap-2">
+        <SidebarMenu className="gap-4">
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild

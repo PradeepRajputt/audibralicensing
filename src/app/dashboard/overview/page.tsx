@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScanSearch, FileText, ShieldCheck, Clock } from "lucide-react";
+import { ScanSearch, FileText, ShieldCheck, Clock, Home } from "lucide-react";
 import Link from 'next/link';
 import { useUser } from "@/context/user-context";
 import { useEffect, useState } from "react";
