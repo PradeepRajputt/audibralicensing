@@ -21,11 +21,11 @@ const timezones = [
 
 export default function OverviewPage() {
   const { avatarUrl, displayName } = useUser();
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState('UTC');
 
   useEffect(() => {
-    // This function runs only on the client, avoiding hydration mismatch
+    // This effect runs only on the client, avoiding hydration mismatch
     const timer = setInterval(() => {
       const timeString = new Date().toLocaleTimeString('en-US', {
         timeZone: selectedTimezone,
@@ -39,7 +39,7 @@ export default function OverviewPage() {
 
     // Cleanup function to clear the interval when the component unmounts or timezone changes
     return () => clearInterval(timer);
-  }, [selectedTimezone]); // Rerun effect when timezone changes
+  }, [selectedTimezone]);
 
   return (
     <div className="space-y-8">
