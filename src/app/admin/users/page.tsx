@@ -1,6 +1,5 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,14 +32,6 @@ const users = [
     joinDate: "2024-03-10",
     avatar: "https://placehold.co/128x128.png",
   },
-  {
-    uid: "user_admin_001",
-    displayName: "Admin User",
-    email: "admin@example.com",
-    role: "admin",
-    joinDate: "2023-12-01",
-    avatar: "https://placehold.co/128x128.png",
-  },
 ];
 
 
@@ -48,9 +39,9 @@ export default function UserManagementPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
+        <CardTitle>Creator Management</CardTitle>
         <CardDescription>
-          A list of all users on the CreatorShield platform.
+          A list of all creators on the CreatorShield platform.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -59,7 +50,6 @@ export default function UserManagementPage() {
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
               <TableHead>Join Date</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -77,11 +67,6 @@ export default function UserManagementPage() {
                   </div>
                 </TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge variant={user.role === 'admin' ? "destructive" : "secondary"}>
-                    {user.role}
-                  </Badge>
-                </TableCell>
                 <TableCell>{new Date(user.joinDate).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="ghost" size="icon">

@@ -1,10 +1,9 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ShieldBan, Trash2, UserCog, Youtube, Instagram, Globe } from "lucide-react";
+import { ShieldBan, Trash2, Youtube, Instagram, Globe } from "lucide-react";
 import Link from 'next/link';
 
 // Mock user data. In a real application, this would be fetched from Firestore.
@@ -38,15 +37,6 @@ const users = [
     avatar: "https://placehold.co/128x128.png",
     platformsConnected: ["web"],
   },
-  {
-    uid: "user_admin_001",
-    displayName: "Admin User",
-    email: "admin@example.com",
-    role: "admin",
-    joinDate: "2023-12-01",
-    avatar: "https://placehold.co/128x128.png",
-    platformsConnected: [],
-  },
 ];
 
 const platformIcons = {
@@ -64,12 +54,12 @@ export default function UserDetailsPage({ params }: { params: { userId: string }
     return (
       <Card>
         <CardHeader>
-          <CardTitle>User Not Found</CardTitle>
+          <CardTitle>Creator Not Found</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>The requested user could not be found.</p>
+          <p>The requested creator could not be found.</p>
           <Button asChild variant="link" className="px-0">
-            <Link href="/admin/users">Return to User Management</Link>
+            <Link href="/admin/users">Return to Creator Management</Link>
           </Button>
         </CardContent>
       </Card>
@@ -87,24 +77,21 @@ export default function UserDetailsPage({ params }: { params: { userId: string }
           <div>
             <h1 className="text-2xl font-bold">{user.displayName}</h1>
             <p className="text-muted-foreground">{user.email}</p>
-            <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'} className="mt-2">
-              {user.role}
-            </Badge>
           </div>
         </div>
         <Button asChild variant="outline">
-          <Link href="/admin/users">Back to User List</Link>
+          <Link href="/admin/users">Back to Creator List</Link>
         </Button>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>User Information</CardTitle>
+            <CardTitle>Creator Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">User ID</span>
+              <span className="text-muted-foreground">Creator ID</span>
               <span className="font-mono text-sm">{user.uid}</span>
             </div>
             <Separator />
@@ -133,27 +120,20 @@ export default function UserDetailsPage({ params }: { params: { userId: string }
       <Card>
         <CardHeader>
           <CardTitle>Admin Actions</CardTitle>
-          <CardDescription>Perform administrative actions on this user account.</CardDescription>
+          <CardDescription>Perform administrative actions on this creator account.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between p-4 border border-yellow-200/50 rounded-lg bg-yellow-50/10">
             <div>
-              <h3 className="font-semibold">Suspend User</h3>
-              <p className="text-sm text-muted-foreground">Temporarily disable the user's account and access.</p>
+              <h3 className="font-semibold">Suspend Creator</h3>
+              <p className="text-sm text-muted-foreground">Temporarily disable the creator's account and access.</p>
             </div>
             <Button variant="outline"><ShieldBan className="mr-2" /> Suspend</Button>
           </div>
-          <div className="flex items-center justify-between p-4 border border-blue-200/50 rounded-lg bg-blue-50/10">
-            <div>
-              <h3 className="font-semibold">Change Role</h3>
-              <p className="text-sm text-muted-foreground">Promote or demote the user's role and permissions.</p>
-            </div>
-            <Button variant="outline"><UserCog className="mr-2" /> Change Role</Button>
-          </div>
           <div className="flex items-center justify-between p-4 border-destructive/50 rounded-lg bg-destructive/10">
             <div>
-              <h3 className="font-semibold text-destructive">Delete User</h3>
-              <p className="text-sm text-muted-foreground">Permanently delete this user and all associated data.</p>
+              <h3 className="font-semibold text-destructive">Delete Creator</h3>
+              <p className="text-sm text-muted-foreground">Permanently delete this creator and all associated data.</p>
             </div>
             <Button variant="destructive"><Trash2 className="mr-2" /> Delete</Button>
           </div>
