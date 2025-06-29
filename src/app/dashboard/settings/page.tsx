@@ -28,9 +28,27 @@ const profileFormSchema = z.object({
   email: z.string().email(),
 });
 
+const platformData = [
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    account: 'MyAwesomeVlogs',
+    icon: <Youtube className="w-8 h-8 text-red-600" />,
+  },
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    account: 'InstaVlogs',
+    icon: <Instagram className="w-8 h-8 text-pink-500" />,
+  },
+] as const;
+
+type PlatformId = typeof platformData[number]['id'];
+
 export default function SettingsPage() {
     const { toast } = useToast();
     const { avatarUrl, setAvatarUrl, displayName, setDisplayName } = useUser();
+    const [activePlatform, setActivePlatform] = React.useState<PlatformId | null>('youtube');
 
     const form = useForm<z.infer<typeof profileFormSchema>>({
         resolver: zodResolver(profileFormSchema),
@@ -63,8 +81,6 @@ export default function SettingsPage() {
     };
 
     const handleUpload = () => {
-        // In a real app, you'd upload the file to a storage service
-        // and save the URL to the user's profile in Firestore.
         setIsUploading(true);
         setTimeout(() => {
             toast({
@@ -74,6 +90,16 @@ export default function SettingsPage() {
             setIsUploading(false);
         }, 1500);
     }
+    
+    const handlePlatformToggle = (platformId: PlatformId, isChecked: boolean) => {
+        if (isChecked) {
+            setActivePlatform(platformId);
+            toast({
+                title: "Platform Connection Updated",
+                description: `You are now connected with ${platformData.find(p => p.id === platformId)?.name}.`,
+            });
+        }
+    };
 
 
     return (
@@ -151,29 +177,27 @@ export default function SettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Connected Platforms</CardTitle>
-                    <CardDescription>Manage your connected social media and content platforms.</CardDescription>
+                    <CardDescription>Manage your connected social media and content platforms. Only one platform can be active at a time.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                        <div className="flex items-center gap-4">
-                            <Youtube className="w-8 h-8 text-red-600" />
-                            <div>
-                                <h3 className="font-semibold">YouTube</h3>
-                                <p className="text-sm text-muted-foreground">MyAwesomeVlogs</p>
+                    {platformData.map((platform) => (
+                        <div key={platform.id} className="flex items-center justify-between p-4 rounded-lg border">
+                            <div className="flex items-center gap-4">
+                                {platform.icon}
+                                <div>
+                                    <h3 className="font-semibold">{platform.name}</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        {activePlatform === platform.id ? platform.account : 'Not connected'}
+                                    </p>
+                                </div>
                             </div>
+                            <Switch
+                                checked={activePlatform === platform.id}
+                                onCheckedChange={(isChecked) => handlePlatformToggle(platform.id, isChecked)}
+                                aria-label={`Toggle ${platform.name} connection`}
+                             />
                         </div>
-                        <Switch defaultChecked={true} aria-label="Toggle YouTube connection" />
-                    </div>
-                    <div className="flex items-center justify-between p-4 rounded-lg border">
-                        <div className="flex items-center gap-4">
-                            <Instagram className="w-8 h-8 text-pink-500" />
-                            <div>
-                                <h3 className="font-semibold">Instagram</h3>
-                                <p className="text-sm text-muted-foreground">Not connected</p>
-                            </div>
-                        </div>
-                        <Switch defaultChecked={false} aria-label="Toggle Instagram connection" />
-                    </div>
+                    ))}
                 </CardContent>
             </Card>
 
