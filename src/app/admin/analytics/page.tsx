@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Bar } from 'recharts';
+import { BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Bar, AreaChart, Area } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Users, ScanSearch, UserPlus } from 'lucide-react';
@@ -28,7 +28,7 @@ const generateMockData = () => {
 
 const allData = generateMockData();
 
-type ChartType = 'bar' | 'line';
+type ChartType = 'bar' | 'line' | 'area';
 
 export default function AdminAnalyticsPage() {
     const [date, setDate] = React.useState<DateRange | undefined>({
@@ -36,7 +36,7 @@ export default function AdminAnalyticsPage() {
         to: new Date(),
     });
 
-    const [userGrowthChartType, setUserGrowthChartType] = React.useState<ChartType>('bar');
+    const [userGrowthChartType, setUserGrowthChartType] = React.useState<ChartType>('area');
     const [platformActivityChartType, setPlatformActivityChartType] = React.useState<ChartType>('line');
 
     const filteredData = React.useMemo(() => {
@@ -121,13 +121,14 @@ export default function AdminAnalyticsPage() {
                                 <SelectValue placeholder="Chart Type" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="area">Area Chart</SelectItem>
                                 <SelectItem value="bar">Bar Chart</SelectItem>
                                 <SelectItem value="line">Line Chart</SelectItem>
                             </SelectContent>
                         </Select>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                        <ChartContainer config={chartConfig} className="h-[300px] w-full">
                             {userGrowthChartType === 'bar' ? (
                                 <BarChart accessibilityLayer data={filteredData} barCategoryGap="20%">
                                     <CartesianGrid vertical={false} />
@@ -136,7 +137,7 @@ export default function AdminAnalyticsPage() {
                                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                     <Bar dataKey="signups" fill="var(--color-signups)" radius={4} />
                                 </BarChart>
-                            ) : (
+                            ) : userGrowthChartType === 'line' ? (
                                 <LineChart accessibilityLayer data={filteredData}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
@@ -144,6 +145,20 @@ export default function AdminAnalyticsPage() {
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Line type="monotone" dataKey="signups" stroke="var(--color-signups)" strokeWidth={2} dot={false} />
                                 </LineChart>
+                            ) : (
+                                <AreaChart accessibilityLayer data={filteredData} margin={{ left: 12, right: 12 }}>
+                                    <defs>
+                                        <linearGradient id="fillSignups" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--color-signups)" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="var(--color-signups)" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
+                                    <YAxis tickMargin={10} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Area type="monotone" dataKey="signups" stroke="var(--color-signups)" fill="url(#fillSignups)" strokeWidth={2} dot={false} />
+                                </AreaChart>
                             )}
                         </ChartContainer>
                     </CardContent>
@@ -161,11 +176,12 @@ export default function AdminAnalyticsPage() {
                             <SelectContent>
                                 <SelectItem value="line">Line Chart</SelectItem>
                                 <SelectItem value="bar">Bar Chart</SelectItem>
+                                <SelectItem value="area">Area Chart</SelectItem>
                             </SelectContent>
                         </Select>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                        <ChartContainer config={chartConfig} className="h-[300px] w-full">
                             {platformActivityChartType === 'line' ? (
                                 <LineChart accessibilityLayer data={filteredData}>
                                     <CartesianGrid vertical={false} />
@@ -174,7 +190,7 @@ export default function AdminAnalyticsPage() {
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Line type="monotone" dataKey="scans" stroke="var(--color-scans)" strokeWidth={2} dot={false} />
                                 </LineChart>
-                            ) : (
+                            ) : platformActivityChartType === 'bar' ? (
                                 <BarChart accessibilityLayer data={filteredData} barCategoryGap="20%">
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
@@ -182,6 +198,20 @@ export default function AdminAnalyticsPage() {
                                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                                     <Bar dataKey="scans" fill="var(--color-scans)" radius={4} />
                                 </BarChart>
+                            ) : (
+                                <AreaChart accessibilityLayer data={filteredData} margin={{ left: 12, right: 12 }}>
+                                     <defs>
+                                        <linearGradient id="fillScans" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--color-scans)" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="var(--color-scans)" stopOpacity={0.1}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
+                                    <YAxis tickMargin={10} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Area type="monotone" dataKey="scans" stroke="var(--color-scans)" fill="url(#fillScans)" strokeWidth={2} dot={false} />
+                                </AreaChart>
                             )}
                         </ChartContainer>
                     </CardContent>
