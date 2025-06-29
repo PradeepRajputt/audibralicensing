@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,15 +48,23 @@ export default function AddContentPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    
-    const result = await addProtectedContentAction(values);
-
-    if (result?.success === false) {
+    try {
+      const result = await addProtectedContentAction(values);
+      if (result && result.success === false) {
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: result.message,
+        });
+      }
+    } catch (error) {
+      console.error("Submission failed:", error);
       toast({
           variant: "destructive",
-          title: "Submission Failed",
-          description: result.message,
+          title: "An unexpected error occurred",
+          description: "There was a problem submitting the form. Please try again.",
       });
+    } finally {
       setIsLoading(false);
     }
   }

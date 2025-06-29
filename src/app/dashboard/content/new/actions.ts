@@ -1,4 +1,3 @@
-
 'use server';
 
 import { z } from 'zod';
@@ -30,8 +29,8 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
     const newContentData: Omit<ProtectedContent, 'contentId'> = {
       creatorId: MOCK_CREATOR_ID,
       title: values.title,
-      contentType: values.contentType as 'video' | 'audio' | 'text' | 'image',
-      platform: values.platform as 'youtube' | 'vimeo' | 'web',
+      contentType: values.contentType,
+      platform: values.platform,
       videoURL: values.videoURL,
       tags: values.tags ? values.tags.split(',').map(tag => tag.trim()) : [],
       uploadDate: Timestamp.now(),
