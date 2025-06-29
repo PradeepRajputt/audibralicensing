@@ -6,8 +6,8 @@ import { google } from 'googleapis';
 
 // Configure the Google OAuth2 client
 const oAuth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_CLIENT_ID || '',
+  process.env.GOOGLE_CLIENT_SECRET || '',
   process.env.NEXTAUTH_URL
     ? `${process.env.NEXTAUTH_URL}/api/auth/callback/google`
     : 'http://localhost:9002/api/auth/callback/google'
@@ -32,14 +32,14 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
     const { credentials } = await oAuth2Client.refreshAccessToken();
     
     // Check if we received the new credentials
-    if (!credentials || !credentials.access_token || !credentials.expiry_date) {
+    if (!credentials || !credentials.access_token) {
         throw new Error("Failed to refresh access token, credentials missing.");
     }
 
     return {
       ...token,
       accessToken: credentials.access_token,
-      accessTokenExpires: credentials.expiry_date,
+      accessTokenExpires: credentials.expiry_date ? credentials.expiry_date : Date.now() + 3600 * 1000,
       refreshToken: credentials.refresh_token ?? token.refreshToken, // Use new refresh token if provided
       error: undefined,
     };
