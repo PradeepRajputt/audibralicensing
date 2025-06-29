@@ -9,11 +9,12 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, LayoutDashboard, Youtube, ScanSearch, FileText, Settings, LogOut, FileVideo, ShieldAlert } from 'lucide-react';
+import { Home, Shield, LayoutDashboard, Youtube, ScanSearch, FileText, Settings, LogOut, FileVideo, ShieldAlert } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
+  { href: '/dashboard/overview', label: 'Overview', icon: Home },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/analytics', label: 'Analytics', icon: Youtube },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
@@ -39,7 +40,7 @@ export function CreatorSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+                isActive={item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)}
                 tooltip={item.label}
               >
                 <Link href={item.href}>
