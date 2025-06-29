@@ -60,13 +60,18 @@ function saveReportsToStorage(reports: Report[]) {
 // ---- Public API ----
 
 export function getAllReports(): Report[] {
-  return getReportsFromStorage();
+  return getReportsFromStorage().sort((a, b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime());
 }
 
 export function getPendingStrikeRequests(): Report[] {
-  const allReports = getReportsFromStorage();
+  const allReports = getAllReports();
   // For the admin, we only show pending reports.
   return allReports.filter(report => report.status === 'in_review');
+}
+
+export function getReportById(id: string): Report | undefined {
+  const allReports = getReportsFromStorage();
+  return allReports.find(report => report.id === id);
 }
 
 export function addReport(data: { platform: string; suspectUrl: string; reason: string }): Report {

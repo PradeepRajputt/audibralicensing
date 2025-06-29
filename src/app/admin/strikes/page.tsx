@@ -5,10 +5,13 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, Eye } from "lucide-react";
+import Link from 'next/link';
 import type { Report } from '@/lib/reports-store';
-import { getPendingStrikeRequests, updateReportStatus } from '@/lib/reports-store';
+import { getAllReports, updateReportStatus } from '@/lib/reports-store';
 
 
 export default function StrikeRequestsPage() {
@@ -17,7 +20,7 @@ export default function StrikeRequestsPage() {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   function loadStrikes() {
-      setStrikes(getPendingStrikeRequests());
+      setStrikes(getAllReports());
   }
 
   useEffect(() => {
@@ -34,58 +37,49 @@ export default function StrikeRequestsPage() {
   const handleAction = (action: 'approve' | 'deny', strikeId: string) => {
     setLoadingAction(`${action}-${strikeId}`);
     
-    if (action === 'approve') {
-      updateReportStatus(strikeId, 'approved');
-      toast({
-        title: "Action Successful",
-        description: 'Strike request has been approved and takedown initiated.',
-      });
-    } else {
-      updateReportStatus(strikeId, 'rejected');
-      toast({
-        title: "Action Successful",
-        description: 'Strike request has been denied.',
-      });
-    }
+    updateReportStatus(strikeId, action === 'approve' ? 'approved' : 'rejected');
+    toast({
+      title: "Action Successful",
+      description: `Strike request has been ${action}d.`,
+    });
     
     // Refresh the list from our simulated database
     loadStrikes();
     setLoadingAction(null);
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Copyright Strike Requests</CardTitle>
-        <CardDescription>
-          Review and process copyright strike requests submitted by creators.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {strikes.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Creator</TableHead>
-                <TableHead>Infringing URL</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Request Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {strikes.map((strike) => (
-                <TableRow key={strike.id}>
-                  <TableCell className="font-medium">{strike.creatorName}</TableCell>
-                   <TableCell>
-                    <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
-                        {strike.suspectUrl}
-                    </a>
-                  </TableCell>
-                   <TableCell className="truncate max-w-xs">{strike.reason}</TableCell>
-                  <TableCell>{new Date(strike.submitted).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+  const renderTable = (data: Report[], showActions: boolean) => {
+    if (data.length === 0) {
+      return (
+        <div className="text-center py-10 text-muted-foreground">
+          <p>There are no requests in this category.</p>
+        </div>
+      );
+    }
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Creator</TableHead>
+            <TableHead>Infringing URL</TableHead>
+            <TableHead>Submitted</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((strike) => (
+            <TableRow key={strike.id}>
+              <TableCell className="font-medium">{strike.creatorName}</TableCell>
+               <TableCell>
+                <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
+                    {strike.suspectUrl}
+                </a>
+              </TableCell>
+              <TableCell>{new Date(strike.submitted).toLocaleDateString()}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
+                  {showActions && (
+                    <>
                       <Button
                         variant="outline"
                         size="sm"
@@ -104,17 +98,62 @@ export default function StrikeRequestsPage() {
                          {loadingAction === `deny-${strike.id}` ? <Loader2 className="animate-spin" /> : <X />}
                         Deny
                       </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <div className="text-center py-10 text-muted-foreground">
-            <p>There are no pending strike requests.</p>
-          </div>
-        )}
+                    </>
+                  )}
+                  <Button asChild variant="ghost" size="icon">
+                    <Link href={`/admin/strikes/${strike.id}`}>
+                      <Eye className="h-4 w-4" />
+                      <span className="sr-only">View Details</span>
+                    </Link>
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+  
+  const pendingStrikes = strikes.filter(s => s.status === 'in_review');
+  const approvedStrikes = strikes.filter(s => s.status === 'approved');
+  const rejectedStrikes = strikes.filter(s => s.status === 'rejected');
+
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Copyright Strike Requests</CardTitle>
+        <CardDescription>
+          Review and process copyright strike requests submitted by creators.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="pending">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="pending">
+              Pending
+              <Badge variant="secondary" className="ml-2">{pendingStrikes.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="approved">
+              Approved
+              <Badge variant="default" className="ml-2">{approvedStrikes.length}</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Rejected
+              <Badge variant="destructive" className="ml-2">{rejectedStrikes.length}</Badge>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="pending" className="mt-4">
+            {renderTable(pendingStrikes, true)}
+          </TabsContent>
+          <TabsContent value="approved" className="mt-4">
+            {renderTable(approvedStrikes, false)}
+          </TabsContent>
+          <TabsContent value="rejected" className="mt-4">
+            {renderTable(rejectedStrikes, false)}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
