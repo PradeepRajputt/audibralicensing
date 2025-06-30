@@ -48,6 +48,7 @@ export default function OverviewPage() {
 
   useEffect(() => {
     setIsClient(true);
+    // Set up the interval only after the component has mounted on the client
     const timer = setInterval(() => {
       const timeString = new Date().toLocaleTimeString('en-US', {
         timeZone: selectedTimezone,
