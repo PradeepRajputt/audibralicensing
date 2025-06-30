@@ -46,23 +46,34 @@ export async function getDashboardData(channelId?: string) {
     });
     const mostViewedVideo = videosResponse.data.items?.[0];
 
-    // 3. Construct analytics object
+    // 3. Construct analytics object with more realistic simulated historical data
+    const totalViews = Number(stats.viewCount);
+    const totalSubs = Number(stats.subscriberCount);
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+    // Simulate a plausible growth curve for views over the last 6 months
+    const monthlyViewsData = months.map((month, i) => ({
+        month,
+        // This generates more realistic-looking data that climbs towards the total
+        views: Math.floor(totalViews / 6 * (0.5 + i * 0.2 + Math.random() * 0.2)),
+    }));
+
+    // Simulate a plausible growth curve for subscribers over the last 6 months
+    const subscriberData = Array.from({ length: 6 }).map((_, i) => ({
+        date: `2024-0${i + 1}-01`,
+        count: Math.floor(totalSubs * (0.8 + (i * 0.04) + (Math.random() - 0.5) * 0.05)),
+    }));
+
+
     const analytics = {
-      subscribers: Number(stats.subscriberCount),
-      views: Number(stats.viewCount),
+      subscribers: totalSubs,
+      views: totalViews,
       mostViewedVideo: {
         title: mostViewedVideo?.snippet?.title ?? 'N/A',
         views: 'N/A' // View count requires another API call, so we'll omit for simplicity
       },
-      // This data remains simulated for UI demo purposes
-      monthlyViewsData: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, i) => ({
-        month,
-        views: Math.floor((Math.sin(i) + 1.5) * Number(stats.viewCount) / 20),
-      })),
-      subscriberData: Array.from({ length: 6 }).map((_, i) => ({
-        date: `2024-0${i + 1}-01`,
-        count: Math.floor(Number(stats.subscriberCount) * (0.8 + (i * 0.04))),
-      })),
+      monthlyViewsData,
+      subscriberData,
     };
 
     // 4. Generate some mock activity data

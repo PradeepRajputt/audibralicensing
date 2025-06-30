@@ -1,7 +1,6 @@
 
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScanSearch, FileText, ShieldCheck, Clock, Youtube } from "lucide-react";
 import Link from 'next/link';
@@ -27,19 +26,16 @@ function DashboardSkeleton() {
     return (
         <div className="space-y-8 animate-pulse">
             <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <Skeleton className="h-16 w-16 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-8 w-64" />
-                        <Skeleton className="h-4 w-80" />
-                    </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-80" />
                 </div>
                 <Skeleton className="h-24 w-72" />
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader><div className="p-3 bg-muted rounded-full self-start w-fit"><Skeleton className="h-8 w-8 rounded-full" /></div></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader><div className="p-3 bg-muted rounded-full self-start w-fit"><Skeleton className="h-8 w-8 rounded-full" /></div></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader><div className="p-3 bg-muted rounded-full self-start w-fit"><Skeleton className="h-8 w-8 rounded-full" /></div></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
             </div>
         </div>
     );
@@ -68,7 +64,7 @@ function ConfigurationErrorPrompt() {
 
 
 export default function OverviewPage() {
-  const { isLoading, creatorName, creatorImage } = useUser();
+  const { isLoading, creatorName } = useUser();
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState('UTC');
   const [isClient, setIsClient] = useState(false);
@@ -99,15 +95,9 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-            <AvatarImage src={creatorImage ?? "https://placehold.co/128x128.png"} alt="Creator Avatar" data-ai-hint="profile picture" />
-            <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
-            </Avatar>
-            <div>
+        <div>
             <h1 className="text-3xl font-bold">Welcome back, {creatorName}!</h1>
             <p className="text-muted-foreground">What would you like to accomplish today?</p>
-            </div>
         </div>
 
         <Card className="min-w-[280px]">
