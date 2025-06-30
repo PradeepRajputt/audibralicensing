@@ -1,29 +1,21 @@
 
 import * as admin from 'firebase-admin';
-import { config } from 'dotenv';
 
-// Explicitly load environment variables from the .env file at the root.
-// This is crucial for server-side code in environments where it's not automatic.
-config();
+let app: admin.app.App | undefined;
 
-// This function ensures the Firebase Admin app is initialized only once (singleton pattern).
-function getAdminApp(): admin.app.App {
-  // If the app is already initialized, return it.
+function initializeAdminApp() {
   if (admin.apps.length > 0 && admin.apps[0]) {
     return admin.apps[0];
   }
-
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
   
-  // This check is the most important part.
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
   if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-    console.error("Firebase Admin credentials are not set in the environment. Please ensure .env file is populated and accessible by the server.");
-    // This specific error message will be caught and displayed to the user.
-    throw new Error("Registration failed. Please check server configuration.");
+    console.warn("Firebase Admin credentials not fully set in .env. Firebase Admin features will be unavailable.");
+    return undefined;
   }
 
   try {
-    // Initialize the app with the credentials.
     return admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
@@ -32,23 +24,38 @@ function getAdminApp(): admin.app.App {
       }),
     });
   } catch (error) {
-    // This handles cases where hot-reloading might try to re-initialize the app.
     if (error instanceof Error && error.message.includes('already exists')) {
         return admin.app();
     }
     console.error('Firebase admin initialization error:', error);
-    throw new Error('Failed to initialize Firebase Admin SDK.');
+    // Don't throw, just return undefined so the app can proceed without it
+    return undefined;
   }
 }
 
 /**
+ * Gets the initialized Firebase Admin app instance on-demand.
+ * Returns undefined if configuration is missing.
+ */
+function getAdminApp(): admin.app.App | undefined {
+  if (!app) {
+    app = initializeAdminApp();
+  }
+  return app;
+}
+
+
+/**
  * Gets the initialized Firestore database and Auth instances.
- * The initialization is handled on-demand.
+ * Returns null for db/auth if the admin app is not configured.
  */
 export function getFirebaseAdmin() {
-    const app = getAdminApp();
+    const adminApp = getAdminApp();
+    if (!adminApp) {
+        return { adminDb: null, adminAuth: null };
+    }
     return {
-        adminDb: app.firestore(),
-        adminAuth: app.auth()
+        adminDb: adminApp.firestore(),
+        adminAuth: adminApp.auth()
     }
 };

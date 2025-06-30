@@ -2,12 +2,8 @@
 'use server';
 
 import { z } from 'zod';
-import { createUser, getUserByEmail } from '@/lib/firebase/firestore';
-import { hashPassword } from '@/lib/auth';
-import type { User } from '@/lib/firebase/types';
+import { createUser, getUserByEmail } from '@/lib/users-store';
 import { redirect } from 'next/navigation';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
-import { Timestamp } from 'firebase-admin/firestore';
 
 const registerFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -17,29 +13,25 @@ const registerFormSchema = z.object({
 
 export async function registerUser(values: z.infer<typeof registerFormSchema>) {
     try {
-        const existingUser = await getUserByEmail(values.email);
+        const existingUser = getUserByEmail(values.email);
 
         if (existingUser) {
             return { success: false, message: 'An account with this email already exists.' };
         }
 
-        const passwordHash = await hashPassword(values.password);
-
-        const newUser: Omit<User, 'uid'> = {
+        await createUser({
             displayName: values.name,
             email: values.email,
-            passwordHash,
+            password: values.password,
             role: 'creator',
             joinDate: new Date().toISOString(),
             platformsConnected: [],
             status: 'active',
             avatar: `https://placehold.co/128x128.png`,
-        };
+        });
 
-        await createUser(newUser);
     } catch (error) {
         console.error("Registration Error:", error);
-        // This will now catch the specific error from getFirebaseAdmin or other issues
         if (error instanceof Error) {
             return { success: false, message: error.message };
         }

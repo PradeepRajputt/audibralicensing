@@ -1,7 +1,7 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserByEmail } from '@/lib/firebase/firestore';
+import { getUserByEmail } from '@/lib/users-store';
 import { verifyPassword } from '@/lib/auth';
 
 
@@ -28,36 +28,25 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Please enter your email and password.");
         }
         
-        try {
-            const user = await getUserByEmail(credentials.email);
-            
-            if (!user || !user.passwordHash) {
-              throw new Error("No user found with this email or user has no password set.");
-            }
-    
-            const isValid = await verifyPassword(credentials.password, user.passwordHash);
-    
-            if (!isValid) {
-              throw new Error("Incorrect password.");
-            }
-    
-            // Return a serializable user object for the session token
-            return {
-              id: user.uid,
-              email: user.email,
-              name: user.displayName,
-              role: user.role,
-            };
-        } catch (error) {
-            console.error("Login authorization failed:", error);
-            // This will now catch the specific error from getFirebaseAdmin or other issues
-            if (error instanceof Error) {
-                throw new Error(error.message);
-            }
-            
-            // Fallback for any other unexpected errors
-            throw new Error('An unexpected error occurred during login.');
+        const user = getUserByEmail(credentials.email);
+        
+        if (!user || !user.passwordHash) {
+          throw new Error("No user found with this email or user has no password set.");
         }
+
+        const isValid = await verifyPassword(credentials.password, user.passwordHash);
+
+        if (!isValid) {
+          throw new Error("Incorrect password.");
+        }
+
+        // Return a serializable user object for the session token
+        return {
+          id: user.uid,
+          email: user.email,
+          name: user.displayName,
+          role: user.role,
+        };
       },
     }),
   ],
