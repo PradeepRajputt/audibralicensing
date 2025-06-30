@@ -18,6 +18,11 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const errorMessages: { [key: string]: string } = {
+    CredentialsSignin: "Invalid email or password. Please try again.",
+    Default: "An unknown error occurred. Please try again.",
+  };
+
   useEffect(() => {
     // Show a success toast if redirected from registration
     if (searchParams.get('registered') === 'true') {
@@ -31,12 +36,11 @@ export default function LoginPage() {
 
     const error = searchParams.get('error');
     if (error) {
+      const errorMessage = errorMessages[error] || decodeURIComponent(error);
       toast({
         variant: "destructive",
         title: "Login Failed",
-        description: error === "CredentialsSignin" 
-            ? "Invalid credentials. Please check your email and password." 
-            : error,
+        description: errorMessage,
       });
        router.replace('/login', {scroll: false});
     }
@@ -51,25 +55,15 @@ export default function LoginPage() {
     
     const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-    const result = await signIn('credentials', {
-      redirect: false,
+    // This will redirect on success, or add an `error` query param on failure
+    await signIn('credentials', {
       email,
       password,
       callbackUrl,
     });
-
-    if (result?.error) {
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: result.error,
-      });
-    } else if (result?.url) {
-      window.location.href = result.url;
-    } else {
-      window.location.href = callbackUrl;
-    }
     
+    // This part is often not reached because of the redirect,
+    // but it's a good fallback in case of an unhandled promise rejection.
     setIsLoading(false);
   };
   

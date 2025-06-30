@@ -2,9 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { createUser } from '@/lib/auth';
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { createUser } from '@/lib/users-store';
 
 const registerFormSchema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters."),
@@ -35,14 +33,10 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
     } catch (error) {
         console.error("Registration Server Action Error:", error);
         if (error instanceof Error) {
-            if (error.message.includes('already exists')) {
-                return { success: false, message: 'An account with this email already exists.' };
-            }
-            return { success: false, message: 'An unexpected server error occurred.' };
+            return { success: false, message: error.message };
         }
         return { success: false, message: 'An unknown error occurred.' };
     }
-
-    revalidatePath('/admin/users'); // Ensure admin list is updated
+    
     return { success: true };
 }

@@ -1,7 +1,8 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserByEmail, verifyPassword } from '@/lib/auth';
+import { getUserByEmail } from '@/lib/users-store';
+import { verifyPassword } from '@/lib/auth';
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'your_default_secret_for_development_ creatorshield',
@@ -17,27 +18,23 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<any> {
         if (!credentials?.email || !credentials?.password) {
-          // Returning null is the standard way to indicate a failed login attempt to NextAuth
-          return null;
+          throw new Error("Please enter your email and password.");
         }
         
-        const user = await getUserByEmail(credentials.email);
+        const user = getUserByEmail(credentials.email);
             
         if (!user) {
-          console.log('No user found with email:', credentials.email);
-          return null; // User not found
+          // Use standard error for NextAuth to handle
+          throw new Error("No user found with that email.");
         }
 
         const isValid = await verifyPassword(credentials.password, user.passwordHash);
 
         if (!isValid) {
-          console.log('Invalid password for user:', credentials.email);
-          return null; // Invalid credentials
+          throw new Error("Invalid password.");
         }
 
         if (user.status !== 'active') {
-          console.log(`Login attempt for disabled account: ${user.email} (${user.status})`);
-          // Throw a specific error for non-active accounts to provide better user feedback
           throw new Error(`Your account is currently ${user.status}. Please contact support or request reactivation.`);
         }
 
@@ -72,7 +69,7 @@ export const authOptions: NextAuthOptions = {
   },
    pages: {
     signIn: '/login',
-    error: '/login', // Redirect to login page on credentials error, shows error in URL
+    error: '/login', // Redirect to login page on error, with error message in URL
   },
 };
 

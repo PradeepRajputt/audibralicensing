@@ -1,34 +1,18 @@
 
-'use client';
-
-import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, Circle } from "lucide-react";
+import { Eye } from "lucide-react";
 import Link from "next/link";
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { getAllUsers } from '@/lib/users-store';
 import type { User } from '@/lib/firebase/types';
 
+// This is now a Server Component
 export default function UserManagementPage() {
-  const [users, setUsers] = React.useState<User[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  
-  React.useEffect(() => {
-    async function fetchUsers() {
-      setIsLoading(true);
-      const fetchedUsers = await getAllUsers();
-      setUsers(fetchedUsers);
-      setIsLoading(false);
-    }
-    fetchUsers();
-
-    window.addEventListener('storage', fetchUsers);
-    return () => window.removeEventListener('storage', fetchUsers);
-  }, []);
+  // Fetch data directly on the server
+  const users = getAllUsers();
   
   const getStatusInfo = (status: User['status']) => {
     switch (status) {
@@ -63,15 +47,7 @@ export default function UserManagementPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? Array.from({ length: 3 }).map((_, index) => (
-                <TableRow key={index}>
-                    <TableCell><Skeleton className="h-10 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-10 w-10 ml-auto" /></TableCell>
-                </TableRow>
-            )) : users.map((user) => {
+            {users.map((user) => {
               const statusInfo = getStatusInfo(user.status);
               return (
               <TableRow key={user.uid}>
@@ -88,7 +64,6 @@ export default function UserManagementPage() {
                 <TableCell>{new Date(user.joinDate).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Badge variant={statusInfo.variant}>
-                     <Circle className="mr-1 h-3 w-3" />
                      {statusInfo.text}
                    </Badge>
                 </TableCell>
