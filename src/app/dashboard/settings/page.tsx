@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { verifyYoutubeChannel } from './actions';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 
 const LOCAL_STORAGE_KEY = 'creator_shield_youtube_channel';
 
@@ -33,7 +32,7 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const formRef = React.useRef<HTMLFormElement>(null);
 
-    const [state, formAction] = useFormState(verifyYoutubeChannel, null);
+    const [state, formAction] = React.useActionState(verifyYoutubeChannel, null);
 
     React.useEffect(() => {
         // This code runs only in the browser
