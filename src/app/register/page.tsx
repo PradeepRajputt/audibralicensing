@@ -37,18 +37,14 @@ export default function RegisterPage() {
         title: "Registration Failed",
         description: result.message,
       });
+      setIsLoading(false);
     } else {
         toast({
             title: "Registration Successful",
-            description: "You will be redirected to the login page.",
+            description: "You will now be redirected to the login page.",
         });
-        // The action handles the redirect on success, but we can do it here too
-        // in case the redirect in the action doesn't work as expected in some scenarios.
-        router.push('/login');
+        router.push('/login?registered=true');
     }
-
-
-    setIsLoading(false);
   };
 
   if (!isClient) {
@@ -65,10 +61,10 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
              <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="displayName">Full Name</Label>
               <Input
-                id="name"
-                name="name"
+                id="displayName"
+                name="displayName"
                 type="text"
                 placeholder="Your Name"
                 required

@@ -3,7 +3,8 @@
 
 import { z } from 'zod';
 import { createUser } from '@/lib/users';
-import { redirect } from 'next/navigation';
+// We will handle redirect on the client side to show a toast message
+// import { redirect } from 'next/navigation';
 
 const registerFormSchema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters."),
@@ -15,7 +16,10 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
     try {
         const validatedFields = registerFormSchema.safeParse(values);
         if (!validatedFields.success) {
-            return { success: false, message: 'Invalid form data provided.' };
+            // Flatten the error messages to be more user-friendly
+            const errorMessages = validatedFields.error.flatten().fieldErrors;
+            const firstError = Object.values(errorMessages)[0]?.[0] || 'Invalid form data provided.';
+            return { success: false, message: firstError };
         }
         
         await createUser({
@@ -41,6 +45,5 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
         return { success: false, message: 'An unknown error occurred.' };
     }
 
-    // Redirect to login only on successful creation
-    redirect('/login?registered=true');
+    return { success: true };
 }
