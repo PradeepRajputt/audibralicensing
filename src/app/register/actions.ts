@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { createUser, getUserByEmail } from '@/lib/users-store';
+import { createUser, getUserByEmail } from '@/lib/users';
 import { redirect } from 'next/navigation';
 
 const registerFormSchema = z.object({
