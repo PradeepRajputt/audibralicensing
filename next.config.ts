@@ -1,7 +1,8 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // output: 'standalone' is not needed for this Cloud Functions setup
   typescript: {
     ignoreBuildErrors: true,
   },
