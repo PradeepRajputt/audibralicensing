@@ -50,14 +50,9 @@ export const authOptions: NextAuthOptions = {
             };
         } catch (error) {
             console.error("Login authorization failed:", error);
-            // Don't re-throw the original error which might contain sensitive info.
-            // Throw a generic error that next-auth will catch and display on the login page.
-            if (error instanceof Error && error.message.includes("Firebase Admin credentials")) {
-                throw new Error('Server not configured for login. Please contact support.');
-            }
-            // Re-throw other specific, safe errors so they appear on the login form
-            if (error instanceof Error && (error.message.includes("No user found") || error.message.includes("Incorrect password"))) {
-                throw error;
+            // This will now catch the specific error from getFirebaseAdmin or other issues
+            if (error instanceof Error) {
+                throw new Error(error.message);
             }
             
             // Fallback for any other unexpected errors

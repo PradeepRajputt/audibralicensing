@@ -1,7 +1,12 @@
 
 import * as admin from 'firebase-admin';
+import { config } from 'dotenv';
 
-// This is a more robust way to handle the singleton pattern in serverless environments.
+// Explicitly load environment variables from the .env file at the root.
+// This is crucial for server-side code in environments where it's not automatic.
+config();
+
+// This function ensures the Firebase Admin app is initialized only once (singleton pattern).
 function getAdminApp(): admin.app.App {
   // If the app is already initialized, return it.
   if (admin.apps.length > 0 && admin.apps[0]) {
@@ -9,40 +14,41 @@ function getAdminApp(): admin.app.App {
   }
 
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
+  
+  // This check is the most important part.
   if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-    throw new Error("Firebase Admin credentials are not set in the environment. Please check your .env file and server configuration.");
+    console.error("Firebase Admin credentials are not set in the environment. Please ensure .env file is populated and accessible by the server.");
+    // This specific error message will be caught and displayed to the user.
+    throw new Error("Registration failed. Please check server configuration.");
   }
 
   try {
-    const app = admin.initializeApp({
+    // Initialize the app with the credentials.
+    return admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         privateKey: privateKey,
       }),
     });
-    console.log("Firebase Admin SDK initialized successfully.");
-    return app;
   } catch (error) {
+    // This handles cases where hot-reloading might try to re-initialize the app.
+    if (error instanceof Error && error.message.includes('already exists')) {
+        return admin.app();
+    }
     console.error('Firebase admin initialization error:', error);
-    // Re-throw a more generic error to avoid leaking implementation details
     throw new Error('Failed to initialize Firebase Admin SDK.');
   }
 }
 
 /**
- * Gets the initialized Firestore database instance.
- * Throws an error if initialization fails.
+ * Gets the initialized Firestore database and Auth instances.
+ * The initialization is handled on-demand.
  */
-export function getAdminDb() {
-  return getAdminApp().firestore();
-}
-
-/**
- * Gets the initialized Firebase Auth instance.
- * Throws an error if initialization fails.
- */
-export function getAdminAuth() {
-  return getAdminApp().auth();
-}
+export function getFirebaseAdmin() {
+    const app = getAdminApp();
+    return {
+        adminDb: app.firestore(),
+        adminAuth: app.auth()
+    }
+};

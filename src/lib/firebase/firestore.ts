@@ -6,14 +6,13 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) {
-      throw new Error("Firestore is not initialized. Check Firebase Admin credentials.");
-  }
   const usersCollection = adminDb.collection('users');
   const snapshot = await usersCollection.where('email', '==', email).limit(1).get();
+  
   if (snapshot.empty) {
     return null;
   }
+
   const userDoc = snapshot.docs[0];
   const userData = userDoc.data();
   
@@ -29,15 +28,16 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function createUser(userData: Omit<User, 'uid'>): Promise<string> {
    const { adminDb } = getFirebaseAdmin();
-   if (!adminDb) {
-       throw new Error("Firestore is not initialized. Cannot create user.");
-   }
    const usersCollection = adminDb.collection('users');
    const { joinDate, ...rest } = userData;
-   const docRef = usersCollection.doc(); // Let Firestore generate the ID
+   
+   // Let Firestore generate the ID
+   const docRef = usersCollection.doc(); 
+   
    await docRef.set({
     ...rest,
     joinDate: Timestamp.fromDate(new Date(joinDate)), // Store as Timestamp
    });
+
    return docRef.id;
 }

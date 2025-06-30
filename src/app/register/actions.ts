@@ -6,6 +6,8 @@ import { createUser, getUserByEmail } from '@/lib/firebase/firestore';
 import { hashPassword } from '@/lib/auth';
 import type { User } from '@/lib/firebase/types';
 import { redirect } from 'next/navigation';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { Timestamp } from 'firebase-admin/firestore';
 
 const registerFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -36,12 +38,12 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
 
         await createUser(newUser);
     } catch (error) {
-        console.error("Error creating user:", error);
-        if (error instanceof Error && error.message.includes("Firebase Admin credentials")) {
-             return { success: false, message: 'Registration failed. Please check server configuration.' };
+        console.error("Registration Error:", error);
+        // This will now catch the specific error from getFirebaseAdmin or other issues
+        if (error instanceof Error) {
+            return { success: false, message: error.message };
         }
-        const message = error instanceof Error ? error.message : 'An unknown error occurred. Please try again.';
-        return { success: false, message };
+        return { success: false, message: 'An unknown error occurred. Please try again.' };
     }
 
     // Redirect to login only on successful creation
