@@ -49,12 +49,19 @@ export const authOptions: NextAuthOptions = {
               role: user.role,
             };
         } catch (error) {
-            console.error("Login failed:", error);
-            if (error instanceof Error && error.message.includes("Firestore is not initialized")) {
-                throw new Error('Server not configured for login. Please check credentials.');
+            console.error("Login authorization failed:", error);
+            // Don't re-throw the original error which might contain sensitive info.
+            // Throw a generic error that next-auth will catch and display on the login page.
+            if (error instanceof Error && error.message.includes("Firebase Admin credentials")) {
+                throw new Error('Server not configured for login. Please contact support.');
             }
-            // Re-throw other errors (like wrong password or no user found)
-            throw error;
+            // Re-throw other specific, safe errors so they appear on the login form
+            if (error instanceof Error && (error.message.includes("No user found") || error.message.includes("Incorrect password"))) {
+                throw error;
+            }
+            
+            // Fallback for any other unexpected errors
+            throw new Error('An unexpected error occurred during login.');
         }
       },
     }),

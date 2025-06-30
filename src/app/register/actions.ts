@@ -37,7 +37,7 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
         await createUser(newUser);
     } catch (error) {
         console.error("Error creating user:", error);
-        if (error instanceof Error && error.message.includes("Firestore is not initialized")) {
+        if (error instanceof Error && error.message.includes("Firebase Admin credentials")) {
              return { success: false, message: 'Registration failed. Please check server configuration.' };
         }
         const message = error instanceof Error ? error.message : 'An unknown error occurred. Please try again.';
