@@ -20,7 +20,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    // Show a success toast if redirected from registration
+    if (searchParams.get('registered') === 'true') {
+      toast({
+        title: "Registration Successful",
+        description: "You can now sign in with your new account.",
+      });
+    }
+  }, [searchParams, toast]);
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

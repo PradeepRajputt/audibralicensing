@@ -5,7 +5,7 @@
  * traditional cloud functions.
  */
 import { Timestamp } from 'firebase-admin/firestore';
-import { adminDb } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import type { ProtectedContent, ManualReport, User, Violation, UserAnalytics } from '@/lib/firebase/types';
 import axios from 'axios';
 import sgMail from '@sendgrid/mail';
@@ -69,6 +69,7 @@ export async function triggerFastApiForNewReport(report: ManualReport) {
  * This function is intended to be called by a webhook from our FastAPI service.
  */
 export async function processViolationFromFastApi(violationData: Omit<Violation, 'id' | 'detectedAt'> & { creatorEmail: string }) {
+  const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     const message = "Firebase is not configured. Cannot process violation.";
     console.error(message);
@@ -122,6 +123,7 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
  * This is designed to be run by a scheduled cron job.
  */
 export async function updateAllUserAnalytics() {
+  const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     const message = "Firebase is not configured. Cannot update analytics.";
     console.error(message);

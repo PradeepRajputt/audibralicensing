@@ -38,12 +38,12 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
     } catch (error) {
         console.error("Error creating user:", error);
         if (error instanceof Error && error.message.includes("Firestore is not initialized")) {
-             return { success: false, message: 'The server is not configured for registration. Please add Firebase credentials to your .env file.' };
+             return { success: false, message: 'Registration failed. Please add Firebase credentials to your .env file.' };
         }
         const message = error instanceof Error ? error.message : 'An unknown error occurred. Please try again.';
         return { success: false, message };
     }
 
     // Redirect to login only on successful creation
-    redirect('/login');
+    redirect('/login?registered=true');
 }
