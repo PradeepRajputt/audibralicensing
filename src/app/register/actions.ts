@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { createUser } from '@/lib/users-store';
+import { createUser } from '@/lib/users';
 import { revalidatePath } from 'next/cache';
 
 const registerFormSchema = z.object({
