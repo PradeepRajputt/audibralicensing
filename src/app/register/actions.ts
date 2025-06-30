@@ -14,30 +14,26 @@ const registerFormSchema = z.object({
 });
 
 export async function registerUser(values: z.infer<typeof registerFormSchema>) {
-    if (!process.env.FIREBASE_PROJECT_ID) {
-        return { success: false, message: 'Server is not configured for registration.' };
-    }
-
-    const existingUser = await getUserByEmail(values.email);
-
-    if (existingUser) {
-        return { success: false, message: 'An account with this email already exists.' };
-    }
-
-    const passwordHash = await hashPassword(values.password);
-
-    const newUser: Omit<User, 'uid'> = {
-        displayName: values.name,
-        email: values.email,
-        passwordHash,
-        role: 'creator',
-        joinDate: new Date().toISOString(),
-        platformsConnected: [],
-        status: 'active',
-        avatar: `https://placehold.co/128x128.png`,
-    };
-
     try {
+        const existingUser = await getUserByEmail(values.email);
+
+        if (existingUser) {
+            return { success: false, message: 'An account with this email already exists.' };
+        }
+
+        const passwordHash = await hashPassword(values.password);
+
+        const newUser: Omit<User, 'uid'> = {
+            displayName: values.name,
+            email: values.email,
+            passwordHash,
+            role: 'creator',
+            joinDate: new Date().toISOString(),
+            platformsConnected: [],
+            status: 'active',
+            avatar: `https://placehold.co/128x128.png`,
+        };
+
         await createUser(newUser);
     } catch (error) {
         console.error("Error creating user:", error);
@@ -45,5 +41,6 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
         return { success: false, message };
     }
 
+    // Redirect to login only on successful creation
     redirect('/login');
 }

@@ -7,6 +7,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 export async function getUserByEmail(email: string): Promise<User | null> {
   if (!adminDb) {
       console.error("Firestore is not initialized. Check Firebase Admin credentials.");
+      // Return null and let the auth logic handle the "user not found" case.
       return null;
   }
   const usersCollection = adminDb.collection('users');
