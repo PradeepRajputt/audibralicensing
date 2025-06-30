@@ -1,11 +1,11 @@
+
 {
   "hosting": {
     "rewrites": [
       {
         "source": "**",
         "apphosting": {
-          "backendId": "shieldview-5ns5s",
-          "region": "us-central1"
+          "backendId": "shieldview-5ns5s"
         }
       }
     ]
