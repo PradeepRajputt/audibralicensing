@@ -2,7 +2,9 @@
 'use server';
 
 import { google } from 'googleapis';
-import type { User } from '@/lib/users-store';
+import type { User } from '@/lib/firebase/types';
+import { getAllUsers as dbGetAllUsers } from '@/lib/users';
+
 
 export type CreatorStatus = {
   uid: string;
@@ -10,6 +12,15 @@ export type CreatorStatus = {
   status: 'Active' | 'Not Found' | 'Error' | 'Not Connected';
   message: string;
 };
+
+export async function getAllUsers(): Promise<User[]> {
+    try {
+        return await dbGetAllUsers();
+    } catch (error) {
+        console.error("Error fetching all users:", error);
+        return [];
+    }
+}
 
 /**
  * Fetches the status of multiple YouTube channels based on their IDs.

@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { createUser, getUserByEmail } from '@/lib/users';
+import { createUser } from '@/lib/users';
 import { redirect } from 'next/navigation';
 
 const registerFormSchema = z.object({
@@ -13,16 +13,12 @@ const registerFormSchema = z.object({
 
 export async function registerUser(values: z.infer<typeof registerFormSchema>) {
     try {
-        const existingUser = getUserByEmail(values.email);
-
-        if (existingUser) {
-            return { success: false, message: 'An account with this email already exists.' };
-        }
-
+        // The createUser function now handles checking for existing users.
         await createUser({
             displayName: values.name,
             email: values.email,
             password: values.password,
+            // These are default values for a new user
             role: 'creator',
             joinDate: new Date().toISOString(),
             platformsConnected: [],
@@ -31,7 +27,7 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
         });
 
     } catch (error) {
-        console.error("Registration Error:", error);
+        console.error("Registration Server Action Error:", error);
         if (error instanceof Error) {
             return { success: false, message: error.message };
         }

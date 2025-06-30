@@ -20,7 +20,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
-import { getUserById, updateUserStatus, type User } from '@/lib/users-store';
+import { suspendCreator, liftSuspension, deactivateCreator } from './actions';
+import type { User } from '@/lib/firebase/types';
 
 
 const platformIcons = {
@@ -31,53 +32,48 @@ const platformIcons = {
 } as const;
 
 
-export default function DetailsClientPage({ userId }: { userId: string }) {
+export default function DetailsClientPage({ initialUser, userId }: { initialUser: User | undefined, userId: string }) {
   const { toast } = useToast();
-  const [user, setUser] = useState<User | undefined>(undefined);
+  const [user, setUser] = useState<User | undefined>(initialUser);
   const [isLoading, setIsLoading] = useState<'suspend' | 'lift' | 'deactivate' | null>(null);
 
+  // This effect keeps the local state in sync if the server component re-renders with new props
   useEffect(() => {
-    // On mount, read the status from localStorage to keep UI in sync across pages
-    setUser(getUserById(userId));
-    
-    const handleStorageChange = () => {
-        setUser(getUserById(userId));
-    }
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [userId]);
+    setUser(initialUser);
+  }, [initialUser]);
   
-  const handleDeactivate = () => {
-    if (!user) return;
-    setIsLoading('deactivate');
-    updateUserStatus(user.uid, 'deactivated');
-    setUser(getUserById(userId));
-    toast({
-      title: "Creator Deactivated",
-      description: `${user?.displayName} has been deactivated. They will need to request reactivation.`,
-    });
-    setIsLoading(null);
-  }
+  const handleAction = async (action: 'suspend' | 'lift' | 'deactivate') => {
+      if (!user) return;
+      setIsLoading(action);
 
-  const handleSuspend = async () => {
-    if (!user) return;
-    setIsLoading('suspend');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    updateUserStatus(user.uid, 'suspended');
-    setUser(getUserById(userId));
-    toast({ title: "Action Successful", description: 'Creator has been suspended for 24 hours (simulated).' });
-    setIsLoading(null);
-  }
+      let result;
+      let newStatus: User['status'] = user.status;
 
-  const handleLiftSuspension = async () => {
-    if (!user) return;
-    setIsLoading('lift');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    updateUserStatus(user.uid, 'active');
-    setUser(getUserById(userId));
-    toast({ title: "Action Successful", description: 'Creator suspension has been lifted.' });
-    setIsLoading(null);
-  }
+      switch(action) {
+          case 'suspend':
+              result = await suspendCreator(user.uid);
+              newStatus = 'suspended';
+              break;
+          case 'lift':
+              result = await liftSuspension(user.uid);
+              newStatus = 'active';
+              break;
+          case 'deactivate':
+              result = await deactivateCreator(user.uid);
+              newStatus = 'deactivated';
+              break;
+      }
+      
+      if (result.success) {
+          toast({ title: "Action Successful", description: result.message });
+          // Optimistically update the UI
+          setUser(prev => prev ? { ...prev, status: newStatus } : undefined);
+      } else {
+          toast({ variant: 'destructive', title: "Action Failed", description: result.message });
+      }
+
+      setIsLoading(null);
+  };
 
 
   if (!user) {
@@ -159,12 +155,12 @@ export default function DetailsClientPage({ userId }: { userId: string }) {
               <p className="text-sm text-muted-foreground">Temporarily disable account for 24 hours.</p>
             </div>
             {user.status === 'suspended' ? (
-                <Button variant="outline" onClick={handleLiftSuspension} disabled={isLoading === 'lift'}>
+                <Button variant="outline" onClick={() => handleAction('lift')} disabled={isLoading === 'lift'}>
                     {isLoading === 'lift' ? <Loader2 className="mr-2 animate-spin" /> : <ShieldCheck className="mr-2" />}
                     Lift Suspension
                 </Button>
             ) : (
-                <Button variant="outline" onClick={handleSuspend} disabled={isLoading === 'suspend' || user.status === 'deactivated'}>
+                <Button variant="outline" onClick={() => handleAction('suspend')} disabled={isLoading === 'suspend' || user.status === 'deactivated'}>
                     {isLoading === 'suspend' ? <Loader2 className="mr-2 animate-spin" /> : <ShieldBan className="mr-2" />}
                     Suspend
                 </Button>
@@ -195,7 +191,7 @@ export default function DetailsClientPage({ userId }: { userId: string }) {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeactivate}>
+                  <AlertDialogAction onClick={() => handleAction('deactivate')}>
                     Yes, Deactivate Creator
                   </AlertDialogAction>
                 </AlertDialogFooter>

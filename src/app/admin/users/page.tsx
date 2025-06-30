@@ -8,20 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Eye, Circle } from "lucide-react";
 import Link from "next/link";
-import { getAllUsers, type User } from '@/lib/users-store';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getAllUsers } from './actions';
+import type { User } from '@/lib/firebase/types';
 
 export default function UserManagementPage() {
   const [users, setUsers] = React.useState<User[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-      setUsers(getAllUsers());
+    async function fetchUsers() {
+      setIsLoading(true);
+      const fetchedUsers = await getAllUsers();
+      setUsers(fetchedUsers);
       setIsLoading(false);
-    }, 500);
+    }
+    fetchUsers();
   }, []);
   
   const getStatusInfo = (status: User['status']) => {
