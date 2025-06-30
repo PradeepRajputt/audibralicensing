@@ -1,5 +1,5 @@
 
-import * as functions from "firebase-functions/v1";
+import * as functions from "firebase-functions";
 import next from "next";
 import * as path from "path";
 import { config } from 'dotenv';
