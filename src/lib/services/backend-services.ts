@@ -53,12 +53,12 @@ export async function triggerFastApiForNewReport(report: ManualReport) {
     }
   try {
     await axios.post(`${process.env.FASTAPI_BACKEND_URL}/new-report`, {
-      reportId: report.id,
+      reportId: report.reportId,
       creatorId: report.creatorId,
       suspectURL: report.suspectURL,
       reason: report.reason,
     });
-    console.log(`Triggered FastAPI for new manual report: ${report.id}`);
+    console.log(`Triggered FastAPI for new manual report: ${report.reportId}`);
   } catch (error) {
     console.error('Error triggering FastAPI for new report:', error);
   }

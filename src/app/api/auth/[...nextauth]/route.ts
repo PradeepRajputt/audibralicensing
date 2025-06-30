@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
             console.error("Login failed:", error);
             if (error instanceof Error && error.message.includes("Firestore is not initialized")) {
-                throw new Error('Login failed. Please ensure server credentials are set in the .env file.');
+                throw new Error('Server not configured for login. Please check credentials.');
             }
             // Re-throw other errors (like wrong password or no user found)
             throw error;

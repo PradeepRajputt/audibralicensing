@@ -2,8 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, Timestamp, addDoc } from 'firebase-admin/firestore';
-import { adminDb } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { triggerFastApiForNewContent } from '@/lib/services/backend-services';
 import type { ProtectedContent } from '@/lib/firebase/types';
 import { revalidatePath } from 'next/cache';
@@ -20,6 +19,7 @@ const formSchema = z.object({
 });
 
 export async function addProtectedContentAction(values: z.infer<typeof formSchema>) {
+  const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     const message = "Firebase Admin is not configured. Please check server credentials.";
     console.error(message);
@@ -27,14 +27,14 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
   }
 
   try {
-    const newContentData: Omit<ProtectedContent, 'contentId'> = {
+    const newContentData: Omit<ProtectedContent, 'id'> = {
       creatorId: MOCK_CREATOR_ID,
       title: values.title,
       contentType: values.contentType,
       platform: values.platform,
       videoURL: values.videoURL,
       tags: values.tags ? values.tags.split(',').map(tag => tag.trim()) : [],
-      uploadDate: Timestamp.now().toDate().toISOString(),
+      uploadDate: new Date().toISOString(),
     };
 
     const docRef = await adminDb.collection('protectedContent').add(newContentData);
