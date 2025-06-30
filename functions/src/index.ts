@@ -1,5 +1,5 @@
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import next from "next";
 import * as path from "path";
 
@@ -9,7 +9,7 @@ const dev = process.env.NODE_ENV !== "production";
 const app = next({
   dev,
   conf: {
-    distDir: path.join(".next"),
+    distDir: path.join(__dirname, "..", "..", ".next"),
   },
 });
 
