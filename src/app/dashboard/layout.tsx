@@ -7,6 +7,8 @@ import { CreatorSidebar } from '@/components/layout/creator-sidebar';
 import { UserProvider, useUser } from '@/context/user-context';
 import { SuspensionNotice } from '@/components/layout/suspension-notice';
 import { Loader2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 function DashboardHeader() {
   return (
@@ -18,9 +20,10 @@ function DashboardHeader() {
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { status: authStatus } = useSession({ required: true, onUnauthenticated: () => null });
   const { status, isLoading } = useUser();
 
-  if (isLoading) {
+  if (authStatus === 'loading' || isLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -28,13 +31,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (status === 'suspended') {
-    return <SuspensionNotice />;
-  }
-
-  if (status === 'deactivated') {
-    // In a real app, a deactivated user might be forced to log out or see a different page.
-    // For now, we'll show a message similar to suspension.
+  if (status === 'suspended' || status === 'deactivated') {
     return <SuspensionNotice />;
   }
   

@@ -41,28 +41,6 @@ function DashboardSkeleton() {
     );
 }
 
-function ConfigurationErrorPrompt() {
-    return (
-        <Card className="text-center w-full max-w-lg mx-auto">
-            <CardHeader>
-                <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
-                    <Youtube className="w-12 h-12 text-destructive" />
-                </div>
-                <CardTitle className="mt-4">Configuration Error</CardTitle>
-                <CardDescription>
-                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild variant="outline">
-                    <Link href="/dashboard/settings">Go to Settings</Link>
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
-
 export default function OverviewPage() {
   const { isLoading, creatorName } = useUser();
   const [currentTime, setCurrentTime] = useState<string | null>(null);
@@ -88,10 +66,6 @@ export default function OverviewPage() {
     return <DashboardSkeleton />;
   }
   
-  if (!creatorName) {
-    return <ConfigurationErrorPrompt />;
-  }
-
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">

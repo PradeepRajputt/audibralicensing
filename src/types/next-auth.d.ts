@@ -4,20 +4,19 @@ import type { JWT } from "next-auth/jwt"
 
 declare module 'next-auth' {
   interface Session {
-    accessToken?: string;
-    error?: "RefreshAccessTokenError";
     user: {
+      role?: string;
       youtubeChannelId?: string;
     } & DefaultSession['user'];
+  }
+
+  interface User {
+      role?: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    accessToken?: string;
-    accessTokenExpires?: number;
-    refreshToken?: string;
-    error?: "RefreshAccessTokenError";
-    youtubeChannelId?: string;
+    role?: string;
   }
 }

@@ -1,139 +1,66 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
-import type { JWT } from 'next-auth/jwt';
-import GoogleProvider from 'next-auth/providers/google';
-import { google } from 'googleapis';
+import CredentialsProvider from "next-auth/providers/credentials";
 
 // --- STARTUP VALIDATION ---
-// This is a critical check. The NextAuth API route will not work without these
-// environment variables. This block ensures the server fails with a clear
-// error message if they are not set, which prevents the cryptic client-side
-// "CLIENT_FETCH_ERROR" when the API route crashes.
-if (!process.env.GOOGLE_CLIENT_ID) {
-  throw new Error('Missing GOOGLE_CLIENT_ID in .env file');
-}
-if (!process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error('Missing GOOGLE_CLIENT_SECRET in .env file');
-}
+// This ensures the server fails with a clear error message if critical 
+// environment variables are not set.
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('Missing NEXTAUTH_SECRET in .env file');
 }
 if (!process.env.NEXTAUTH_URL) {
-  // This is crucial for deployment, so NextAuth knows its public URL
   throw new Error('Missing NEXTAUTH_URL in .env file');
 }
 // --- END STARTUP VALIDATION ---
 
-
-// This oAuth2Client will be used to refresh the access token.
-const oAuth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET
-);
-
-/**
- * Takes a token, and returns a new token with updated
- * `accessToken` and `accessTokenExpires`. If an error occurs,
- * returns the original token and an error property
- */
-async function refreshAccessToken(token: JWT): Promise<JWT> {
-  if (!token.refreshToken) {
-    console.error('No refresh token available.');
-    return { ...token, error: 'RefreshAccessTokenError' };
-  }
-
-  try {
-    oAuth2Client.setCredentials({
-      refresh_token: token.refreshToken,
-    });
-
-    const { credentials } = await oAuth2Client.refreshAccessToken();
-
-    if (!credentials || !credentials.access_token) {
-        throw new Error("Failed to refresh access token, credentials missing.");
-    }
-    
-    return {
-      ...token,
-      accessToken: credentials.access_token,
-      accessTokenExpires: credentials.expiry_date ? credentials.expiry_date : Date.now() + 3600 * 1000,
-      refreshToken: credentials.refresh_token ?? token.refreshToken, // Fall back to old refresh token
-      error: undefined,
-    };
-  } catch (error) {
-    console.error('Error refreshing access token:', error);
-    return {
-      ...token,
-      error: 'RefreshAccessTokenError',
-    };
-  }
-}
-
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      authorization: {
-        params: {
-          prompt: 'consent',
-          access_type: 'offline',
-          response_type: 'code',
-          scope:
-            'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/youtube.readonly',
-        },
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email", placeholder: "test@example.com" },
+        password: { label: "Password", type: "password" }
       },
-    }),
+      async authorize(credentials, req) {
+        // This is a mock authorization. 
+        // In a real app, you would look up the user in your database.
+        if (
+            (credentials?.email === "creator@example.com" && credentials.password === "password") ||
+            (credentials?.email === "admin@creatorshield.com" && credentials.password === "password")
+        ) {
+          const is_admin = credentials.email.startsWith('admin');
+          return { 
+            id: is_admin ? "user_admin_xyz" : "user_creator_123", 
+            name: is_admin ? "Admin User" : "Sample Creator", 
+            email: credentials.email,
+            role: is_admin ? "admin" : "creator",
+          }
+        }
+        // Return null if user data could not be retrieved
+        return null
+      }
+    })
   ],
+  pages: {
+    signIn: '/login',
+  },
+  session: {
+    strategy: "jwt",
+  },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async jwt({ token, account }) {
-      // Initial sign in
-      if (account) {
-        return {
-            ...token,
-            accessToken: account.access_token,
-            accessTokenExpires: account.expires_at ? account.expires_at * 1000 : 0,
-            refreshToken: account.refresh_token,
-        };
-      }
-
-      // Return previous token if the access token has not expired yet
-      if (token.accessTokenExpires && Date.now() < token.accessTokenExpires) {
-        return token;
-      }
-
-      // Access token has expired, try to update it
-      console.log('Access token expired, refreshing...');
-      return refreshAccessToken(token);
-    },
     async session({ session, token }) {
-      session.accessToken = token.accessToken;
-      session.error = token.error;
-
-      // Fetch YouTube channel ID here to keep JWT callback simple and stable
-      if (session.accessToken && !session.user.youtubeChannelId) {
-          try {
-            const auth = new google.auth.OAuth2();
-            auth.setCredentials({ access_token: session.accessToken });
-            const youtube = google.youtube({ version: 'v3', auth });
-
-            const response = await youtube.channels.list({
-              mine: true,
-              part: ['id'],
-            });
-            const channelId = response.data.items?.[0]?.id;
-            if (channelId) {
-              session.user.youtubeChannelId = channelId;
-            }
-          } catch (error) {
-              console.error("Could not fetch YouTube Channel ID for session.", error);
-              // Don't fail the session, just note the error.
-          }
+      if (token?.role) {
+        session.user.role = token.role;
       }
-
       return session;
     },
+    async jwt({ token, user }) {
+      if (user?.role) {
+        token.role = user.role;
+      }
+      return token;
+    }
   },
 };
 

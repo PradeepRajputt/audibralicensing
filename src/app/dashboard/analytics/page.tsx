@@ -5,10 +5,8 @@ import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart, Area, AreaChart } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Users, Eye, Video, Youtube } from 'lucide-react';
+import { Users, Eye, Video } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { useUser } from '@/context/user-context';
 
 
@@ -32,37 +30,11 @@ function AnalyticsSkeleton() {
     );
 }
 
-function ConfigurationErrorPrompt() {
-    return (
-        <Card className="text-center w-full max-w-lg mx-auto">
-            <CardHeader>
-                <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
-                    <Youtube className="w-12 h-12 text-destructive" />
-                </div>
-                <CardTitle className="mt-4">Configuration Error</CardTitle>
-                <CardDescription>
-                   Could not fetch analytics data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild variant="outline">
-                    <Link href="/dashboard/settings">Go to Settings</Link>
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
-
 export default function AnalyticsPage() {
   const { analytics: data, isLoading } = useUser();
 
-  if (isLoading) {
+  if (isLoading || !data) {
     return <AnalyticsSkeleton />;
-  }
-
-  if (!data) {
-    return <ConfigurationErrorPrompt />;
   }
   
   const chartConfig = {
