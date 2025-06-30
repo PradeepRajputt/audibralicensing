@@ -6,9 +6,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   if (!adminDb) {
-      console.error("Firestore is not initialized. Check Firebase Admin credentials.");
-      // Return null and let the auth logic handle the "user not found" case.
-      return null;
+      throw new Error("Firestore is not initialized. Check Firebase Admin credentials.");
   }
   const usersCollection = adminDb.collection('users');
   const snapshot = await usersCollection.where('email', '==', email).limit(1).get();
@@ -30,8 +28,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function createUser(userData: Omit<User, 'uid'>): Promise<string> {
    if (!adminDb) {
-       console.error("Firestore is not initialized. Cannot create user.");
-       throw new Error("Server is not configured for user creation.");
+       throw new Error("Firestore is not initialized. Cannot create user.");
    }
    const usersCollection = adminDb.collection('users');
    const { joinDate, ...rest } = userData;

@@ -14,6 +14,11 @@ const registerFormSchema = z.object({
 });
 
 export async function registerUser(values: z.infer<typeof registerFormSchema>) {
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+        console.error("Firebase Admin credentials are not set. Cannot register user.");
+        return { success: false, message: 'Server is not configured for registration. Please contact support.' };
+    }
+    
     try {
         const existingUser = await getUserByEmail(values.email);
 

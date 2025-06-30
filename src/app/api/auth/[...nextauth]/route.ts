@@ -9,15 +9,6 @@ import { verifyPassword } from '@/lib/auth';
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error("Missing NEXTAUTH_SECRET environment variable");
 }
-
-// In a real production environment, you would want to ensure NEXTAUTH_URL is set.
-// if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_URL) {
-//   throw new Error("Missing NEXTAUTH_URL environment variable for production");
-// }
-
-if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-    console.warn("Firebase Admin credentials are not fully set. Authentication will not work. Please check your .env file.");
-}
 // --- END STARTUP VALIDATION ---
 
 
@@ -33,17 +24,13 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<any> {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Please enter your email and password.");
-        }
-        
-        // This function needs to handle a potential server cold start
-        // so we check for the required env vars again
         if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
             console.error("Firebase Admin credentials missing. Cannot authorize user.");
-            // Return null to indicate an auth failure that NextAuth can handle gracefully
-            // instead of throwing an error which causes a 500.
-            return null;
+            throw new Error("Server is not configured for login. Please contact support.");
+        }
+        
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Please enter your email and password.");
         }
         
         const user = await getUserByEmail(credentials.email);
