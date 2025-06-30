@@ -1,8 +1,9 @@
+
 {
   "name": "shieldview-functions",
   "main": "lib/index.js",
   "engines": {
-    "node": "20"
+    "node": "16"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.13.0",
