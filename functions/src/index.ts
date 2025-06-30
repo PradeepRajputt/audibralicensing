@@ -2,11 +2,6 @@
 import * as functions from "firebase-functions";
 import next from "next";
 import * as path from "path";
-import { config } from 'dotenv';
-
-// Load environment variables from .env file in the project root
-// The path is relative to the compiled 'lib' folder in the functions directory
-config({ path: path.join(__dirname, "..", "..", ".env") });
 
 const dev = process.env.NODE_ENV !== "production";
 
@@ -21,8 +16,6 @@ const app = next({
 const handle = app.getRequestHandler();
 
 export const nextServer = functions.https.onRequest((request, response) => {
-  // log the page.js file path
-  // This is a temporary log for debugging purposes.
-  console.log("File: " + request.originalUrl);
+  console.log("File: " + request.originalUrl); // to debug
   return app.prepare().then(() => handle(request, response));
 });
