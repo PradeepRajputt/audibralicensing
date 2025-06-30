@@ -8,7 +8,9 @@ const dev = process.env.NODE_ENV !== "production";
 // The Next.js app is located at the root, so we point the project root there.
 const app = next({
   dev,
-  dir: path.join(__dirname, "..", ".."),
+  conf: {
+    distDir: path.join(".next"),
+  },
 });
 
 const handle = app.getRequestHandler();
