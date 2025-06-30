@@ -21,3 +21,8 @@ const app = next({
 const handle = app.getRequestHandler();
 
 export const nextServer = functions.https.onRequest((request, response) => {
+  // log the page.js file path
+  // This is a temporary log for debugging purposes.
+  console.log("File: " + request.originalUrl);
+  return app.prepare().then(() => handle(request, response));
+});
