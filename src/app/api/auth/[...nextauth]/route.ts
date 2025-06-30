@@ -5,8 +5,10 @@ import GoogleProvider from 'next-auth/providers/google';
 import { google } from 'googleapis';
 
 // --- STARTUP VALIDATION ---
-// This is the critical fix. We check for the required environment variables when the server starts.
-// If they are missing, we throw a clear error instead of letting the server crash later.
+// This is a critical check. The NextAuth API route will not work without these
+// environment variables. This block ensures the server fails with a clear
+// error message if they are not set, which prevents the cryptic client-side
+// "CLIENT_FETCH_ERROR" when the API route crashes.
 if (!process.env.GOOGLE_CLIENT_ID) {
   throw new Error('Missing GOOGLE_CLIENT_ID in .env file');
 }
