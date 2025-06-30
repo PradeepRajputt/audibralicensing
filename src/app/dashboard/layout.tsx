@@ -4,9 +4,12 @@
 import * as React from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
-import { UserProvider, useUser } from '@/context/user-context';
-import { SuspensionNotice } from '@/components/layout/suspension-notice';
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { SuspensionNotice } from '@/components/layout/suspension-notice';
+import { UserProvider } from '@/context/user-context';
+
 
 function DashboardHeader() {
   return (
@@ -18,9 +21,14 @@ function DashboardHeader() {
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { status, isLoading } = useUser();
-  
-  if (isLoading) {
+  const { data: session, status } = useSession({
+      required: true,
+      onUnauthenticated() {
+        redirect('/login?callbackUrl=/dashboard');
+      },
+  });
+
+  if (status === 'loading') {
     return (
         <div className="flex h-screen w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -28,10 +36,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // These states are now managed client-side in the user-context
-  if (status === 'suspended' || status === 'deactivated') {
-    return <SuspensionNotice />;
-  }
+  // This state is now managed client-side in the user-context
+  // if (status === 'suspended' || status === 'deactivated') {
+  //   return <SuspensionNotice />;
+  // }
   
   return (
       <SidebarProvider>

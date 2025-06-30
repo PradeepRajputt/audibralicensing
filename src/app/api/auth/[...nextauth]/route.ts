@@ -3,7 +3,6 @@ import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getUserByEmail } from '@/lib/firebase/firestore';
 import { verifyPassword } from '@/lib/auth';
-import { User } from '@/lib/firebase/types';
 
 
 // --- STARTUP VALIDATION ---
@@ -11,8 +10,13 @@ if (!process.env.NEXTAUTH_SECRET) {
   throw new Error("Missing NEXTAUTH_SECRET environment variable");
 }
 
+// In a real production environment, you would want to ensure NEXTAUTH_URL is set.
+// if (process.env.NODE_ENV === "production" && !process.env.NEXTAUTH_URL) {
+//   throw new Error("Missing NEXTAUTH_URL environment variable for production");
+// }
+
 if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-    console.warn("Firebase Admin credentials are not set. Authentication will not work.");
+    console.warn("Firebase Admin credentials are not fully set. Authentication will not work. Please check your .env file.");
 }
 // --- END STARTUP VALIDATION ---
 
@@ -30,29 +34,29 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<any> {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error("Please enter your email and password.");
         }
         
         // This function needs to handle a potential server cold start
         // so we check for the required env vars again
         if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
             console.error("Firebase Admin credentials missing. Cannot authorize user.");
-            throw new Error("Server is not configured for authentication.");
+            throw new Error("Authentication is not configured on the server.");
         }
         
         const user = await getUserByEmail(credentials.email);
         
         if (!user || !user.passwordHash) {
-          return null;
+          throw new Error("No user found with this email or user has no password set.");
         }
 
         const isValid = await verifyPassword(credentials.password, user.passwordHash);
 
         if (!isValid) {
-          return null;
+          throw new Error("Incorrect password.");
         }
 
-        // Return a serializable user object
+        // Return a serializable user object for the session token
         return {
           id: user.uid,
           email: user.email,
@@ -80,6 +84,7 @@ export const authOptions: NextAuthOptions = {
   },
    pages: {
     signIn: '/login',
+    error: '/login', // Redirect to login page on error
   },
 };
 
