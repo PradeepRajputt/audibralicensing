@@ -1,8 +1,11 @@
 
 import * as admin from 'firebase-admin';
+import { config } from 'dotenv';
 
-// This is a common pattern to avoid re-initializing the Firebase Admin SDK
-// on every hot reload in development.
+// Manually load environment variables from .env file at the module's start.
+// This ensures they are available whenever this module is imported.
+config();
+
 
 interface FirebaseAdmin {
   adminDb: admin.firestore.Firestore;
@@ -16,25 +19,30 @@ declare global {
 }
 
 function initializeAdmin(): FirebaseAdmin {
+  // If the instance already exists, return it to avoid re-initialization.
   if (global.__firebaseAdmin) {
     return global.__firebaseAdmin;
   }
-  
+
+  // Sanitize the private key, which often comes with escaped newlines from .env files.
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
+  // Check for the presence of all required environment variables.
   if (!process.env.FIREBASE_PROJECT_ID) {
-    throw new Error('Server Configuration Error: FIREBASE_PROJECT_ID is not set in your environment variables.');
+    throw new Error('Server Configuration Error: FIREBASE_PROJECT_ID is missing from your .env file.');
   }
   if (!process.env.FIREBASE_CLIENT_EMAIL) {
-    throw new Error('Server Configuration Error: FIREBASE_CLIENT_EMAIL is not set in your environment variables.');
+    throw new Error('Server Configuration Error: FIREBASE_CLIENT_EMAIL is missing from your .env file.');
   }
   if (!privateKey) {
-    throw new Error('Server Configuration Error: FIREBASE_PRIVATE_KEY is not set in your environment variables.');
+    throw new Error('Server Configuration Error: FIREBASE_PRIVATE_KEY is missing from your .env file.');
   }
   
   try {
-    const app = admin.apps.length > 0 && admin.apps[0]
-      ? admin.apps[0]
+    // Initialize the Firebase Admin App.
+    // This checks if an app is already initialized to prevent errors in hot-reload environments.
+    const app = admin.apps.length > 0
+      ? admin.apps[0]!
       : admin.initializeApp({
           credential: admin.credential.cert({
             projectId: process.env.FIREBASE_PROJECT_ID,
@@ -48,25 +56,22 @@ function initializeAdmin(): FirebaseAdmin {
       adminAuth: admin.auth(app),
     };
     
-    // Cache the initialized services in the global scope
+    // Cache the initialized services in the global scope for efficiency.
     global.__firebaseAdmin = adminServices;
     
+    console.log("Firebase Admin SDK initialized successfully.");
     return adminServices;
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization error:', error);
-    // Provide a more user-friendly error
-    throw new Error('Failed to initialize Firebase services on the server. Please check server logs for details.');
+    console.error('Firebase Admin SDK initialization error:', error.message);
+    // Throw a more user-friendly error if initialization fails.
+    throw new Error('Failed to initialize Firebase services. Please check server logs for credential errors.');
   }
 }
 
 /**
  * A singleton getter for Firebase Admin services.
- * It will initialize the app on the first call.
+ * It will initialize the app on the first call and reuse the instance on subsequent calls.
  */
 export const getFirebaseAdmin = (): FirebaseAdmin => {
-  // This pattern prevents re-initialization on hot-reloads in development.
-  if (global.__firebaseAdmin) {
-    return global.__firebaseAdmin;
-  }
   return initializeAdmin();
 };
