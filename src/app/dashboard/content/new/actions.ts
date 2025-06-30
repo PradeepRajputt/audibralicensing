@@ -3,7 +3,6 @@
 
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
-import { triggerFastApiForNewContent } from '@/lib/services/backend-services';
 import type { ProtectedContent } from '@/lib/firebase/types';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -40,11 +39,8 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
     const docRef = await adminDb.collection('protectedContent').add(newContentData);
     console.log(`Protected content saved with ID: ${docRef.id}`);
 
-    const fullContent: ProtectedContent = {
-      ...newContentData,
-      id: docRef.id,
-    };
-    await triggerFastApiForNewContent(fullContent);
+    // The call to the external service has been removed to simplify the app.
+    // await triggerFastApiForNewContent(fullContent);
     
   } catch (error) {
     console.error('Error adding protected content:', error);

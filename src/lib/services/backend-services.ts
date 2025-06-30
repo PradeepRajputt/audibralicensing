@@ -6,62 +6,12 @@
  */
 import { Timestamp } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
-import type { ProtectedContent, ManualReport, User, Violation, UserAnalytics } from '@/lib/firebase/types';
-import axios from 'axios';
+import type { User, Violation, UserAnalytics } from '@/lib/firebase/types';
 import sgMail from '@sendgrid/mail';
 
 // Initialize SendGrid
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
-
-/**
- * Simulates a trigger for when new protected content is added.
- * It calls an external FastAPI backend to start an analysis process.
- * 
- * In a real app, you would call this function after successfully uploading
- * and saving new content information to Firestore.
- */
-export async function triggerFastApiForNewContent(content: ProtectedContent) {
-  if (!process.env.FASTAPI_BACKEND_URL) {
-    console.error('FASTAPI_BACKEND_URL is not set.');
-    return;
-  }
-  try {
-    await axios.post(`${process.env.FASTAPI_BACKEND_URL}/new-content`, {
-      contentId: content.id,
-      creatorId: content.creatorId,
-      videoURL: content.videoURL,
-      title: content.title,
-    });
-    console.log(`Triggered FastAPI for new content: ${content.id}`);
-  } catch (error) {
-    console.error('Error triggering FastAPI for new content:', error);
-  }
-}
-
-/**
- * Simulates a trigger for when a new manual report is submitted.
- * It calls an external FastAPI backend to process the report.
- * 
- * In a real app, this would be called after a user submits a manual report form.
- */
-export async function triggerFastApiForNewReport(report: ManualReport) {
-    if (!process.env.FASTAPI_BACKEND_URL) {
-        console.error('FASTAPI_BACKEND_URL is not set.');
-        return;
-    }
-  try {
-    await axios.post(`${process.env.FASTAPI_BACKEND_URL}/new-report`, {
-      reportId: report.reportId,
-      creatorId: report.creatorId,
-      suspectURL: report.suspectURL,
-      reason: report.reason,
-    });
-    console.log(`Triggered FastAPI for new manual report: ${report.reportId}`);
-  } catch (error) {
-    console.error('Error triggering FastAPI for new report:', error);
-  }
 }
 
 /**
