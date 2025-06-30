@@ -10,7 +10,7 @@ import { Eye, Circle } from "lucide-react";
 import Link from "next/link";
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getAllUsers } from './actions';
+import { getAllUsers } from '@/lib/users-store';
 import type { User } from '@/lib/firebase/types';
 
 export default function UserManagementPage() {
@@ -25,6 +25,9 @@ export default function UserManagementPage() {
       setIsLoading(false);
     }
     fetchUsers();
+
+    window.addEventListener('storage', fetchUsers);
+    return () => window.removeEventListener('storage', fetchUsers);
   }, []);
   
   const getStatusInfo = (status: User['status']) => {

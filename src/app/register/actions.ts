@@ -2,9 +2,8 @@
 'use server';
 
 import { z } from 'zod';
-import { createUser } from '@/lib/users';
-// We will handle redirect on the client side to show a toast message
-// import { redirect } from 'next/navigation';
+import { createUser } from '@/lib/users-store';
+import { revalidatePath } from 'next/cache';
 
 const registerFormSchema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters."),
@@ -16,7 +15,6 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
     try {
         const validatedFields = registerFormSchema.safeParse(values);
         if (!validatedFields.success) {
-            // Flatten the error messages to be more user-friendly
             const errorMessages = validatedFields.error.flatten().fieldErrors;
             const firstError = Object.values(errorMessages)[0]?.[0] || 'Invalid form data provided.';
             return { success: false, message: firstError };
@@ -36,7 +34,6 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
     } catch (error) {
         console.error("Registration Server Action Error:", error);
         if (error instanceof Error) {
-            // Return specific, safe error messages to the client
             if (error.message.includes('already exists')) {
                 return { success: false, message: 'An account with this email already exists.' };
             }
@@ -45,5 +42,6 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
         return { success: false, message: 'An unknown error occurred.' };
     }
 
+    revalidatePath('/admin/users'); // Ensure admin list is updated
     return { success: true };
 }

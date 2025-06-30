@@ -7,7 +7,7 @@ export interface User {
   uid: string;
   displayName: string | null;
   email: string | null;
-  passwordHash?: string;
+  passwordHash: string;
   role: 'creator' | 'admin';
   joinDate: string; // Using ISO string for client-side
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];

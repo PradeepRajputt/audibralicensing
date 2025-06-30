@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,18 +16,31 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    setIsClient(true);
     // Show a success toast if redirected from registration
     if (searchParams.get('registered') === 'true') {
       toast({
         title: "Registration Successful",
         description: "You can now sign in with your new account.",
       });
+      // Remove the query param from the URL
+      router.replace('/login', {scroll: false});
     }
-  }, [searchParams, toast]);
+
+    const error = searchParams.get('error');
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error === "CredentialsSignin" 
+            ? "Invalid credentials. Please check your email and password." 
+            : error,
+      });
+       router.replace('/login', {scroll: false});
+    }
+  }, [searchParams, toast, router]);
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -36,43 +49,30 @@ export default function LoginPage() {
     const email = e.currentTarget.email.value;
     const password = e.currentTarget.password.value;
     
-    try {
-      const callbackUrl = searchParams.get('callbackUrl');
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        callbackUrl: callbackUrl || undefined
-      });
+    const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-      if (result?.error) {
-        toast({
-          variant: "destructive",
-          title: "Login Failed",
-          description: result.error,
-        });
-      } else if (result?.url) {
-        window.location.href = result.url;
-      } else {
-        // Fallback redirect if URL is not provided
-        window.location.href = '/dashboard';
-      }
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password,
+      callbackUrl,
+    });
 
-    } catch (error) {
-      console.error(error);
-       toast({
+    if (result?.error) {
+      toast({
         variant: "destructive",
-        title: "An unexpected error occurred",
-        description: "Please try again.",
+        title: "Login Failed",
+        description: result.error,
       });
-    } finally {
-      setIsLoading(false);
+    } else if (result?.url) {
+      window.location.href = result.url;
+    } else {
+      window.location.href = callbackUrl;
     }
+    
+    setIsLoading(false);
   };
   
-  if (!isClient) {
-    return null; // Render nothing on the server to prevent hydration mismatch
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

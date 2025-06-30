@@ -2,11 +2,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { updateUserStatus } from '@/lib/users';
+import { updateUserStatus as dbUpdateUserStatus } from '@/lib/users-store';
+
+// Note: These actions now call the client-side store, which is suitable for this prototype.
+// In a real application, these would interact directly with a database via server-only functions.
 
 export async function suspendCreator(creatorId: string) {
   try {
-    await updateUserStatus(creatorId, 'suspended');
+    dbUpdateUserStatus(creatorId, 'suspended');
     revalidatePath(`/admin/users/${creatorId}`);
     revalidatePath('/admin/users');
     return { success: true, message: 'Creator has been suspended for 24 hours.' };
@@ -17,7 +20,7 @@ export async function suspendCreator(creatorId: string) {
 
 export async function liftSuspension(creatorId: string) {
   try {
-    await updateUserStatus(creatorId, 'active');
+    dbUpdateUserStatus(creatorId, 'active');
     revalidatePath(`/admin/users/${creatorId}`);
     revalidatePath('/admin/users');
     return { success: true, message: 'Creator suspension has been lifted.' };
@@ -28,7 +31,7 @@ export async function liftSuspension(creatorId: string) {
 
 export async function deactivateCreator(creatorId: string) {
     try {
-        await updateUserStatus(creatorId, 'deactivated');
+        dbUpdateUserStatus(creatorId, 'deactivated');
         revalidatePath(`/admin/users/${creatorId}`);
         revalidatePath('/admin/users');
         return { success: true, message: 'Creator has been deactivated.' };

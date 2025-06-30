@@ -1,54 +1,56 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { sendReactivationDenialEmail, sendReactivationApprovalEmail } from '@/lib/services/backend-services';
+import { updateUserStatus } from '@/lib/users-store';
+// Email sending is commented out as it requires external service configuration.
+// import { sendReactivationDenialEmail, sendReactivationApprovalEmail } from '@/lib/services/backend-services';
 
 /**
- * Simulates approving a creator's reactivation request and sends a notification email.
- * In a real app, this would update the user's status in Firestore.
+ * Simulates approving a creator's reactivation request.
+ * In this prototype, it updates the status in the local store.
  */
 export async function approveReactivationRequest(creatorId: string, creatorEmail: string, creatorName: string) {
-  console.log(`Simulating approval for creator: ${creatorId}`);
+  console.log(`Approving reactivation for creator: ${creatorId}`);
 
-  const emailResult = await sendReactivationApprovalEmail({ to: creatorEmail, name: creatorName });
-
-  if (!emailResult.success) {
-    return { success: false, message: 'Failed to send approval email. Please try again.' };
-  }
-
-  // In a real app, you would update the user document in Firestore here.
-  // e.g., await updateDoc(doc(db, 'users', creatorId), { status: 'active' });
+  // const emailResult = await sendReactivationApprovalEmail({ to: creatorEmail, name: creatorName });
+  // if (!emailResult.success) {
+  //   return { success: false, message: 'Failed to send approval email. Please try again.' };
+  // }
+  
+  updateUserStatus(creatorId, 'active');
+  
   revalidatePath('/admin/reactivations');
   revalidatePath('/admin/users');
+  revalidatePath(`/admin/users/${creatorId}`);
 
-  let message = `Creator has been reactivated. An email has been sent to ${creatorName}.`;
-  if (emailResult.simulated) {
-    message = `Creator has been reactivated. Email sending was simulated as SendGrid is not configured.`;
-  }
+  let message = `Creator has been reactivated.`;
+  // if (emailResult.simulated) {
+  //   message = `Creator has been reactivated. Email sending was simulated as SendGrid is not configured.`;
+  // }
 
   return { success: true, message };
 }
 
 /**
- * Denies a creator's reactivation request and sends a notification email.
+ * Denies a creator's reactivation request.
  */
 export async function denyReactivationRequest(creatorId: string, creatorEmail: string, creatorName: string) {
-  console.log(`Simulating denial for creator: ${creatorId}`);
+  console.log(`Denying reactivation for creator: ${creatorId}`);
   
-  const emailResult = await sendReactivationDenialEmail({ to: creatorEmail, name: creatorName });
-
-  if (!emailResult.success) {
-    return { success: false, message: 'Failed to send denial email. Please try again.' };
-  }
-
-  // In a real app, you might update the user's status to 'permanently_denied'
-  // or delete the reactivation request document.
+  // const emailResult = await sendReactivationDenialEmail({ to: creatorEmail, name: creatorName });
+  // if (!emailResult.success) {
+  //   return { success: false, message: 'Failed to send denial email. Please try again.' };
+  // }
+  
+  // No status change on denial, just removing the request.
+  
   revalidatePath('/admin/reactivations');
   
-  let message = `Denial email sent to ${creatorName}.`;
-  if (emailResult.simulated) {
-    message = `Denial email sending was simulated for ${creatorName} as SendGrid is not configured.`;
-  }
+  let message = `Denial for ${creatorName} has been processed.`;
+  // if (emailResult.simulated) {
+  //   message = `Denial email sending was simulated for ${creatorName} as SendGrid is not configured.`;
+  // }
 
   return { success: true, message };
 }

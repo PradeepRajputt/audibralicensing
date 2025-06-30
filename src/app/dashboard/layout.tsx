@@ -7,7 +7,6 @@ import { CreatorSidebar } from '@/components/layout/creator-sidebar';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { SuspensionNotice } from '@/components/layout/suspension-notice';
 import { UserProvider } from '@/context/user-context';
 
 
@@ -21,7 +20,7 @@ function DashboardHeader() {
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession({
+  const { status } = useSession({
       required: true,
       onUnauthenticated() {
         redirect('/login?callbackUrl=/dashboard');
@@ -35,11 +34,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </div>
     );
   }
-  
-  // This state is now managed client-side in the user-context
-  // if (status === 'suspended' || status === 'deactivated') {
-  //   return <SuspensionNotice />;
-  // }
   
   return (
       <SidebarProvider>

@@ -1,11 +1,11 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserByEmail } from '@/lib/users';
+import { getUserByEmail } from '@/lib/users-store';
 import { verifyPassword } from '@/lib/auth';
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'your_default_secret_for_development',
   session: {
     strategy: "jwt",
   },
@@ -21,47 +21,36 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
         
-        try {
-            const user = await getUserByEmail(credentials.email);
+        const user = await getUserByEmail(credentials.email);
             
-            // Check if user exists first
-            if (!user || !user.passwordHash) {
-              console.log('No user found with email:', credentials.email);
-              return null;
-            }
-
-            // Then check if the account is active
-            if (user.status !== 'active') {
-              console.log(`Login attempt for disabled account: ${user.email} (${user.status})`);
-              // Throwing a specific error that NextAuth can catch and display
-              throw new Error(`Your account is currently ${user.status}. Please contact support.`);
-            }
-
-            // Finally, verify password
-            const isValid = await verifyPassword(credentials.password, user.passwordHash);
-
-            if (!isValid) {
-              console.log('Invalid password for user:', credentials.email);
-              return null;
-            }
-
-            // Return a serializable user object for the session token on success
-            return {
-              id: user.uid,
-              email: user.email,
-              name: user.displayName,
-              role: user.role,
-              youtubeChannelId: user.youtubeChannelId,
-            };
-        } catch (error) {
-            console.error("Authorize Error:", error);
-            // Re-throw the error to be handled by NextAuth's error page
-            // This ensures specific messages (like 'account suspended') are shown.
-            if (error instanceof Error) {
-              throw new Error(error.message);
-            }
-            throw new Error('An unexpected error occurred during authentication.');
+        // 1. Check if user exists first
+        if (!user) {
+          console.log('No user found with email:', credentials.email);
+          throw new Error("No user found with this email.");
         }
+
+        // 2. Then check if the account is active
+        if (user.status !== 'active') {
+          console.log(`Login attempt for disabled account: ${user.email} (${user.status})`);
+          throw new Error(`Your account is currently ${user.status}. Please contact support or request reactivation.`);
+        }
+
+        // 3. Finally, verify password
+        const isValid = await verifyPassword(credentials.password, user.passwordHash);
+
+        if (!isValid) {
+          console.log('Invalid password for user:', credentials.email);
+          throw new Error("Invalid credentials. Please check your email and password.");
+        }
+
+        // 4. Return a serializable user object for the session token on success
+        return {
+          id: user.uid,
+          email: user.email,
+          name: user.displayName,
+          role: user.role,
+          youtubeChannelId: user.youtubeChannelId,
+        };
       },
     }),
   ],
