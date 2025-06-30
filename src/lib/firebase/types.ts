@@ -7,30 +7,37 @@ export interface User {
   uid: string;
   displayName: string | null;
   email: string | null;
+  passwordHash?: string;
   role: 'creator' | 'admin';
   joinDate: string; // Using ISO string for client-side
-  platformsConnected: ('youtube' | 'instagram' | 'tiktok')[];
-  youtubeId?: string;
+  platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
+  youtubeChannelId?: string;
   status: 'active' | 'suspended' | 'deactivated';
+  avatar: string;
 }
 
 /**
- * Represents a user's analytics data in the `analytics` subcollection.
- * Path: /users/{uid}/analytics/{docId}
+ * Represents a user's analytics data.
  */
 export interface UserAnalytics {
   subscribers: number;
   views: number;
-  mostViewedVideo: string; // video ID or URL
-  lastFetched: string; // Using ISO string for client-side
+  mostViewedVideo: {
+    title: string;
+    views: number | string;
+  };
+  dailyData: {
+    date: string;
+    views: number;
+    subscribers: number;
+  }[];
 }
 
 /**
- * Represents a piece of protected content in the `protectedContent` collection.
- * Path: /protectedContent/{contentId}
+ * Represents a piece of protected content.
  */
 export interface ProtectedContent {
-  contentId: string;
+  id: string; // Using simple ID for localStorage
   creatorId: User['uid'];
   contentType: 'video' | 'audio' | 'text' | 'image';
   videoURL?: string;
@@ -40,46 +47,41 @@ export interface ProtectedContent {
   uploadDate: string; // Using ISO string for client-side
 }
 
+
 /**
- * Represents a detected copyright violation in the `violations` collection.
- * Path: /violations/{matchId}
+ * Represents a detected copyright violation.
  */
 export interface Violation {
-  matchId: string;
+  id: string;
   creatorId: User['uid'];
   matchedURL: string;
   platform: 'youtube' | 'web' | 'instagram' | 'tiktok';
-  matchScore: number; // e.g., 0.95 for 95% match
+  matchScore: number; 
   detectedAt: string; // Using ISO string for client-side
   status: 'pending_review' | 'action_taken' | 'dismissed';
 }
 
+
 /**
- * Represents a manual report submitted by a creator in the `manualReports` collection.
- * Path: /manualReports/{reportId}
+ * Represents a manual report submitted by a creator.
  */
-export interface ManualReport {
-  reportId: string;
-  creatorId: User['uid'];
+export interface Report {
+  id: string;
+  creatorName: string; // denormalized for simplicity
   platform: string;
-  suspectURL: string;
+  suspectUrl: string;
   reason: string;
-  evidenceLink?: string;
-  formStatus: 'submitted' | 'in_review' | 'resolved' | 'rejected';
-  createdAt: string; // Using ISO string for client-side
+  status: 'in_review' | 'approved' | 'rejected';
+  submitted: string; // ISO date string
 }
 
 /**
- * Represents an action taken by an admin in the `adminActions` collection.
- * Path: /adminActions/{actionId}
+ * Represents a reactivation request from a creator.
  */
-export interface AdminAction {
-  actionId: string;
-  reportId: ManualReport['reportId'] | Violation['matchId'];
-  adminId: User['uid'];
-  status: 'warning_sent' | 'takedown_issued' | 'resolved' | 'escalated';
-  warningSent: boolean;
-  deadline?: string; // Using ISO string for client-side
-  resolutionDate: string; // Using ISO string for client-side
-  notes?: string;
-}
+export interface ReactivationRequest {
+  creatorId: string;
+  displayName: string;
+  email: string;
+  avatar: string;
+  requestDate: string; // ISO Date string
+};

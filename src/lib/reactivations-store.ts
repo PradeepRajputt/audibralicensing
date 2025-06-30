@@ -1,51 +1,53 @@
 
 'use client';
-import { db } from '@/lib/firebase/config';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import type { ReactivationRequest } from '@/lib/firebase/types';
 
-// Note: In a real application, "reactivation requests" might be a status
-// on the user object itself, or a separate collection as modeled here.
-// This mock assumes a separate collection.
+const REACTIVATIONS_KEY = 'creator_shield_reactivations';
 
-export type ReactivationRequest = {
-  creatorId: string;
-  displayName: string;
-  email: string;
-  avatar: string;
-  requestDate: string; // ISO Date string
-};
+const initialRequests: ReactivationRequest[] = [
+    {
+        creatorId: "user_creator_wlallah",
+        displayName: "Online Wlallah",
+        email: "guddumis003@gmail.com",
+        avatar: "https://placehold.co/128x128.png",
+        requestDate: new Date('2024-06-12').toISOString(),
+    },
+    {
+        creatorId: "user_creator_xyz",
+        displayName: "Deleted User",
+        email: "deleted@example.com",
+        avatar: "https://placehold.co/128x128.png",
+        requestDate: new Date('2024-05-28').toISOString(),
+    }
+];
 
-// This function now fetches from Firestore
-export async function getAllReactivationRequests(): Promise<ReactivationRequest[]> {
-  if (!db) {
-    console.warn("Firestore is not initialized. Returning empty array.");
-    return [];
+function getReactivationsFromStorage(): ReactivationRequest[] {
+  if (typeof window === 'undefined') return initialRequests;
+  
+  const stored = localStorage.getItem(REACTIVATIONS_KEY);
+  if (!stored) {
+    localStorage.setItem(REACTIVATIONS_KEY, JSON.stringify(initialRequests));
+    return initialRequests;
   }
-  const requestsRef = collection(db, "reactivationRequests");
-  const querySnapshot = await getDocs(requestsRef);
-  const requests: ReactivationRequest[] = [];
-  querySnapshot.forEach((doc) => {
-    const data = doc.data();
-    requests.push({
-      creatorId: doc.id, // Assuming doc ID is creatorId
-      displayName: data.displayName,
-      email: data.email,
-      avatar: data.avatar,
-      requestDate: data.requestDate.toDate().toISOString(),
-    });
-  });
-  return requests;
+  return JSON.parse(stored);
 }
 
-// This would be handled by a server action that updates the user's status
-// and then deletes the reactivation request document.
-export async function approveReactivationRequest(creatorId: string) {
-    if (!db) return;
-    await deleteDoc(doc(db, "reactivationRequests", creatorId));
-    // The server action would also set user status to 'active'
+function saveReactivationsToStorage(requests: ReactivationRequest[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(REACTIVATIONS_KEY, JSON.stringify(requests));
+  window.dispatchEvent(new Event('storage'));
 }
 
-export async function denyReactivationRequest(creatorId: string) {
-    if (!db) return;
-    await deleteDoc(doc(db, "reactivationRequests", creatorId));
+export function getAllReactivationRequests(): ReactivationRequest[] {
+    return getReactivationsFromStorage();
+}
+
+export function approveReactivationRequest(creatorId: string) {
+    const current = getReactivationsFromStorage();
+    saveReactivationsToStorage(current.filter(r => r.creatorId !== creatorId));
+}
+
+export function denyReactivationRequest(creatorId: string) {
+    const current = getReactivationsFromStorage();
+    saveReactivationsToStorage(current.filter(r => r.creatorId !== creatorId));
 }

@@ -1,39 +1,81 @@
 
 'use client';
-
-import { db } from '@/lib/firebase/config';
 import type { ProtectedContent } from '@/lib/firebase/types';
-import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 
-export type { ProtectedContent };
+const CONTENT_KEY = 'creator_shield_content';
 
-// This function now fetches from Firestore
-export async function getAllContent(creatorId: string): Promise<ProtectedContent[]> {
-    if (!db) {
-        console.warn("Firestore is not initialized. Returning empty array.");
-        return [];
+const initialContent: ProtectedContent[] = [
+    {
+        id: 'content_1',
+        creatorId: 'user_creator_123',
+        title: "My Most Epic Adventure Yet!",
+        contentType: "video",
+        platform: "youtube",
+        uploadDate: new Date("2024-05-15").toISOString(),
+        videoURL: "https://youtube.com/watch?v=dQw4w9WgXcQ",
+        tags: ["adventure", "travel"]
+    },
+    {
+        id: 'content_2',
+        creatorId: 'user_creator_123',
+        title: "How to Bake the Perfect Sourdough",
+        contentType: "video",
+        platform: "youtube",
+        uploadDate: new Date("2024-04-22").toISOString(),
+        videoURL: "https://youtube.com/watch?v=dQw4w9WgXcQ",
+        tags: ["baking", "cooking", "sourdough"]
+    },
+    {
+        id: 'content_3',
+        creatorId: 'user_creator_123',
+        title: "My Travel Blog - Summer in Italy",
+        contentType: "text",
+        platform: "web",
+        uploadDate: new Date("2024-03-10").toISOString(),
+        videoURL: "https://myblog.com/italy-2024",
+        tags: ["travel", "italy", "blog"]
+    },
+    {
+        id: 'content_4',
+        creatorId: 'user_creator_456',
+        title: "Acoustic Guitar Session",
+        contentType: "audio",
+        platform: "vimeo",
+        uploadDate: new Date("2024-02-01").toISOString(),
+        videoURL: "https://vimeo.com/123456",
+        tags: ["music", "acoustic", "guitar"]
     }
-    const contentRef = collection(db, "protectedContent");
-    const q = query(contentRef, where("creatorId", "==", creatorId));
-    
-    const querySnapshot = await getDocs(q);
-    const content: ProtectedContent[] = [];
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        content.push({
-            contentId: doc.id,
-            creatorId: data.creatorId,
-            title: data.title,
-            contentType: data.contentType,
-            platform: data.platform,
-            videoURL: data.videoURL,
-            tags: data.tags,
-            uploadDate: (data.uploadDate as Timestamp).toDate().toISOString(),
-        });
-    });
+];
 
+function getContentFromStorage(): ProtectedContent[] {
+  if (typeof window === 'undefined') return initialContent;
+  
+  const stored = localStorage.getItem(CONTENT_KEY);
+  if (!stored) {
+    localStorage.setItem(CONTENT_KEY, JSON.stringify(initialContent));
+    return initialContent;
+  }
+  return JSON.parse(stored);
+}
+
+function saveContentToStorage(content: ProtectedContent[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(CONTENT_KEY, JSON.stringify(content));
+  window.dispatchEvent(new Event('storage'));
+}
+
+export function getAllContent(): ProtectedContent[] {
+    const content = getContentFromStorage();
     return content.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
 }
 
-// addContent is now a server action in `src/app/dashboard/content/new/actions.ts`
-// This file is now primarily for fetching data on the client if needed, and for types.
+export function addContent(data: Omit<ProtectedContent, 'id' | 'creatorId' | 'uploadDate'>) {
+    const content = getContentFromStorage();
+    const newContent: ProtectedContent = {
+        ...data,
+        id: `content_${Date.now()}`,
+        creatorId: 'user_creator_123', // Mock current user
+        uploadDate: new Date().toISOString(),
+    };
+    saveContentToStorage([newContent, ...content]);
+}

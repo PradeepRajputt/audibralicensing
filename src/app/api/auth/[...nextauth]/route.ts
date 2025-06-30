@@ -2,61 +2,84 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getUserByEmail } from '@/lib/firebase/firestore';
+import { verifyPassword } from '@/lib/auth';
+import { User } from '@/lib/firebase/types';
+
 
 // --- STARTUP VALIDATION ---
 if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error('Missing NEXTAUTH_SECRET in .env file');
+  throw new Error("Missing NEXTAUTH_SECRET environment variable");
+}
+
+if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+    console.warn("Firebase Admin credentials are not set. Authentication will not work.");
 }
 // --- END STARTUP VALIDATION ---
 
+
 export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-            return null;
+      async authorize(credentials): Promise<any> {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
         }
         
-        // In a real app, you would verify the password hash.
-        // For this demo, we'll just check if the user exists.
+        // This function needs to handle a potential server cold start
+        // so we check for the required env vars again
+        if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+            console.error("Firebase Admin credentials missing. Cannot authorize user.");
+            throw new Error("Server is not configured for authentication.");
+        }
+        
         const user = await getUserByEmail(credentials.email);
         
-        if (user) {
-          // This is where you'd check `bcrypt.compare(credentials.password, user.passwordHash)`
-          // Since we don't store passwords, we'll just return the user object
-          return { id: user.uid, name: user.displayName, email: user.email, role: user.role, image: user.avatar };
+        if (!user || !user.passwordHash) {
+          return null;
         }
 
-        return null
-      }
-    })
+        const isValid = await verifyPassword(credentials.password, user.passwordHash);
+
+        if (!isValid) {
+          return null;
+        }
+
+        // Return a serializable user object
+        return {
+          id: user.uid,
+          email: user.email,
+          name: user.displayName,
+          role: user.role,
+        };
+      },
+    }),
   ],
-  pages: {
-    signIn: '/login',
-  },
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub as string;
-        session.user.role = token.role as string;
-      }
-      return session;
+    jwt({ token, user }) {
+        if (user) {
+            token.id = user.id;
+            token.role = user.role;
+        }
+        return token;
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role;
-      }
-      return token;
-    }
+    session({ session, token }) {
+        if (session.user) {
+            session.user.id = token.id as string;
+            session.user.role = token.role as string;
+        }
+        return session;
+    },
+  },
+   pages: {
+    signIn: '/login',
   },
 };
 

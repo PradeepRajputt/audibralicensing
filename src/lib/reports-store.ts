@@ -1,61 +1,71 @@
 
 'use client';
-import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
-import type { ManualReport } from '@/lib/firebase/types';
 
-// This file now acts as a client-side wrapper for Firestore operations.
-// The data is fetched from the server and this file just provides typed functions.
+import type { Report } from '@/lib/firebase/types';
 
-export type Report = {
-  id: string;
-  creatorName: string;
-  platform: string;
-  suspectUrl: string;
-  reason: string;
-  status: 'in_review' | 'approved' | 'rejected';
-  submitted: string; // ISO date string
-};
+const REPORTS_KEY = 'creator_shield_reports';
 
-export async function getAllReports(): Promise<Report[]> {
-  if (!db) {
-      console.warn("Firestore is not initialized. Returning empty array.");
-      return [];
+const initialReports: Report[] = [
+    {
+        id: 'report_initial_1',
+        creatorName: 'Sample Creator',
+        platform: 'youtube',
+        suspectUrl: 'https://youtube.com/watch?v=fake123',
+        reason: 'This is a direct reupload of my video.',
+        status: 'approved',
+        submitted: new Date(Date.now() - (1000 * 60 * 60 * 24 * 2)).toISOString(),
+    },
+    {
+        id: 'report_initial_2',
+        creatorName: 'Alice Vlogs',
+        platform: 'instagram',
+        suspectUrl: 'https://instagram.com/p/reel456',
+        reason: 'They used my background music without credit.',
+        status: 'rejected',
+        submitted: new Date(Date.now() - (1000 * 60 * 60 * 24 * 7)).toISOString(),
+    },
+];
+
+function getReportsFromStorage(): Report[] {
+  if (typeof window === 'undefined') return initialReports;
+  const stored = localStorage.getItem(REPORTS_KEY);
+  if (!stored) {
+    localStorage.setItem(REPORTS_KEY, JSON.stringify(initialReports));
+    return initialReports;
   }
-  const reportsRef = collection(db, "manualReports");
-  const q = query(reportsRef);
-  const querySnapshot = await getDocs(q);
-  const reports: Report[] = [];
-  querySnapshot.forEach((doc) => {
-    const data = doc.data() as Omit<ManualReport, 'reportId'> & { createdAt: Timestamp };
-    reports.push({
-      id: doc.id,
-      creatorName: data.creatorId, // In a real app, you'd fetch the creator name
-      platform: data.platform,
-      suspectUrl: data.suspectURL,
-      reason: data.reason,
-      status: data.formStatus,
-      submitted: data.createdAt.toDate().toISOString(),
-    });
-  });
-  return reports.sort((a, b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime());
+  return JSON.parse(stored);
+}
+
+function saveReportsToStorage(reports: Report[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+  window.dispatchEvent(new Event('storage'));
 }
 
 
-export async function getReportById(id: string): Promise<Report | undefined> {
-    const allReports = await getAllReports();
-    return allReports.find(report => report.id === id);
+export function getAllReports(): Report[] {
+    const reports = getReportsFromStorage();
+    return reports.sort((a, b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime());
 }
 
+export function getReportById(id: string): Report | undefined {
+    return getReportsFromStorage().find(report => report.id === id);
+}
 
-export async function updateReportStatus(reportId: string, status: 'approved' | 'rejected'): Promise<Report | undefined> {
-    if (!db) {
-        console.error("Firestore not configured, cannot update report.");
-        return;
-    }
-    const reportRef = doc(db, "manualReports", reportId);
-    await updateDoc(reportRef, {
-        formStatus: status
-    });
-    return getReportById(reportId);
+export function addReport(data: Omit<Report, 'id' | 'creatorName' | 'status' | 'submitted'>) {
+    const reports = getReportsFromStorage();
+    const newReport: Report = {
+        ...data,
+        id: `report_${Date.now()}`,
+        creatorName: 'Sample Creator', // In a real app, get this from session
+        status: 'in_review',
+        submitted: new Date().toISOString(),
+    };
+    saveReportsToStorage([newReport, ...reports]);
+}
+
+export function updateReportStatus(reportId: string, status: 'approved' | 'rejected') {
+    const reports = getReportsFromStorage();
+    const updatedReports = reports.map(r => r.id === reportId ? { ...r, status } : r);
+    saveReportsToStorage(updatedReports);
 }

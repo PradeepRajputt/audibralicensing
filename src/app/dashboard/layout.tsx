@@ -8,7 +8,6 @@ import { UserProvider, useUser } from '@/context/user-context';
 import { SuspensionNotice } from '@/components/layout/suspension-notice';
 import { Loader2 } from 'lucide-react';
 
-
 function DashboardHeader() {
   return (
      <header className="p-4 md:p-6 border-b flex items-center gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
@@ -29,6 +28,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
   }
   
+  // These states are now managed client-side in the user-context
   if (status === 'suspended' || status === 'deactivated') {
     return <SuspensionNotice />;
   }

@@ -10,26 +10,40 @@ import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { registerUser } from './actions';
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const formData = new FormData(e.currentTarget);
+    const values = Object.fromEntries(formData.entries());
     
-    toast({
-      title: "Registration Successful",
-      description: "You can now log in with your new account.",
-    });
+    const result = await registerUser(values as any);
+    
+    if (result?.success === false) {
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: result.message,
+      });
+    } else {
+        toast({
+            title: "Registration Successful",
+            description: "You will be redirected to the login page.",
+        });
+        // The action handles the redirect on success, but we can do it here too
+        // in case the redirect in the action doesn't work as expected in some scenarios.
+        router.push('/login');
+    }
+
 
     setIsLoading(false);
-    router.push('/login');
   };
 
   return (
@@ -45,6 +59,7 @@ export default function RegisterPage() {
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
+                name="name"
                 type="text"
                 placeholder="Your Name"
                 required
@@ -54,6 +69,7 @@ export default function RegisterPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="creator@example.com"
                 required
@@ -63,6 +79,7 @@ export default function RegisterPage() {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 required
               />
