@@ -1,19 +1,103 @@
 
 'use client';
-// This page is effectively removed from the app flow by making it a no-op.
-// All authentication is now handled client-side with mock data.
-// A real app would have a proper login flow here.
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LoginPage() {
-    const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
 
-    useEffect(() => {
-        // Since we have no login, redirect users to the dashboard.
-        router.replace('/dashboard');
-    }, [router]);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    const email = e.currentTarget.email.value;
+    const password = e.currentTarget.password.value;
+    
+    try {
+      const callbackUrl = searchParams.get('callbackUrl');
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+        callbackUrl: callbackUrl || undefined
+      });
 
-    return null; // Render nothing while redirecting
+      if (result?.error) {
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: result.error,
+        });
+      } else if (result?.url) {
+        window.location.href = result.url;
+      } else {
+        // Fallback redirect if URL is not provided
+        window.location.href = '/dashboard';
+      }
+
+    } catch (error) {
+      console.error(error);
+       toast({
+        variant: "destructive",
+        title: "An unexpected error occurred",
+        description: "Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle>Welcome Back</CardTitle>
+          <CardDescription>Sign in to your CreatorShield account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="creator@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Sign In
+            </Button>
+          </form>
+           <p className="text-center text-sm text-muted-foreground mt-4">
+            Don't have an account?{" "}
+            <Link href="/register" className="underline underline-offset-4 hover:text-primary">
+                Sign Up
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

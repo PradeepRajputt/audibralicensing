@@ -1,7 +1,7 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserById } from '@/lib/users-store';
+import { getUserByEmail } from '@/lib/firebase/firestore';
 
 // --- STARTUP VALIDATION ---
 if (!process.env.NEXTAUTH_SECRET) {
@@ -18,15 +18,20 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // This is a mock authorization for demo purposes.
-        // In a real app, you would look up the user in your database.
-        if (credentials?.email === "creator@example.com" && credentials.password === "password") {
-           return getUserById("user_creator_123") || null;
+        if (!credentials?.email || !credentials.password) {
+            return null;
         }
-        if (credentials?.email === "admin@creatorshield.com" && credentials.password === "password") {
-           return { id: "admin_user_001", name: "Admin User", email: "admin@creatorshield.com", role: "admin" } as any;
+        
+        // In a real app, you would verify the password hash.
+        // For this demo, we'll just check if the user exists.
+        const user = await getUserByEmail(credentials.email);
+        
+        if (user) {
+          // This is where you'd check `bcrypt.compare(credentials.password, user.passwordHash)`
+          // Since we don't store passwords, we'll just return the user object
+          return { id: user.uid, name: user.displayName, email: user.email, role: user.role, image: user.avatar };
         }
-        // Return null if user data could not be retrieved
+
         return null
       }
     })
@@ -40,16 +45,14 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async session({ session, token }) {
-      if (token?.role) {
+      if (token) {
+        session.user.id = token.sub as string;
         session.user.role = token.role as string;
-      }
-       if (token?.sub) {
-        session.user.id = token.sub;
       }
       return session;
     },
     async jwt({ token, user }) {
-      if (user?.role) {
+      if (user) {
         token.role = user.role;
       }
       return token;
