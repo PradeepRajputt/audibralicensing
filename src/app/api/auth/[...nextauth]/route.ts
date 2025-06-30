@@ -1,4 +1,5 @@
 
+import 'dotenv/config';
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getUserByEmail } from '@/lib/users';
@@ -30,8 +31,12 @@ export const authOptions: NextAuthOptions = {
         
         const user = getUserByEmail(credentials.email);
         
-        if (!user || !user.passwordHash) {
-          throw new Error("No user found with this email or user has no password set.");
+        if (!user) {
+          throw new Error("No user found with this email.");
+        }
+
+        if (!user.passwordHash) {
+            throw new Error("This account does not have a password set.");
         }
 
         const isValid = await verifyPassword(credentials.password, user.passwordHash);
