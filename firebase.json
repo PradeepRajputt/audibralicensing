@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "build",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -8,8 +8,7 @@
     ],
     "rewrites": [
       {
-        "source": "**",
-        "function": "nextServer"
+        "source": "**"
       }
     ]
   },
@@ -19,7 +18,6 @@
       "codebase": "default",
       "ignore": [
         "node_modules",
-        ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
         ".runtimeconfig.json"
