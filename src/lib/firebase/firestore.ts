@@ -4,9 +4,12 @@ import type { User } from '@/lib/firebase/types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 
-const usersCollection = adminDb.collection('users');
-
 export async function getUserByEmail(email: string): Promise<User | null> {
+  if (!adminDb) {
+      console.error("Firestore is not initialized. Check Firebase Admin credentials.");
+      return null;
+  }
+  const usersCollection = adminDb.collection('users');
   const snapshot = await usersCollection.where('email', '==', email).limit(1).get();
   if (snapshot.empty) {
     return null;
@@ -25,6 +28,11 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function createUser(userData: Omit<User, 'uid'>): Promise<string> {
+   if (!adminDb) {
+       console.error("Firestore is not initialized. Cannot create user.");
+       throw new Error("Server is not configured for user creation.");
+   }
+   const usersCollection = adminDb.collection('users');
    const { joinDate, ...rest } = userData;
    const docRef = usersCollection.doc(); // Let Firestore generate the ID
    await docRef.set({
