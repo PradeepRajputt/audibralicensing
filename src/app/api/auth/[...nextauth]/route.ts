@@ -3,19 +3,20 @@ import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getUserByEmail } from '@/lib/users';
 import { verifyPassword } from '@/lib/auth';
+import { config } from 'dotenv';
 
+config();
 
 // --- STARTUP VALIDATION ---
 if (!process.env.NEXTAUTH_SECRET) {
   console.error("CRITICAL: Missing NEXTAUTH_SECRET environment variable");
-  // In a real production environment, you might want the app to fail hard.
-  // For this context, we'll throw to make it clear during development.
   throw new Error("Missing NEXTAUTH_SECRET environment variable. The application cannot start securely.");
 }
 // --- END STARTUP VALIDATION ---
 
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
   },
@@ -28,26 +29,25 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<any> {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Please enter your email and password.");
+          // Returning null is the standard way to indicate failed authentication
+          return null;
         }
         
         const user = getUserByEmail(credentials.email);
         
-        if (!user) {
-          throw new Error("No user found with this email.");
-        }
-
-        if (!user.passwordHash) {
-            throw new Error("This account does not have a password set. Please use a different login method.");
+        if (!user || !user.passwordHash) {
+          // User not found or has no password. Do not specify which for security.
+          return null;
         }
 
         const isValid = await verifyPassword(credentials.password, user.passwordHash);
 
         if (!isValid) {
-          throw new Error("Incorrect password.");
+          // Incorrect password
+          return null;
         }
 
-        // Return a serializable user object for the session token
+        // Return a serializable user object for the session token on success
         return {
           id: user.uid,
           email: user.email,
@@ -75,7 +75,7 @@ export const authOptions: NextAuthOptions = {
   },
    pages: {
     signIn: '/login',
-    error: '/login', // Redirect to login page on error
+    error: '/login', // Redirect to login page on other errors
   },
 };
 
