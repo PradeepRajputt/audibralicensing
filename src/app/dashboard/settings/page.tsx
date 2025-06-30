@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from "react";
-import { useFormStatus } from 'react-dom';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Youtube, Globe } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const formRef = React.useRef<HTMLFormElement>(null);
 
-    const [state, formAction] = React.useActionState(verifyYoutubeChannel, null);
+    const [state, formAction] = useFormState(verifyYoutubeChannel, null);
 
     React.useEffect(() => {
         // This code runs only in the browser
@@ -67,7 +67,7 @@ export default function SettingsPage() {
         <div className="space-y-2">
             <h1 className="text-2xl font-bold">Settings</h1>
             <p className="text-muted-foreground">
-                Manage your profile and connected platforms.
+                Manage your connected platforms for content monitoring.
             </p>
         </div>
          <Separator />

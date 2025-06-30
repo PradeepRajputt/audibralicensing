@@ -3,8 +3,6 @@
 
 import * as React from 'react';
 import { getDashboardData } from '@/app/dashboard/actions';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 type AnalyticsData = NonNullable<DashboardData>['analytics'];
@@ -25,48 +23,27 @@ interface UserContextType {
 const UserContext = React.createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-    const router = useRouter();
-    const { data: session, status: sessionStatus } = useSession({ 
-      required: true, 
-      onUnauthenticated: () => {
-        router.push('/login');
-      }
-    });
-    
     const [data, setData] = React.useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [status, setStatus] = React.useState<UserStatus>('active');
 
     React.useEffect(() => {
-        if (sessionStatus === 'loading') {
-            setIsLoading(true);
-            return;
-        }
-
-        if (sessionStatus === 'unauthenticated') {
-            // The onUnauthenticated callback handles the redirect.
-            // We can set loading to false and return early.
-            setIsLoading(false);
-            return;
-        }
+        setIsLoading(true);
 
         const storedStatus = localStorage.getItem('user_status') as UserStatus;
         if (storedStatus) {
             setStatus(storedStatus);
         }
-
+        
         const storedChannelData = localStorage.getItem('creator_shield_youtube_channel');
         const localStorageChannelId = storedChannelData ? JSON.parse(storedChannelData).id : undefined;
-        const sessionChannelId = session?.user?.youtubeChannelId;
-        
-        const channelIdToFetch = localStorageChannelId || sessionChannelId;
 
-        getDashboardData(channelIdToFetch).then(dashboardData => {
+        getDashboardData(localStorageChannelId).then(dashboardData => {
             setData(dashboardData);
             setIsLoading(false);
         });
 
-    }, [status, session, sessionStatus, router]);
+    }, [status]);
 
     const value = {
         data,

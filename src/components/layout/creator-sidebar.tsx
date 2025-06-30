@@ -50,8 +50,6 @@ export function CreatorSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                // This strict equality check is the correct way to determine the active link.
-                // It ensures only the link that exactly matches the current URL is highlighted.
                 isActive={pathname === item.href}
                 tooltip={item.label}
               >
@@ -75,14 +73,6 @@ export function CreatorSidebar() {
               <Link href="/dashboard/settings" prefetch={false}>
                 <Settings />
                 <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <Link href="/" prefetch={false}>
-                <LogOut />
-                <span>Logout</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -6,8 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Activity, ShieldCheck, Youtube, LogIn } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { useUser } from '@/context/user-context';
 
 
@@ -36,8 +34,15 @@ function DashboardSkeleton() {
     );
 }
 
-function ConfigurationErrorPrompt() {
-    return (
+export default function CreatorDashboardPage() {
+  const { analytics, activity, isLoading } = useUser();
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+  
+  if (!analytics) {
+     return (
         <Card className="text-center w-full max-w-lg mx-auto">
             <CardHeader>
                 <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
@@ -48,24 +53,8 @@ function ConfigurationErrorPrompt() {
                    Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <Button asChild variant="outline">
-                    <Link href="/dashboard/settings">Go to Settings</Link>
-                </Button>
-            </CardContent>
         </Card>
     );
-}
-
-export default function CreatorDashboardPage() {
-  const { analytics, activity, isLoading } = useUser();
-
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
-  
-  if (!analytics) {
-    return <ConfigurationErrorPrompt />;
   }
 
   return (
