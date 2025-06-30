@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -163,7 +162,7 @@ function ConnectAccountPrompt() {
                 <CardDescription>To view your dashboard and see real-time data, please sign in with your Google account.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button onClick={() => signIn('google')}>
+                <Button onClick={() => signIn('google', { callbackUrl: '/dashboard' })}>
                     <Youtube className="mr-2 h-5 w-5" />
                     Sign in with Google
                 </Button>

@@ -1,4 +1,3 @@
-
 'use client'
 
 import * as React from "react"
@@ -20,8 +19,8 @@ export default function SettingsPage() {
     const user = session?.user;
 
     const handleConnect = () => {
-        // This will initiate the Google sign-in flow
-        signIn('google');
+        // This will initiate the Google sign-in flow and redirect to the dashboard.
+        signIn('google', { callbackUrl: '/dashboard/settings' });
     }
 
     const handleDisconnect = () => {

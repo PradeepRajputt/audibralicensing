@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
@@ -17,7 +16,7 @@ function DashboardHeader() {
         <h1 className="text-xl font-semibold">Creator Dashboard</h1>
         <div className="ml-auto flex items-center gap-4">
           {!session && (
-            <Button onClick={() => signIn('google')} size="sm">
+            <Button onClick={() => signIn('google', { callbackUrl: '/dashboard' })} size="sm">
               <Youtube className="mr-2 h-5 w-5" />
               Sign In with Google
             </Button>
