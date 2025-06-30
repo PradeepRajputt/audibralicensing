@@ -6,6 +6,7 @@ import { Providers } from '@/components/providers';
 export const metadata: Metadata = {
   title: 'CreatorShield',
   description: 'A SaaS platform to protect your content.',
+  icons: null,
 };
 
 export default function RootLayout({

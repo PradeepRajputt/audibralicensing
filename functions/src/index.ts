@@ -5,10 +5,10 @@ import * as path from "path";
 
 const dev = process.env.NODE_ENV !== "production";
 
-// The Next.js app is located at the root, so we point the distDir there.
+// The Next.js app is located at the root, so we point the project root there.
 const app = next({
   dev,
-  conf: { distDir: path.join(__dirname, "..", ".next") },
+  dir: path.join(__dirname, "..", ".."),
 });
 
 const handle = app.getRequestHandler();
