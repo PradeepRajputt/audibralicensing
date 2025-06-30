@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { verifyYoutubeChannel } from './actions';
+import { useSession } from 'next-auth/react';
 
 
 const LOCAL_STORAGE_KEY = 'creator_shield_youtube_channel';
@@ -29,6 +30,7 @@ function SubmitButton() {
 }
 
 export default function SettingsPage() {
+    const { data: session } = useSession();
     const [connectedChannel, setConnectedChannel] = React.useState<ConnectedChannel | null>(null);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const { toast } = useToast();
@@ -71,6 +73,31 @@ export default function SettingsPage() {
             </p>
         </div>
          <Separator />
+        <Card>
+            <CardHeader>
+                <CardTitle>Profile Information</CardTitle>
+                <CardDescription>Your profile is managed through your login provider.</CardDescription>
+            </CardHeader>
+             <CardContent>
+                <div className="flex items-center gap-6">
+                    <Avatar className="w-24 h-24">
+                        <AvatarImage src={session?.user?.image ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
+                        <AvatarFallback>{session?.user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-2">
+                         <div className="space-y-1">
+                            <Label>Display Name</Label>
+                            <Input value={session?.user?.name ?? ''} disabled className="max-w-xs" />
+                        </div>
+                         <div className="space-y-1">
+                            <Label>Email</Label>
+                            <Input value={session?.user?.email ?? ''} disabled className="max-w-xs" />
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+
         <Card>
             <CardHeader>
                 <CardTitle>Connected Platforms</CardTitle>

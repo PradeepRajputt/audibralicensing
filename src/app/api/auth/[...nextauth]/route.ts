@@ -1,46 +1,51 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import { getUserById } from '@/lib/users-store';
 
 // --- STARTUP VALIDATION ---
-// This ensures the server fails with a clear error message if critical 
-// environment variables are not set.
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('Missing NEXTAUTH_SECRET in .env file');
 }
-if (!process.env.NEXTAUTH_URL) {
-  throw new Error('Missing NEXTAUTH_URL in .env file');
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    console.warn("Missing Google OAuth credentials in .env file. Google login will be disabled.");
 }
 // --- END STARTUP VALIDATION ---
 
-export const authOptions: NextAuthOptions = {
-  providers: [
+const providers = [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "test@example.com" },
+        email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials, req) {
-        // This is a mock authorization. 
+      async authorize(credentials) {
+        // This is a mock authorization for demo purposes.
         // In a real app, you would look up the user in your database.
-        if (
-            (credentials?.email === "creator@example.com" && credentials.password === "password") ||
-            (credentials?.email === "admin@creatorshield.com" && credentials.password === "password")
-        ) {
-          const is_admin = credentials.email.startsWith('admin');
-          return { 
-            id: is_admin ? "user_admin_xyz" : "user_creator_123", 
-            name: is_admin ? "Admin User" : "Sample Creator", 
-            email: credentials.email,
-            role: is_admin ? "admin" : "creator",
-          }
+        if (credentials?.email === "creator@example.com" && credentials.password === "password") {
+           return getUserById("user_creator_123") || null;
+        }
+        if (credentials?.email === "admin@creatorshield.com" && credentials.password === "password") {
+           return { id: "admin_user_001", name: "Admin User", email: "admin@creatorshield.com", role: "admin" } as any;
         }
         // Return null if user data could not be retrieved
         return null
       }
     })
-  ],
+];
+
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    providers.push(
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        })
+    );
+}
+
+export const authOptions: NextAuthOptions = {
+  providers,
   pages: {
     signIn: '/login',
   },
@@ -51,7 +56,10 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (token?.role) {
-        session.user.role = token.role;
+        session.user.role = token.role as string;
+      }
+       if (token?.sub) {
+        session.user.id = token.sub;
       }
       return session;
     },

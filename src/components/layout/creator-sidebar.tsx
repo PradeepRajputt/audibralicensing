@@ -15,6 +15,7 @@ import { useUser } from '@/context/user-context';
 import { Shield, Activity, Youtube, ScanSearch, FileText, Settings, LogOut, FileVideo, ShieldAlert, Home } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 
 const menuItems = [
   { href: '/dashboard/overview', label: 'Overview', icon: Home },
@@ -74,6 +75,17 @@ export function CreatorSidebar() {
                 <Settings />
                 <span>Settings</span>
               </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              onClick={() => signOut({ callbackUrl: '/' })}
+            >
+              <button>
+                <LogOut />
+                <span>Logout</span>
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

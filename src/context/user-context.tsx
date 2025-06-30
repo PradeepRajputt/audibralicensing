@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { getDashboardData } from '@/app/dashboard/actions';
+import { useSession } from 'next-auth/react';
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 type AnalyticsData = NonNullable<DashboardData>['analytics'];
@@ -23,6 +24,7 @@ interface UserContextType {
 const UserContext = React.createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+    const { data: session } = useSession();
     const [data, setData] = React.useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [status, setStatus] = React.useState<UserStatus>('active');
@@ -41,17 +43,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         getDashboardData(localStorageChannelId).then(dashboardData => {
             setData(dashboardData);
             setIsLoading(false);
+        }).catch(err => {
+            console.error("Failed to fetch dashboard data:", err);
+            setData(null);
+            setIsLoading(false);
         });
 
-    }, [status]);
+    }, [status, session]);
 
     const value = {
         data,
         analytics: data?.analytics ?? null,
         activity: data?.activity ?? [],
         isLoading,
-        creatorName: data?.creatorName,
-        creatorImage: data?.creatorImage,
+        creatorName: data?.creatorName ?? session?.user?.name ?? undefined,
+        creatorImage: data?.creatorImage ?? session?.user?.image ?? undefined,
         status,
         setStatus,
     };

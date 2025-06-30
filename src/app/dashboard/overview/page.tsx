@@ -2,27 +2,16 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScanSearch, FileText, ShieldCheck, Clock, Youtube } from "lucide-react";
-import Link from 'next/link';
+import { ScanSearch, ShieldCheck, Activity, Youtube } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/context/user-context';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LogIn } from "lucide-react";
 import { signIn } from "next-auth/react";
-
-// A representative list of timezones
-const timezones = [
-    { value: 'UTC', label: 'UTC' },
-    { value: 'America/New_York', label: 'New York (EST)' },
-    { value: 'Europe/London', label: 'London (GMT)' },
-    { value: 'Europe/Paris', label: 'Paris (CET)' },
-    { value: 'Asia/Kolkata', label: 'India (IST)' },
-    { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
-    { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
-];
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AnalogClock } from "@/components/ui/analog-clock";
 
 function DashboardSkeleton() {
     return (
@@ -74,27 +63,8 @@ function NotConnected() {
 }
 
 export default function OverviewPage() {
-  const { analytics, activity, isLoading, creatorName } = useUser();
-  const [currentTime, setCurrentTime] = useState<string | null>(null);
-  const [selectedTimezone, setSelectedTimezone] = useState('UTC');
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    // Set up the interval only after the component has mounted on the client
-    const timer = setInterval(() => {
-      const timeString = new Date().toLocaleTimeString('en-US', {
-        timeZone: selectedTimezone,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      });
-      setCurrentTime(timeString);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [selectedTimezone]);
-
+  const { analytics, activity, isLoading, creatorName, creatorImage } = useUser();
+ 
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -106,30 +76,19 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={creatorImage ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
+            <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
+          </Avatar>
+          <div>
             <h1 className="text-3xl font-bold">Welcome back, {creatorName}!</h1>
             <p className="text-muted-foreground">What would you like to accomplish today?</p>
+          </div>
         </div>
 
-        <Card className="min-w-[280px]">
-            <CardHeader className="flex-row items-center gap-4 space-y-0 pb-2">
-                <Clock className="h-6 w-6 text-muted-foreground" />
-                <Select onValueChange={setSelectedTimezone} defaultValue={selectedTimezone}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {timezones.map(tz => (
-                            <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold text-center">
-                    {isClient ? (currentTime || 'Loading...') : <Skeleton className="h-8 w-32 mx-auto" />}
-                </div>
-            </CardContent>
+        <Card className="min-w-[280px] h-36 flex items-center justify-center">
+            <AnalogClock />
         </Card>
       </div>
 

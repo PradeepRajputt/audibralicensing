@@ -24,7 +24,8 @@
         "firebase-debug.log",
         "firebase-debug.*.log",
         ".runtimeconfig.json"
-      ]
+      ],
+      "runtime": "nodejs20"
     }
   ]
 }

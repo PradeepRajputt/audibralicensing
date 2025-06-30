@@ -7,6 +7,8 @@ import { CreatorSidebar } from '@/components/layout/creator-sidebar';
 import { UserProvider, useUser } from '@/context/user-context';
 import { SuspensionNotice } from '@/components/layout/suspension-notice';
 import { Loader2 } from 'lucide-react';
+import { useSession, signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 function DashboardHeader() {
   return (
@@ -18,8 +20,8 @@ function DashboardHeader() {
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { status, isLoading } = useUser();
-
+  const { status: userStatus, isLoading } = useUser();
+  
   if (isLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
@@ -28,7 +30,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (status === 'suspended' || status === 'deactivated') {
+  if (userStatus === 'suspended' || userStatus === 'deactivated') {
     return <SuspensionNotice />;
   }
   
@@ -45,14 +47,40 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   )
 }
 
+function AuthBoundary({ children }: { children: React.ReactNode }) {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+
+    React.useEffect(() => {
+        if (status === 'unauthenticated') {
+            // Using router.replace to avoid adding the dashboard to browser history
+            router.replace('/login');
+        }
+    }, [status, router]);
+
+    if (status === 'loading') {
+        return (
+            <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
+    
+    if (status === 'authenticated') {
+         return <UserProvider>{children}</UserProvider>;
+    }
+
+    return null;
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <UserProvider>
+    <AuthBoundary>
       <DashboardContent>{children}</DashboardContent>
-    </UserProvider>
+    </AuthBoundary>
   );
 }
