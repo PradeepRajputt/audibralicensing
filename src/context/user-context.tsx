@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { getDashboardData } from '@/app/dashboard/actions';
+import { useSession } from 'next-auth/react';
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 type AnalyticsData = NonNullable<DashboardData>['analytics'];
@@ -23,24 +24,37 @@ interface UserContextType {
 const UserContext = React.createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
+    const { data: session, status: sessionStatus } = useSession();
     const [data, setData] = React.useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = React.useState(true);
     const [status, setStatus] = React.useState<UserStatus>('active');
 
     React.useEffect(() => {
+        if (sessionStatus === 'loading') {
+            setIsLoading(true);
+            return;
+        }
+
         const storedStatus = localStorage.getItem('user_status') as UserStatus;
         if (storedStatus) {
             setStatus(storedStatus);
         }
 
-        const channelData = localStorage.getItem('creator_shield_youtube_channel');
-        const channelId = channelData ? JSON.parse(channelData).id : undefined;
+        // Prioritize localStorage ID, then session ID from Google Sign-In.
+        const storedChannelData = localStorage.getItem('creator_shield_youtube_channel');
+        const localStorageChannelId = storedChannelData ? JSON.parse(storedChannelData).id : undefined;
+        const sessionChannelId = session?.user?.youtubeChannelId;
+        
+        const channelIdToFetch = localStorageChannelId || sessionChannelId;
 
-        getDashboardData(channelId).then(dashboardData => {
+        // If a channel ID is available (from any source), fetch its data.
+        // Otherwise, it might be a new user or config issue, so `getDashboardData` will handle it.
+        getDashboardData(channelIdToFetch).then(dashboardData => {
             setData(dashboardData);
             setIsLoading(false);
         });
-    }, [status]); // Re-fetch data if status changes
+
+    }, [status, session, sessionStatus]);
 
     const value = {
         data,

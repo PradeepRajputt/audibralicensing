@@ -36,7 +36,7 @@ export async function getDashboardData(channelId?: string) {
       throw new Error(`Could not fetch channel statistics or snippet for ID: ${finalChannelId}`);
     }
 
-    // 2. Fetch most viewed video (as a simple example)
+    // 2. Fetch most viewed video ID
     const videosResponse = await youtube.search.list({
         part: ['snippet'],
         channelId: finalChannelId,
@@ -45,6 +45,21 @@ export async function getDashboardData(channelId?: string) {
         maxResults: 1,
     });
     const mostViewedVideo = videosResponse.data.items?.[0];
+    const mostViewedVideoId = mostViewedVideo?.id?.videoId;
+    
+    let mostViewedVideoViews: string | number = 'N/A';
+    if (mostViewedVideoId) {
+        // 2a. Fetch statistics for the most viewed video to get accurate view count
+        const videoStatsResponse = await youtube.videos.list({
+            id: [mostViewedVideoId],
+            part: ['statistics'],
+        });
+        const videoStats = videoStatsResponse.data.items?.[0]?.statistics;
+        if (videoStats?.viewCount) {
+            mostViewedVideoViews = Number(videoStats.viewCount);
+        }
+    }
+
 
     // 3. Construct analytics object with more realistic simulated historical data
     const totalViews = Number(stats.viewCount);
@@ -70,7 +85,7 @@ export async function getDashboardData(channelId?: string) {
       views: totalViews,
       mostViewedVideo: {
         title: mostViewedVideo?.snippet?.title ?? 'N/A',
-        views: 'N/A' // View count requires another API call, so we'll omit for simplicity
+        views: mostViewedVideoViews
       },
       monthlyViewsData,
       subscriberData,
