@@ -41,7 +41,9 @@ export const authOptions: NextAuthOptions = {
         // so we check for the required env vars again
         if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
             console.error("Firebase Admin credentials missing. Cannot authorize user.");
-            throw new Error("Authentication is not configured on the server.");
+            // Return null to indicate an auth failure that NextAuth can handle gracefully
+            // instead of throwing an error which causes a 500.
+            return null;
         }
         
         const user = await getUserByEmail(credentials.email);
