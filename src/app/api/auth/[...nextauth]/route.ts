@@ -18,28 +18,30 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<any> {
         if (!credentials?.email || !credentials?.password) {
-          return null; // Basic validation
+          return null;
         }
         
         try {
             const user = await getUserByEmail(credentials.email);
             
+            // Check if user exists first
             if (!user || !user.passwordHash) {
-              // No user found or user has no password (e.g. social login in future)
+              console.log('No user found with email:', credentials.email);
               return null;
             }
 
-            // Prevent login for non-active users
+            // Then check if the account is active
             if (user.status !== 'active') {
               console.log(`Login attempt for disabled account: ${user.email} (${user.status})`);
-              // You can throw a specific error here to show a custom message on the login page
-              // For now, returning null will result in a generic "Invalid credentials" error.
-              return null;
+              // Throwing a specific error that NextAuth can catch and display
+              throw new Error(`Your account is currently ${user.status}. Please contact support.`);
             }
 
+            // Finally, verify password
             const isValid = await verifyPassword(credentials.password, user.passwordHash);
 
             if (!isValid) {
+              console.log('Invalid password for user:', credentials.email);
               return null;
             }
 
@@ -52,9 +54,13 @@ export const authOptions: NextAuthOptions = {
               youtubeChannelId: user.youtubeChannelId,
             };
         } catch (error) {
-            // Log any other unexpected errors during authorization
             console.error("Authorize Error:", error);
-            return null;
+            // Re-throw the error to be handled by NextAuth's error page
+            // This ensures specific messages (like 'account suspended') are shown.
+            if (error instanceof Error) {
+              throw new Error(error.message);
+            }
+            throw new Error('An unexpected error occurred during authentication.');
         }
       },
     }),
@@ -79,7 +85,7 @@ export const authOptions: NextAuthOptions = {
   },
    pages: {
     signIn: '/login',
-    error: '/login', // Redirect to login page on credentials error
+    error: '/login', // Redirect to login page on credentials error, shows error in URL
   },
 };
 

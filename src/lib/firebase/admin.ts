@@ -1,11 +1,7 @@
 
 import * as admin from 'firebase-admin';
-import { config } from 'dotenv';
 
-// Manually load environment variables from .env file at the module's start.
-// This ensures they are available whenever this module is imported.
-config();
-
+// This file is designed to be imported only on the server.
 
 interface FirebaseAdmin {
   adminDb: admin.firestore.Firestore;
@@ -23,19 +19,19 @@ function initializeAdmin(): FirebaseAdmin {
   if (global.__firebaseAdmin) {
     return global.__firebaseAdmin;
   }
-
+  
   // Sanitize the private key, which often comes with escaped newlines from .env files.
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
   // Check for the presence of all required environment variables.
   if (!process.env.FIREBASE_PROJECT_ID) {
-    throw new Error('Server Configuration Error: FIREBASE_PROJECT_ID is missing from your .env file.');
+    throw new Error('Server Configuration Error: FIREBASE_PROJECT_ID is missing from environment variables.');
   }
   if (!process.env.FIREBASE_CLIENT_EMAIL) {
-    throw new Error('Server Configuration Error: FIREBASE_CLIENT_EMAIL is missing from your .env file.');
+    throw new Error('Server Configuration Error: FIREBASE_CLIENT_EMAIL is missing from environment variables.');
   }
   if (!privateKey) {
-    throw new Error('Server Configuration Error: FIREBASE_PRIVATE_KEY is missing from your .env file.');
+    throw new Error('Server Configuration Error: FIREBASE_PRIVATE_KEY is missing from environment variables.');
   }
   
   try {
@@ -64,7 +60,7 @@ function initializeAdmin(): FirebaseAdmin {
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization error:', error.message);
     // Throw a more user-friendly error if initialization fails.
-    throw new Error('Failed to initialize Firebase services. Please check server logs for credential errors.');
+    throw new Error('Failed to initialize Firebase services on the server. Please check server logs for credential errors.');
   }
 }
 
