@@ -1,8 +1,7 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserByEmail } from '@/lib/users';
-import { verifyPassword } from '@/lib/auth';
+import { getUserByEmail, verifyPassword } from '@/lib/auth';
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'your_default_secret_for_development_ creatorshield',
