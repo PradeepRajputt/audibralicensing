@@ -15,7 +15,8 @@ const users: User[] = [
     platformsConnected: ["youtube", "web"],
     youtubeChannelId: "UC-lHJZR3Gqxm24_Vd_AJ5Yw",
     status: "active",
-    passwordHash: "$2a$10$3fR.A.9gB6n.4P.t.b.HfeH/6C5f.I8k3g.m6zJ5n.x8I.1QoO9y." // password is 'password'
+    // Hashed "password"
+    passwordHash: "$2a$10$3fR.A.9gB6n.4P.t.b.HfeH/6C5f.I8k3g.m6zJ5n.x8I.1QoO9y."
   },
   {
     uid: "user_creator_456",
@@ -61,16 +62,20 @@ export function getUserById(uid: string): User | undefined {
     return users.find(u => u.uid === uid);
 }
 
-export function getUserByEmail(email: string): User | null {
+export function getUserByEmail(email: string): User | undefined {
     const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
-    return user || null;
+    return user;
 }
 
 export async function createUser(userData: Omit<User, 'uid' | 'passwordHash'> & { password?: string }): Promise<User> {
     if (getUserByEmail(userData.email!)) {
         throw new Error("An account with this email already exists.");
     }
-    const passwordHash = userData.password ? await hashPassword(userData.password) : undefined;
+    if (!userData.password) {
+        throw new Error("Password is required to create a user.");
+    }
+
+    const passwordHash = await hashPassword(userData.password);
     
     const newUser: User = {
         ...userData,
@@ -79,15 +84,17 @@ export async function createUser(userData: Omit<User, 'uid' | 'passwordHash'> & 
     };
     
     users.push(newUser);
+    // In a real app, this would be a database write. We'll just log it here.
+    console.log(`New user created: ${newUser.displayName} (${newUser.email})`);
     return newUser;
 }
 
-export function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated') {
+export function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): User | undefined {
     const userIndex = users.findIndex(u => u.uid === uid);
     if (userIndex > -1) {
         users[userIndex].status = status;
+        console.log(`Updated status for ${users[userIndex].displayName} to ${status}`);
+        return users[userIndex];
     }
+    return undefined;
 }
-
-// Export the initial data for the client-side store to use.
-export const initialUsers = users;

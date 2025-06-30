@@ -7,14 +7,6 @@ import { config } from 'dotenv';
 
 config();
 
-// --- STARTUP VALIDATION ---
-if (!process.env.NEXTAUTH_SECRET) {
-  console.error("CRITICAL: Missing NEXTAUTH_SECRET environment variable");
-  throw new Error("Missing NEXTAUTH_SECRET environment variable. The application cannot start securely.");
-}
-// --- END STARTUP VALIDATION ---
-
-
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
@@ -29,22 +21,20 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<any> {
         if (!credentials?.email || !credentials?.password) {
-          // Returning null is the standard way to indicate failed authentication
-          return null;
+          throw new Error("Please enter your email and password.");
         }
         
         const user = getUserByEmail(credentials.email);
         
+        // Important: check for user *and* password hash existence before verifying
         if (!user || !user.passwordHash) {
-          // User not found or has no password. Do not specify which for security.
-          return null;
+          throw new Error("Invalid credentials. Please try again.");
         }
 
         const isValid = await verifyPassword(credentials.password, user.passwordHash);
 
         if (!isValid) {
-          // Incorrect password
-          return null;
+          throw new Error("Invalid credentials. Please try again.");
         }
 
         // Return a serializable user object for the session token on success
