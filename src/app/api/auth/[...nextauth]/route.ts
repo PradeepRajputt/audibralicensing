@@ -1,5 +1,4 @@
 
-import 'dotenv/config';
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
 import { getUserByEmail } from '@/lib/users';
@@ -8,7 +7,10 @@ import { verifyPassword } from '@/lib/auth';
 
 // --- STARTUP VALIDATION ---
 if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error("Missing NEXTAUTH_SECRET environment variable");
+  console.error("CRITICAL: Missing NEXTAUTH_SECRET environment variable");
+  // In a real production environment, you might want the app to fail hard.
+  // For this context, we'll throw to make it clear during development.
+  throw new Error("Missing NEXTAUTH_SECRET environment variable. The application cannot start securely.");
 }
 // --- END STARTUP VALIDATION ---
 
@@ -36,7 +38,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         if (!user.passwordHash) {
-            throw new Error("This account does not have a password set.");
+            throw new Error("This account does not have a password set. Please use a different login method.");
         }
 
         const isValid = await verifyPassword(credentials.password, user.passwordHash);
