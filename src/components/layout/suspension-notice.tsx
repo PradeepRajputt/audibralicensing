@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,8 @@ export function SuspensionNotice() {
       // In a real app, this button would not exist. This is for demo purposes 
       // to allow easy testing of the suspended state.
       setStatus('active');
+      // Also clear it from local storage for consistency
+      localStorage.setItem('user_status', 'active');
   }
 
   return (

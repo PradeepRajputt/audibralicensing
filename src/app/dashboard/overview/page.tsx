@@ -3,15 +3,14 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScanSearch, FileText, ShieldCheck, Clock, Youtube, Home } from "lucide-react";
+import { ScanSearch, FileText, ShieldCheck, Clock, Youtube } from "lucide-react";
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { getDashboardData } from '../actions';
-import { Button } from "@/components/ui/button";
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { useUser } from '@/context/user-context';
 
-type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
 // A representative list of timezones
 const timezones = [
@@ -24,9 +23,52 @@ const timezones = [
     { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
 ];
 
+function DashboardSkeleton() {
+    return (
+        <div className="space-y-8 animate-pulse">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-16 w-16 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-8 w-64" />
+                        <Skeleton className="h-4 w-80" />
+                    </div>
+                </div>
+                <Skeleton className="h-24 w-72" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+            </div>
+        </div>
+    );
+}
+
+function ConfigurationErrorPrompt() {
+    return (
+        <Card className="text-center w-full max-w-lg mx-auto">
+            <CardHeader>
+                <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
+                    <Youtube className="w-12 h-12 text-destructive" />
+                </div>
+                <CardTitle className="mt-4">Configuration Error</CardTitle>
+                <CardDescription>
+                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild variant="outline">
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export default function OverviewPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { isLoading, creatorName, creatorImage } = useUser();
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState('UTC');
   const [isClient, setIsClient] = useState(false);
@@ -46,25 +88,13 @@ export default function OverviewPage() {
     return () => clearInterval(timer);
   }, [selectedTimezone]);
 
-  useEffect(() => {
-    const channelData = localStorage.getItem('creator_shield_youtube_channel');
-    const channelId = channelData ? JSON.parse(channelData).id : undefined;
-
-    getDashboardData(channelId).then(dashboardData => {
-        setData(dashboardData);
-        setIsLoading(false);
-    });
-  }, []);
-
   if (isLoading) {
     return <DashboardSkeleton />;
   }
   
-  if (!data) {
+  if (!creatorName) {
     return <ConfigurationErrorPrompt />;
   }
-  
-  const { creatorName, creatorImage } = data;
 
   return (
     <div className="space-y-8">
@@ -154,47 +184,4 @@ export default function OverviewPage() {
       </div>
     </div>
   );
-}
-
-function DashboardSkeleton() {
-    return (
-        <div className="space-y-8 animate-pulse">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <Skeleton className="h-16 w-16 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-8 w-64" />
-                        <Skeleton className="h-4 w-80" />
-                    </div>
-                </div>
-                <Skeleton className="h-24 w-72" />
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
-            </div>
-        </div>
-    );
-}
-
-function ConfigurationErrorPrompt() {
-    return (
-        <Card className="text-center w-full max-w-lg mx-auto">
-            <CardHeader>
-                <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
-                    <Youtube className="w-12 h-12 text-destructive" />
-                </div>
-                <CardTitle className="mt-4">Configuration Error</CardTitle>
-                <CardDescription>
-                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild variant="outline">
-                    <Link href="/dashboard/settings">Go to Settings</Link>
-                </Button>
-            </CardContent>
-        </Card>
-    );
 }

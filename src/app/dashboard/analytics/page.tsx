@@ -1,17 +1,36 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart, Area, AreaChart } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Users, Eye, Video, Youtube, LogIn } from 'lucide-react';
-import { getDashboardData } from '../actions';
+import { Users, Eye, Video, Youtube } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useUser } from '@/context/user-context';
 
-type AnalyticsData = NonNullable<Awaited<ReturnType<typeof getDashboardData>>>['analytics'];
+
+function AnalyticsSkeleton() {
+    return (
+        <div className="space-y-6 animate-pulse">
+            <div className="space-y-1">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-96" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+            </div>
+        </div>
+    );
+}
 
 function ConfigurationErrorPrompt() {
     return (
@@ -34,40 +53,9 @@ function ConfigurationErrorPrompt() {
     );
 }
 
-function AnalyticsSkeleton() {
-    return (
-        <div className="space-y-6 animate-pulse">
-            <div className="space-y-1">
-                <Skeleton className="h-8 w-64" />
-                <Skeleton className="h-4 w-96" />
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-2">
-                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
-            </div>
-        </div>
-    );
-}
-
 
 export default function AnalyticsPage() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const channelData = localStorage.getItem('creator_shield_youtube_channel');
-    const channelId = channelData ? JSON.parse(channelData).id : undefined;
-
-    getDashboardData(channelId).then(dashboardData => {
-        setData(dashboardData?.analytics ?? null);
-        setIsLoading(false);
-    });
-  }, []);
+  const { analytics: data, isLoading } = useUser();
 
   if (isLoading) {
     return <AnalyticsSkeleton />;
