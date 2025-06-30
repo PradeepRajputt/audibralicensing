@@ -1,0 +1,1 @@
+This file ensures the public directory is created for Firebase Hosting deployment. It can be safely deleted.
