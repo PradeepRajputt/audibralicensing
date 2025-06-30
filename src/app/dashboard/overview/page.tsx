@@ -8,7 +8,10 @@ import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/context/user-context';
-
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { LogIn } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 // A representative list of timezones
 const timezones = [
@@ -24,24 +27,54 @@ const timezones = [
 function DashboardSkeleton() {
     return (
         <div className="space-y-8 animate-pulse">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-2">
                     <Skeleton className="h-8 w-64" />
                     <Skeleton className="h-4 w-80" />
                 </div>
-                <Skeleton className="h-24 w-72" />
+                <Skeleton className="h-24 w-[280px]" />
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card><CardHeader><div className="p-3 bg-muted rounded-full self-start w-fit"><Skeleton className="h-8 w-8 rounded-full" /></div></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
-                <Card><CardHeader><div className="p-3 bg-muted rounded-full self-start w-fit"><Skeleton className="h-8 w-8 rounded-full" /></div></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
-                <Card><CardHeader><div className="p-3 bg-muted rounded-full self-start w-fit"><Skeleton className="h-8 w-8 rounded-full" /></div></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
             </div>
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-full max-w-md mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }
 
+
+function NotConnected() {
+    return (
+        <Card className="text-center w-full max-w-lg mx-auto">
+            <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                    <LogIn className="w-12 h-12 text-primary" />
+                </div>
+                <CardTitle className="mt-4">Connect Your Account</CardTitle>
+                <CardDescription>
+                   To view your dashboard and see real-time data, please sign in with your Google account in Settings.
+                </CardDescription>
+            </CardHeader>
+        </Card>
+    );
+}
+
 export default function OverviewPage() {
-  const { isLoading, creatorName } = useUser();
+  const { analytics, activity, isLoading, creatorName } = useUser();
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState('UTC');
   const [isClient, setIsClient] = useState(false);
@@ -64,6 +97,10 @@ export default function OverviewPage() {
 
   if (isLoading) {
     return <DashboardSkeleton />;
+  }
+  
+  if (!analytics) {
+    return <NotConnected />;
   }
   
   return (
@@ -96,56 +133,87 @@ export default function OverviewPage() {
         </Card>
       </div>
 
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Link href="/dashboard/monitoring" className="group">
-          <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
-            <CardHeader>
-                <div className="p-3 bg-accent/10 rounded-full self-start">
-                    <ScanSearch className="w-8 h-8 text-accent" />
-                </div>
-            </CardHeader>
-            <CardContent>
-              <CardTitle className="text-xl">Scan a Web Page</CardTitle>
-              <CardDescription className="mt-2">
-                Check a specific URL for potential copyright infringements against your content.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </Link>
-        
-        <Link href="/dashboard/reports" className="group">
-          <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
-             <CardHeader>
-                <div className="p-3 bg-accent/10 rounded-full self-start">
-                    <FileText className="w-8 h-8 text-accent" />
-                </div>
-            </CardHeader>
-            <CardContent>
-              <CardTitle className="text-xl">Submit a Manual Report</CardTitle>
-              <CardDescription className="mt-2">
-                Found a violation our system missed? Report it manually for review.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/dashboard/violations" className="group">
-          <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
-            <CardHeader>
-                <div className="p-3 bg-accent/10 rounded-full self-start">
-                    <ShieldCheck className="w-8 h-8 text-accent" />
-                </div>
-            </CardHeader>
-            <CardContent>
-              <CardTitle className="text-xl">Review Detected Violations</CardTitle>
-              <CardDescription className="mt-2">
-                View a list of all potential violations found by our automated scans.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </Link>
+       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Views
+            </CardTitle>
+            <Youtube className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all your videos
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Active Monitors
+            </CardTitle>
+            <ScanSearch className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+12</div>
+            <p className="text-xs text-muted-foreground">
+              Scanning across 3 platforms
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Resolved Strikes
+            </CardTitle>
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+5</div>
+            <p className="text-xs text-muted-foreground">
+              This month
+            </p>
+          </CardContent>
+        </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           {activity.length > 0 ? (
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
+                </TableRow>
+                </TableHeader>
+                <TableBody>
+                {activity.map((activity, index) => (
+                    <TableRow key={index}>
+                    <TableCell className="font-medium">{activity.type}</TableCell>
+                    <TableCell>{activity.details}</TableCell>
+                    <TableCell>
+                        <Badge variant={activity.variant as any}>{activity.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{activity.date}</TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+           ) : (
+            <div className="text-center py-10 text-muted-foreground">
+                <p>No recent activity to display.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

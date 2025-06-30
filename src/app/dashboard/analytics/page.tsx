@@ -2,60 +2,160 @@
 'use client';
 
 import * as React from 'react';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Area, AreaChart } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { Users, Eye, Video, Palette } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Users, Eye, Video } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/context/user-context';
 
-// Mock data generation
-const generateMockData = () => {
-  const data = [];
-  // Generate data for the last 90 days
-  for (let i = 89; i >= 0; i--) {
-    const date = subDays(new Date(), i);
-    data.push({
-      date: format(date, 'yyyy-MM-dd'),
-      views: Math.floor(Math.random() * 2000) + 1000 + (89 - i) * 50,
-      subscribers: Math.floor(Math.random() * 20) + 5 + Math.floor((89 - i)/7),
-    });
-  }
-  return data;
-};
+type ChartType = 'area' | 'bar' | 'line';
+type AggregationType = 'day' | 'week' | 'month';
 
-const allData = generateMockData();
+const chartColors = [
+    { name: 'Chart 1', value: 'hsl(var(--chart-1))' },
+    { name: 'Chart 2', value: 'hsl(var(--chart-2))' },
+    { name: 'Chart 3', value: 'hsl(var(--chart-3))' },
+    { name: 'Chart 4', value: 'hsl(var(--chart-4))' },
+    { name: 'Chart 5', value: 'hsl(var(--chart-5))' },
+];
 
-type ChartType = 'bar' | 'line' | 'area';
+function ColorPicker({ color, setColor }: { color: string, setColor: (color: string) => void }) {
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Palette className="h-4 w-4" style={{ color }} />
+                    <span className="sr-only">Change Color</span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2">
+                <div className="flex gap-1">
+                    {chartColors.map(c => (
+                        <Button key={c.name} size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setColor(c.value)}>
+                            <div className="h-6 w-6 rounded-full border" style={{ backgroundColor: c.value }} />
+                        </Button>
+                    ))}
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
+
+function AnalyticsSkeleton() {
+    return (
+        <div className="space-y-6 animate-pulse">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="space-y-1">
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-80" />
+                </div>
+                <Skeleton className="h-10 w-[300px]" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-40" /><Skeleton className="h-3 w-20 mt-2" /></CardContent></Card>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+                 <Card><CardHeader className="flex flex-row items-start justify-between gap-4"><Skeleton className="h-10 w-full" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+                 <Card><CardHeader className="flex flex-row items-start justify-between gap-4"><Skeleton className="h-10 w-full" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+            </div>
+        </div>
+    );
+}
 
 export default function AnalyticsPage() {
-    const [date, setDate] = React.useState<DateRange | undefined>({
-        from: subDays(new Date(), 29),
-        to: new Date(),
-    });
+    const { analytics, isLoading } = useUser();
 
-    const [viewsChartType, setViewsChartType] = React.useState<ChartType>('bar');
+    const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
+    const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
     const [subscribersChartType, setSubscribersChartType] = React.useState<ChartType>('line');
-
-    const filteredData = React.useMemo(() => {
-        if (!date?.from) return [];
-        const toDate = date.to ? new Date(date.to.setHours(23, 59, 59, 999)) : new Date(date.from.setHours(23, 59, 59, 999));
-        
-        return allData.filter(d => {
-            const dDate = new Date(d.date);
-            return dDate >= date.from! && dDate <= toDate;
-        })
-    }, [date]);
-    
-    const totalViews = allData.reduce((acc, curr) => acc + curr.views, 0);
-    const totalSubscribers = allData.reduce((acc, curr) => acc + curr.subscribers, 0);
+    const [aggregation, setAggregation] = React.useState<AggregationType>("day");
+    const [viewsColor, setViewsColor] = React.useState('hsl(var(--chart-1))');
+    const [subscribersColor, setSubscribersColor] = React.useState('hsl(var(--chart-2))');
 
     const chartConfig = {
-        views: { label: 'Views', color: 'hsl(var(--chart-1))' },
-        subscribers: { label: "Subscribers", color: "hsl(var(--chart-2))" },
+        views: { label: 'Views', color: viewsColor },
+        subscribers: { label: "Subscribers", color: subscribersColor },
     };
+
+    const { filteredAndAggregatedData, totalViews, totalSubscribers } = React.useMemo(() => {
+        if (!analytics?.dailyData || !date?.from) return { filteredAndAggregatedData: [], totalViews: 0, totalSubscribers: 0 };
+        
+        const toDate = date.to ? new Date(date.to.setHours(23, 59, 59, 999)) : new Date(date.from.setHours(23, 59, 59, 999));
+        
+        const dataInRange = analytics.dailyData.filter(d => {
+            const dDate = new Date(d.date);
+            return dDate >= date.from! && dDate <= toDate;
+        });
+
+        const currentTotalViews = dataInRange.reduce((acc, curr) => acc + curr.views, 0);
+        const currentTotalSubscribers = dataInRange.reduce((acc, curr) => acc + curr.subscribers, 0);
+
+        if (aggregation === 'day') {
+            return { filteredAndAggregatedData: dataInRange, totalViews: currentTotalViews, totalSubscribers: currentTotalSubscribers };
+        }
+
+        const aggregationMap = new Map<string, { date: string, views: number, subscribers: number }>();
+        
+        dataInRange.forEach(item => {
+            const itemDate = new Date(item.date);
+            let key: string;
+
+            if (aggregation === 'week') {
+                key = format(startOfWeek(itemDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+            } else {
+                key = format(startOfMonth(itemDate), 'yyyy-MM-dd');
+            }
+
+            const existing = aggregationMap.get(key) || { date: key, views: 0, subscribers: 0 };
+            existing.views += item.views;
+            existing.subscribers += item.subscribers;
+            aggregationMap.set(key, existing);
+        });
+
+        return { filteredAndAggregatedData: Array.from(aggregationMap.values()).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()), totalViews: currentTotalViews, totalSubscribers: currentTotalSubscribers };
+
+    }, [date, analytics?.dailyData, aggregation]);
+    
+    const tickFormatter = React.useCallback((value: string) => {
+        const date = new Date(value);
+        if (aggregation === 'month') return format(date, 'MMM yyyy');
+        if (aggregation === 'week') return format(date, 'MMM d');
+        return format(date, 'MMM d');
+    }, [aggregation]);
+
+    const renderChart = (type: ChartType, dataKey: 'views' | 'subscribers') => {
+        const colorVar = `var(--color-${dataKey})`;
+        const fillId = `fill${dataKey.charAt(0).toUpperCase() + dataKey.slice(1)}`;
+
+        switch (type) {
+            case 'bar':
+                return <BarChart accessibilityLayer data={filteredAndAggregatedData}><CartesianGrid vertical={false} /><XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={8} /><YAxis tickMargin={10} /><ChartTooltip content={<ChartTooltipContent />} /><Bar dataKey={dataKey} fill={colorVar} radius={4} /></BarChart>;
+            case 'line':
+                return <LineChart accessibilityLayer data={filteredAndAggregatedData}><CartesianGrid vertical={false} /><XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={10} /><YAxis tickMargin={10} /><ChartTooltip content={<ChartTooltipContent />} /><Line type="monotone" dataKey={dataKey} stroke={colorVar} strokeWidth={2} dot={false} /></LineChart>;
+            case 'area':
+            default:
+                return <AreaChart accessibilityLayer data={filteredAndAggregatedData} margin={{ left: 12, right: 12 }}><defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={colorVar} stopOpacity={0.8} /><stop offset="95%" stopColor={colorVar} stopOpacity={0.1} /></linearGradient></defs><CartesianGrid vertical={false} /><XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={10} /><YAxis tickMargin={10}/><ChartTooltip content={<ChartTooltipContent />} /><Area type="monotone" dataKey={dataKey} stroke={colorVar} fill={`url(#${fillId})`} strokeWidth={2} dot={false} /></AreaChart>;
+        }
+    }
+
+    if (isLoading) {
+        return <AnalyticsSkeleton />;
+    }
+    
+    if (!analytics) {
+        return <div>Could not load analytics. Please connect your YouTube account in settings.</div>;
+    }
 
     return (
         <div className="space-y-6">
@@ -66,7 +166,19 @@ export default function AnalyticsPage() {
                         An interactive overview of your channel's performance.
                     </p>
                 </div>
-                <DateRangePicker date={date} onDateChange={setDate} />
+                 <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <Select value={aggregation} onValueChange={(value: AggregationType) => setAggregation(value)}>
+                        <SelectTrigger className="w-full sm:w-[120px]">
+                            <SelectValue placeholder="Group by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="day">Daily</SelectItem>
+                            <SelectItem value="week">Weekly</SelectItem>
+                            <SelectItem value="month">Monthly</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <DateRangePicker date={date} onDateChange={setDate} />
+                </div>
             </div>
             
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -76,7 +188,7 @@ export default function AnalyticsPage() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{totalSubscribers.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{analytics.subscribers.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Total all-time subscribers</p>
                 </CardContent>
                 </Card>
@@ -86,7 +198,7 @@ export default function AnalyticsPage() {
                     <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Across all your videos</p>
                 </CardContent>
                 </Card>
@@ -96,8 +208,8 @@ export default function AnalyticsPage() {
                     <Video className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-lg font-bold truncate">My Most Epic Adventure Yet!</div>
-                    <p className="text-xs text-muted-foreground">1,203,485 views</p>
+                    <div className="text-lg font-bold truncate">{analytics.mostViewedVideo.title}</div>
+                    <p className="text-xs text-muted-foreground">{'number' === typeof analytics.mostViewedVideo.views ? analytics.mostViewedVideo.views.toLocaleString() : 'N/A'} views</p>
                 </CardContent>
                 </Card>
             </div>
@@ -106,103 +218,52 @@ export default function AnalyticsPage() {
                 <Card>
                     <CardHeader className="flex flex-row items-start justify-between gap-4">
                         <div>
-                            <CardTitle>Monthly Views</CardTitle>
-                            <CardDescription>Your total views over the selected period.</CardDescription>
+                            <CardTitle>Views</CardTitle>
+                            <CardDescription>Total views in the selected period: {totalViews.toLocaleString()}</CardDescription>
                         </div>
-                        <Select value={viewsChartType} onValueChange={(value: ChartType) => setViewsChartType(value)}>
-                            <SelectTrigger className="w-[120px] flex-shrink-0">
-                                <SelectValue placeholder="Chart Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="bar">Bar Chart</SelectItem>
-                                <SelectItem value="line">Line Chart</SelectItem>
-                                <SelectItem value="area">Area Chart</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2">
+                            <ColorPicker color={viewsColor} setColor={setViewsColor} />
+                            <Select value={viewsChartType} onValueChange={(value: ChartType) => setViewsChartType(value)}>
+                                <SelectTrigger className="w-[120px] flex-shrink-0">
+                                    <SelectValue placeholder="Chart Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="area">Area Chart</SelectItem>
+                                    <SelectItem value="bar">Bar Chart</SelectItem>
+                                    <SelectItem value="line">Line Chart</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                           {viewsChartType === 'bar' ? (
-                                <BarChart accessibilityLayer data={filteredData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                    <YAxis />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="views" fill="var(--color-views)" radius={4} />
-                                </BarChart>
-                           ) : viewsChartType === 'line' ? (
-                               <LineChart accessibilityLayer data={filteredData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
-                                    <YAxis />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Line type="monotone" dataKey="views" stroke="var(--color-views)" strokeWidth={2} dot={false} />
-                                </LineChart>
-                           ) : (
-                                <AreaChart accessibilityLayer data={filteredData} margin={{ left: 12, right: 12 }}>
-                                    <defs>
-                                        <linearGradient id="fillViews" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="var(--color-views)" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="var(--color-views)" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={10} />
-                                    <YAxis />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Area type="monotone" dataKey="views" stroke="var(--color-views)" fill="url(#fillViews)" strokeWidth={2} dot={false} />
-                                </AreaChart>
-                           )}
+                           {renderChart(viewsChartType, 'views')}
                         </ChartContainer>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-start justify-between gap-4">
-                        <CardTitle>Subscriber Growth</CardTitle>
-                        <Select value={subscribersChartType} onValueChange={(value: ChartType) => setSubscribersChartType(value)}>
-                            <SelectTrigger className="w-[120px] flex-shrink-0">
-                                <SelectValue placeholder="Chart Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="line">Line Chart</SelectItem>
-                                <SelectItem value="bar">Bar Chart</SelectItem>
-                                <SelectItem value="area">Area Chart</SelectItem>
-                            </SelectContent>
-                        </Select>
+                         <div>
+                            <CardTitle>Subscriber Growth</CardTitle>
+                            <CardDescription>New subscribers in the selected period: +{totalSubscribers.toLocaleString()}</CardDescription>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <ColorPicker color={subscribersColor} setColor={setSubscribersColor} />
+                            <Select value={subscribersChartType} onValueChange={(value: ChartType) => setSubscribersChartType(value)}>
+                                <SelectTrigger className="w-[120px] flex-shrink-0">
+                                    <SelectValue placeholder="Chart Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="line">Line Chart</SelectItem>
+                                    <SelectItem value="bar">Bar Chart</SelectItem>
+                                    <SelectItem value="area">Area Chart</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                            {subscribersChartType === 'line' ? (
-                                <LineChart accessibilityLayer data={filteredData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} />
-                                    <YAxis />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Line type="monotone" dataKey="subscribers" stroke="var(--color-subscribers)" strokeWidth={2} dot={false} />
-                                </LineChart>
-                            ) : subscribersChartType === 'bar' ? (
-                                <BarChart accessibilityLayer data={filteredData}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} tickMargin={8} />
-                                    <YAxis />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="subscribers" fill="var(--color-subscribers)" radius={4} />
-                                </BarChart>
-                            ) : (
-                                <AreaChart accessibilityLayer data={filteredData}>
-                                    <defs>
-                                        <linearGradient id="fillSubscribers" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="var(--color-subscribers)" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="var(--color-subscribers)" stopOpacity={0.1}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickFormatter={(value) => format(new Date(value), 'MMM d')} tickLine={false} axisLine={false} />
-                                    <YAxis />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Area type="monotone" dataKey="subscribers" stroke="var(--color-subscribers)" fill="url(#fillSubscribers)" strokeWidth={2} dot={false} />
-                                </AreaChart>
-                            )}
+                            {renderChart(subscribersChartType, 'subscribers')}
                         </ChartContainer>
                     </CardContent>
                 </Card>
@@ -210,3 +271,4 @@ export default function AnalyticsPage() {
         </div>
     );
 }
+

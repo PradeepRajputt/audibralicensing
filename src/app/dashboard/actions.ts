@@ -2,6 +2,7 @@
 'use server';
 
 import { google } from 'googleapis';
+import { subDays, format } from 'date-fns';
 
 /**
  * Fetches dashboard data using the public YouTube Data API.
@@ -61,24 +62,27 @@ export async function getDashboardData(channelId?: string) {
     }
 
 
-    // 3. Construct analytics object with more realistic simulated historical data
+    // 3. Construct analytics object with realistic daily data
     const totalViews = Number(stats.viewCount);
     const totalSubs = Number(stats.subscriberCount);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    
+    const dailyData: { date: string; views: number; subscribers: number }[] = [];
+    const today = new Date();
+    for (let i = 89; i >= 0; i--) {
+        const date = subDays(today, i);
+        // Simulate non-linear growth, making recent days more active
+        const dayFactor = (90 - i) / 90; // Ramps from 0 to 1
+        const randomFactor = 0.8 + Math.random() * 0.4; // Fluctuation
+        
+        const dailyViews = Math.max(0, Math.floor((totalViews / 90) * dayFactor * randomFactor * 1.5));
+        const dailySubscribers = Math.max(0, Math.floor((totalSubs / 2000) * dayFactor * randomFactor + Math.random() * 5));
 
-    // Simulate a plausible growth curve for views over the last 6 months
-    const monthlyViewsData = months.map((month, i) => ({
-        month,
-        // This generates more realistic-looking data that climbs towards the total
-        views: Math.floor(totalViews / 6 * (0.5 + i * 0.2 + Math.random() * 0.2)),
-    }));
-
-    // Simulate a plausible growth curve for subscribers over the last 6 months
-    const subscriberData = Array.from({ length: 6 }).map((_, i) => ({
-        date: `2024-0${i + 1}-01`,
-        count: Math.floor(totalSubs * (0.8 + (i * 0.04) + (Math.random() - 0.5) * 0.05)),
-    }));
-
+        dailyData.push({
+          date: format(date, 'yyyy-MM-dd'),
+          views: dailyViews,
+          subscribers: dailySubscribers,
+        });
+    }
 
     const analytics = {
       subscribers: totalSubs,
@@ -87,8 +91,7 @@ export async function getDashboardData(channelId?: string) {
         title: mostViewedVideo?.snippet?.title ?? 'N/A',
         views: mostViewedVideoViews
       },
-      monthlyViewsData,
-      subscriberData,
+      dailyData,
     };
 
     // 4. Generate some mock activity data
