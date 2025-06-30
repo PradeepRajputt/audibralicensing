@@ -4,8 +4,8 @@
  * are designed to be used by Next.js API Routes, simulating the behavior of
  * traditional cloud functions.
  */
-import { collection, addDoc, getDocs, query, where, Timestamp, doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { Timestamp } from 'firebase-admin/firestore';
+import { adminDb } from '@/lib/firebase/admin';
 import type { ProtectedContent, ManualReport, User, Violation, UserAnalytics } from '@/lib/firebase/types';
 import axios from 'axios';
 import sgMail from '@sendgrid/mail';
@@ -29,12 +29,12 @@ export async function triggerFastApiForNewContent(content: ProtectedContent) {
   }
   try {
     await axios.post(`${process.env.FASTAPI_BACKEND_URL}/new-content`, {
-      contentId: content.contentId,
+      contentId: content.id,
       creatorId: content.creatorId,
       videoURL: content.videoURL,
       title: content.title,
     });
-    console.log(`Triggered FastAPI for new content: ${content.contentId}`);
+    console.log(`Triggered FastAPI for new content: ${content.id}`);
   } catch (error) {
     console.error('Error triggering FastAPI for new content:', error);
   }
@@ -53,12 +53,12 @@ export async function triggerFastApiForNewReport(report: ManualReport) {
     }
   try {
     await axios.post(`${process.env.FASTAPI_BACKEND_URL}/new-report`, {
-      reportId: report.reportId,
+      reportId: report.id,
       creatorId: report.creatorId,
       suspectURL: report.suspectURL,
       reason: report.reason,
     });
-    console.log(`Triggered FastAPI for new manual report: ${report.reportId}`);
+    console.log(`Triggered FastAPI for new manual report: ${report.id}`);
   } catch (error) {
     console.error('Error triggering FastAPI for new report:', error);
   }
@@ -68,8 +68,8 @@ export async function triggerFastApiForNewReport(report: ManualReport) {
  * Stores a violation reported by the backend and sends an email alert to the creator.
  * This function is intended to be called by a webhook from our FastAPI service.
  */
-export async function processViolationFromFastApi(violationData: Omit<Violation, 'matchId' | 'detectedAt'> & { creatorEmail: string }) {
-  if (!db) {
+export async function processViolationFromFastApi(violationData: Omit<Violation, 'id' | 'detectedAt'> & { creatorEmail: string }) {
+  if (!adminDb) {
     const message = "Firebase is not configured. Cannot process violation.";
     console.error(message);
     return { success: false, error: message };
@@ -82,11 +82,11 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
 
   try {
     // 1. Store the violation in Firestore
-    const newViolation: Omit<Violation, 'matchId'> = {
+    const newViolation: Omit<Violation, 'id'> = {
         ...violationData,
-        detectedAt: Timestamp.now(),
+        detectedAt: Timestamp.now().toDate().toISOString(),
     }
-    const docRef = await addDoc(collection(db, 'violations'), newViolation);
+    const docRef = await adminDb.collection('violations').add(newViolation);
     console.log(`Stored violation with ID: ${docRef.id}`);
 
     // 2. Send an email alert via SendGrid
@@ -122,16 +122,16 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
  * This is designed to be run by a scheduled cron job.
  */
 export async function updateAllUserAnalytics() {
-  if (!db) {
+  if (!adminDb) {
     const message = "Firebase is not configured. Cannot update analytics.";
     console.error(message);
     return { success: false, updated: 0, total: 0, error: message };
   }
 
-  const usersRef = collection(db, 'users');
+  const usersRef = adminDb.collection('users');
   // Find all users who have a youtubeId
-  const q = query(usersRef, where('youtubeId', '!=', null));
-  const querySnapshot = await getDocs(q);
+  const q = usersRef.where('youtubeId', '!=', null);
+  const querySnapshot = await q.get();
 
   if (querySnapshot.empty) {
     console.log('No users with YouTube IDs found to update.');
@@ -156,12 +156,12 @@ export async function updateAllUserAnalytics() {
             mostViewedVideo: mockAnalytics.mostViewedVideo,
         };
 
-        const analyticsRef = doc(db, 'users', user.uid, 'analytics', 'youtube');
-        // Using updateDoc with set to true would also work to create/update
-        await updateDoc(doc(db, 'users', user.uid, 'analytics', 'youtube'), {
+        const analyticsRef = adminDb.collection('users').doc(user.uid).collection('analytics').doc('youtube');
+        
+        await analyticsRef.set({
             ...analyticsData,
             lastFetched: Timestamp.now(),
-        });
+        }, { merge: true });
 
         console.log(`Updated analytics for user ${user.uid}`);
         updatedCount++;

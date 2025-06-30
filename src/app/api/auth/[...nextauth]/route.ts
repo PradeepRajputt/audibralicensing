@@ -24,34 +24,38 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials): Promise<any> {
-        if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-            console.error("Firebase Admin credentials missing. Cannot authorize user.");
-            throw new Error("Server is not configured for login. Please contact support.");
-        }
-        
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Please enter your email and password.");
         }
         
-        const user = await getUserByEmail(credentials.email);
-        
-        if (!user || !user.passwordHash) {
-          throw new Error("No user found with this email or user has no password set.");
+        try {
+            const user = await getUserByEmail(credentials.email);
+            
+            if (!user || !user.passwordHash) {
+              throw new Error("No user found with this email or user has no password set.");
+            }
+    
+            const isValid = await verifyPassword(credentials.password, user.passwordHash);
+    
+            if (!isValid) {
+              throw new Error("Incorrect password.");
+            }
+    
+            // Return a serializable user object for the session token
+            return {
+              id: user.uid,
+              email: user.email,
+              name: user.displayName,
+              role: user.role,
+            };
+        } catch (error) {
+            if (error instanceof Error && error.message.includes("Firestore is not initialized")) {
+                console.error("Login failed due to server configuration:", error.message);
+                throw new Error('Server not configured for login. Please contact an administrator.');
+            }
+            // Re-throw other errors (like wrong password)
+            throw error;
         }
-
-        const isValid = await verifyPassword(credentials.password, user.passwordHash);
-
-        if (!isValid) {
-          throw new Error("Incorrect password.");
-        }
-
-        // Return a serializable user object for the session token
-        return {
-          id: user.uid,
-          email: user.email,
-          name: user.displayName,
-          role: user.role,
-        };
       },
     }),
   ],

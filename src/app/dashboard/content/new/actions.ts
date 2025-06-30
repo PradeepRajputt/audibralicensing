@@ -2,8 +2,8 @@
 'use server';
 
 import { z } from 'zod';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
+import { collection, Timestamp, addDoc } from 'firebase-admin/firestore';
+import { adminDb } from '@/lib/firebase/admin';
 import { triggerFastApiForNewContent } from '@/lib/services/backend-services';
 import type { ProtectedContent } from '@/lib/firebase/types';
 import { revalidatePath } from 'next/cache';
@@ -20,14 +20,10 @@ const formSchema = z.object({
 });
 
 export async function addProtectedContentAction(values: z.infer<typeof formSchema>) {
-  // If Firebase is not configured, we can't save the data.
-  // Instead of showing an error, we'll simulate a successful submission
-  // to allow the user to continue testing the application flow.
-  if (!db) {
-    console.log("Firebase not configured. Simulating successful content submission.");
-    // We still want the redirect and revalidation to happen.
-    revalidatePath('/dashboard/content');
-    redirect('/dashboard/content');
+  if (!adminDb) {
+    const message = "Firebase Admin is not configured. Please check server credentials.";
+    console.error(message);
+    return { success: false, message: 'Server is not configured for this action. Please contact support.' };
   }
 
   try {
@@ -38,15 +34,15 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
       platform: values.platform,
       videoURL: values.videoURL,
       tags: values.tags ? values.tags.split(',').map(tag => tag.trim()) : [],
-      uploadDate: Timestamp.now(),
+      uploadDate: Timestamp.now().toDate().toISOString(),
     };
 
-    const docRef = await addDoc(collection(db, 'protectedContent'), newContentData);
+    const docRef = await adminDb.collection('protectedContent').add(newContentData);
     console.log(`Protected content saved with ID: ${docRef.id}`);
 
     const fullContent: ProtectedContent = {
       ...newContentData,
-      contentId: docRef.id,
+      id: docRef.id,
     };
     await triggerFastApiForNewContent(fullContent);
     

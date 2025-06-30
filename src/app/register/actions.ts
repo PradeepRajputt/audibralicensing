@@ -14,11 +14,6 @@ const registerFormSchema = z.object({
 });
 
 export async function registerUser(values: z.infer<typeof registerFormSchema>) {
-    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
-        console.error("Firebase Admin credentials are not set. Cannot register user.");
-        return { success: false, message: 'Server is not configured for registration. Please contact support.' };
-    }
-    
     try {
         const existingUser = await getUserByEmail(values.email);
 
@@ -42,6 +37,9 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
         await createUser(newUser);
     } catch (error) {
         console.error("Error creating user:", error);
+        if (error instanceof Error && error.message.includes("Firestore is not initialized")) {
+             return { success: false, message: 'The server is not configured for registration. Please add Firebase credentials to your .env file.' };
+        }
         const message = error instanceof Error ? error.message : 'An unknown error occurred. Please try again.';
         return { success: false, message };
     }

@@ -1,9 +1,11 @@
 
 import * as admin from 'firebase-admin';
 
-// This prevents initialization on every hot-reload in development
-if (!admin.apps.length) {
-  try {
+let adminDb: admin.firestore.Firestore | null = null;
+let adminAuth: admin.auth.Auth | null = null;
+
+try {
+  if (!admin.apps.length) {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
     
     if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
@@ -14,16 +16,19 @@ if (!admin.apps.length) {
                 privateKey: privateKey,
             }),
         });
+        adminDb = admin.firestore();
+        adminAuth = admin.auth();
+        console.log("Firebase Admin SDK initialized successfully.");
     } else {
-        console.warn("Firebase admin credentials are not set. Server-side Firebase features will be unavailable.");
+        console.warn("Firebase admin credentials are not fully set in .env. Server-side Firebase features will be unavailable. Please check your environment variables.");
     }
-  } catch (error) {
-    console.error('Firebase admin initialization error:', error);
+  } else {
+    // If already initialized, get the instances
+    adminDb = admin.firestore();
+    adminAuth = admin.auth();
   }
+} catch (error) {
+    console.error('Firebase admin initialization error:', error);
 }
-
-// Export potentially null instances if initialization failed
-const adminDb = admin.apps.length ? admin.firestore() : null;
-const adminAuth = admin.apps.length ? admin.auth() : null;
 
 export { adminDb, adminAuth };
