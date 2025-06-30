@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { updateUserStatus as dbUpdateUserStatus } from '@/lib/users-store';
 
 // Note: These actions now call the client-side store, which is suitable for this prototype.
-// In a real application, these would interact directly with a database via server-only functions.
+// In a real app, these would interact directly with a database via server-only functions.
 
 export async function suspendCreator(creatorId: string) {
   try {
