@@ -1,11 +1,10 @@
 
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { adminDb } from '@/lib/firebase/admin';
 import type { User } from '@/lib/firebase/types';
 import { Timestamp } from 'firebase-admin/firestore';
 
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
       throw new Error("Firestore is not initialized. Check Firebase Admin credentials.");
   }
@@ -28,7 +27,6 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function createUser(userData: Omit<User, 'uid'>): Promise<string> {
-   const { adminDb } = getFirebaseAdmin();
    if (!adminDb) {
        throw new Error("Firestore is not initialized. Cannot create user.");
    }

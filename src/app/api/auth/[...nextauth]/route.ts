@@ -49,11 +49,11 @@ export const authOptions: NextAuthOptions = {
               role: user.role,
             };
         } catch (error) {
+            console.error("Login failed:", error);
             if (error instanceof Error && error.message.includes("Firestore is not initialized")) {
-                console.error("Login failed due to server configuration:", error.message);
-                throw new Error('Server not configured for login. Please contact an administrator.');
+                throw new Error('Login failed. Please ensure server credentials are set in the .env file.');
             }
-            // Re-throw other errors (like wrong password)
+            // Re-throw other errors (like wrong password or no user found)
             throw error;
         }
       },
