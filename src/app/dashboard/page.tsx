@@ -4,39 +4,30 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Activity, ShieldCheck, Youtube, Link as LinkIcon, LogIn } from "lucide-react";
-import { useSession, signIn } from 'next-auth/react';
+import { Activity, ShieldCheck, Youtube, LogIn } from "lucide-react";
 import { getDashboardData } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export default function CreatorDashboardPage() {
-  const { data: session, status } = useSession();
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // We only fetch data if the user is authenticated.
-    if (status === 'authenticated') {
-      setIsLoading(true);
-      getDashboardData().then(dashboardData => {
+    getDashboardData().then(dashboardData => {
         setData(dashboardData);
         setIsLoading(false);
-      });
-    } else if (status === 'unauthenticated') {
-        setIsLoading(false);
-    }
-  }, [status]);
+    });
+  }, []);
 
-  if (isLoading || status === 'loading') {
+  if (isLoading) {
     return <DashboardSkeleton />;
   }
   
-  if (!session || !data) {
-    return <ConnectAccountPrompt />;
+  if (!data) {
+    return <ConfigurationErrorPrompt />;
   }
 
   return (
@@ -151,22 +142,18 @@ function DashboardSkeleton() {
     );
 }
 
-function ConnectAccountPrompt() {
+function ConfigurationErrorPrompt() {
     return (
         <Card className="text-center w-full max-w-lg mx-auto">
             <CardHeader>
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <LogIn className="w-12 h-12 text-primary" />
+                <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
+                    <Youtube className="w-12 h-12 text-destructive" />
                 </div>
-                <CardTitle className="mt-4">Connect Your Account</CardTitle>
-                <CardDescription>To view your dashboard and see real-time data, please sign in with your Google account.</CardDescription>
+                <CardTitle className="mt-4">Configuration Error</CardTitle>
+                <CardDescription>
+                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` and `YOUTUBE_CHANNEL_ID` are correctly set in the `.env` file and that you have deployed the latest changes.
+                </CardDescription>
             </CardHeader>
-            <CardContent>
-                <Button onClick={() => signIn('google', { callbackUrl: '/dashboard' })}>
-                    <Youtube className="mr-2 h-5 w-5" />
-                    Sign in with Google
-                </Button>
-            </CardContent>
         </Card>
     );
 }

@@ -1,14 +1,15 @@
-
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScanSearch, FileText, ShieldCheck, Clock } from "lucide-react";
+import { ScanSearch, FileText, ShieldCheck, Clock, Youtube } from "lucide-react";
 import Link from 'next/link';
-import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getDashboardData } from "../actions";
+
+type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
 // A representative list of timezones
 const timezones = [
@@ -22,14 +23,14 @@ const timezones = [
 ];
 
 export default function OverviewPage() {
-  const { data: session } = useSession();
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [selectedTimezone, setSelectedTimezone] = useState('UTC');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    // This effect runs only on the client, avoiding hydration mismatch
     const timer = setInterval(() => {
       const timeString = new Date().toLocaleTimeString('en-US', {
         timeZone: selectedTimezone,
@@ -40,24 +41,36 @@ export default function OverviewPage() {
       });
       setCurrentTime(timeString);
     }, 1000);
-
-    // Cleanup function to clear the interval when the component unmounts or timezone changes
     return () => clearInterval(timer);
   }, [selectedTimezone]);
 
-  const displayName = session?.user?.name ?? 'Creator';
-  const avatarUrl = session?.user?.image ?? "https://placehold.co/128x128.png";
+  useEffect(() => {
+    getDashboardData().then(dashboardData => {
+        setData(dashboardData);
+        setIsLoading(false);
+    });
+  }, []);
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+  
+  if (!data) {
+    return <ConfigurationErrorPrompt />;
+  }
+  
+  const { creatorName, creatorImage } = data;
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-            <AvatarImage src={avatarUrl} alt="User Avatar" data-ai-hint="profile picture" />
-            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+            <AvatarImage src={creatorImage ?? "https://placehold.co/128x128.png"} alt="Creator Avatar" data-ai-hint="profile picture" />
+            <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
             </Avatar>
             <div>
-            <h1 className="text-3xl font-bold">Welcome back, {displayName}!</h1>
+            <h1 className="text-3xl font-bold">Welcome back, {creatorName}!</h1>
             <p className="text-muted-foreground">What would you like to accomplish today?</p>
             </div>
         </div>
@@ -136,4 +149,42 @@ export default function OverviewPage() {
       </div>
     </div>
   );
+}
+
+function DashboardSkeleton() {
+    return (
+        <div className="space-y-8 animate-pulse">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-16 w-16 rounded-full" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-8 w-64" />
+                        <Skeleton className="h-4 w-80" />
+                    </div>
+                </div>
+                <Skeleton className="h-24 w-72" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-16 w-16 rounded-full" /></CardHeader><CardContent><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardContent></Card>
+            </div>
+        </div>
+    );
+}
+
+function ConfigurationErrorPrompt() {
+    return (
+        <Card className="text-center w-full max-w-lg mx-auto">
+            <CardHeader>
+                <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
+                    <Youtube className="w-12 h-12 text-destructive" />
+                </div>
+                <CardTitle className="mt-4">Configuration Error</CardTitle>
+                <CardDescription>
+                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` and `YOUTUBE_CHANNEL_ID` are correctly set in the `.env` file and that you have deployed the latest changes.
+                </CardDescription>
+            </CardHeader>
+        </Card>
+    );
 }
