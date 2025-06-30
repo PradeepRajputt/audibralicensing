@@ -1,13 +1,15 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScanSearch, FileText, ShieldCheck, Clock, Youtube } from "lucide-react";
+import { ScanSearch, FileText, ShieldCheck, Clock, Youtube, Home } from "lucide-react";
 import Link from 'next/link';
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getDashboardData } from "../actions";
+import { getDashboardData } from '../actions';
+import { Button } from "@/components/ui/button";
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
@@ -45,7 +47,10 @@ export default function OverviewPage() {
   }, [selectedTimezone]);
 
   useEffect(() => {
-    getDashboardData().then(dashboardData => {
+    const channelData = localStorage.getItem('creator_shield_youtube_channel');
+    const channelId = channelData ? JSON.parse(channelData).id : undefined;
+
+    getDashboardData(channelId).then(dashboardData => {
         setData(dashboardData);
         setIsLoading(false);
     });
@@ -182,9 +187,14 @@ function ConfigurationErrorPrompt() {
                 </div>
                 <CardTitle className="mt-4">Configuration Error</CardTitle>
                 <CardDescription>
-                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` and `YOUTUBE_CHANNEL_ID` are correctly set in the `.env` file and that you have deployed the latest changes.
+                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
                 </CardDescription>
             </CardHeader>
+            <CardContent>
+                <Button asChild variant="outline">
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
         </Card>
     );
 }

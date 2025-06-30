@@ -1,12 +1,15 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart, Area, AreaChart } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Users, Eye, Video, Youtube } from 'lucide-react';
+import { Users, Eye, Video, Youtube, LogIn } from 'lucide-react';
 import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 type AnalyticsData = NonNullable<Awaited<ReturnType<typeof getDashboardData>>>['analytics'];
 
@@ -19,9 +22,14 @@ function ConfigurationErrorPrompt() {
                 </div>
                 <CardTitle className="mt-4">Configuration Error</CardTitle>
                 <CardDescription>
-                   Could not fetch analytics data from YouTube. Please ensure your `YOUTUBE_API_KEY` and `YOUTUBE_CHANNEL_ID` are set correctly in the `.env` file and that the YouTube Data API is enabled for your key.
+                   Could not fetch analytics data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
                 </CardDescription>
             </CardHeader>
+            <CardContent>
+                <Button asChild variant="outline">
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
         </Card>
     );
 }
@@ -52,7 +60,10 @@ export default function AnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getDashboardData().then(dashboardData => {
+    const channelData = localStorage.getItem('creator_shield_youtube_channel');
+    const channelId = channelData ? JSON.parse(channelData).id : undefined;
+
+    getDashboardData(channelId).then(dashboardData => {
         setData(dashboardData?.analytics ?? null);
         setIsLoading(false);
     });

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import { Activity, ShieldCheck, Youtube, LogIn } from "lucide-react";
 import { getDashboardData } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
@@ -16,7 +18,10 @@ export default function CreatorDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getDashboardData().then(dashboardData => {
+    const channelData = localStorage.getItem('creator_shield_youtube_channel');
+    const channelId = channelData ? JSON.parse(channelData).id : undefined;
+
+    getDashboardData(channelId).then(dashboardData => {
         setData(dashboardData);
         setIsLoading(false);
     });
@@ -151,9 +156,14 @@ function ConfigurationErrorPrompt() {
                 </div>
                 <CardTitle className="mt-4">Configuration Error</CardTitle>
                 <CardDescription>
-                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` and `YOUTUBE_CHANNEL_ID` are correctly set in the `.env` file and that you have deployed the latest changes.
+                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
                 </CardDescription>
             </CardHeader>
+            <CardContent>
+                <Button asChild variant="outline">
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
         </Card>
     );
 }

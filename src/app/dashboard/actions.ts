@@ -5,12 +5,15 @@ import { google } from 'googleapis';
 
 /**
  * Fetches dashboard data using the public YouTube Data API.
- * It uses an API key and a pre-configured channel ID from environment variables.
+ * It uses the provided channel ID, or falls back to the one in the .env file.
+ * @param channelId The optional YouTube channel ID to fetch data for.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
-export async function getDashboardData() {
-  if (!process.env.YOUTUBE_API_KEY || !process.env.YOUTUBE_CHANNEL_ID) {
-      console.error('YouTube API Key or Channel ID is not configured in .env file.');
+export async function getDashboardData(channelId?: string) {
+  const finalChannelId = channelId || process.env.YOUTUBE_CHANNEL_ID;
+
+  if (!process.env.YOUTUBE_API_KEY || !finalChannelId) {
+      console.error('YouTube API Key or Channel ID is not configured.');
       // Return null to allow the UI to show a configuration error state.
       return null;
   }
@@ -23,20 +26,20 @@ export async function getDashboardData() {
 
     // 1. Fetch channel statistics
     const channelResponse = await youtube.channels.list({
-      id: [process.env.YOUTUBE_CHANNEL_ID],
+      id: [finalChannelId],
       part: ['statistics', 'snippet'],
     });
 
     const channel = channelResponse.data.items?.[0];
     const stats = channel?.statistics;
     if (!stats || !channel?.snippet) {
-      throw new Error("Could not fetch channel statistics or snippet.");
+      throw new Error(`Could not fetch channel statistics or snippet for ID: ${finalChannelId}`);
     }
 
     // 2. Fetch most viewed video (as a simple example)
     const videosResponse = await youtube.search.list({
         part: ['snippet'],
-        channelId: process.env.YOUTUBE_CHANNEL_ID,
+        channelId: finalChannelId,
         order: 'viewCount',
         type: ['video'],
         maxResults: 1,

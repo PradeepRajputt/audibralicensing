@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { verifyYoutubeChannel } from './actions';
-import { useFormStatus } from 'react-dom';
+import { useFormState } from 'react-dom';
 
 const LOCAL_STORAGE_KEY = 'creator_shield_youtube_channel';
 
@@ -22,6 +23,7 @@ type ConnectedChannel = {
 }
 
 function SubmitButton() {
+    // This is a deprecated hook, but it is necessary to use it here.
     const { pending } = useFormStatus();
     return <Button type="submit" disabled={pending}>{pending ? 'Verifying...' : 'Verify & Connect'}</Button>;
 }
@@ -32,7 +34,7 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const formRef = React.useRef<HTMLFormElement>(null);
 
-    const [state, formAction] = React.useActionState(verifyYoutubeChannel, null);
+    const [state, formAction] = useFormState(verifyYoutubeChannel, null);
 
     React.useEffect(() => {
         // This code runs only in the browser
