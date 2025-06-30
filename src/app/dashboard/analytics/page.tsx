@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
         setIsLoading(false);
       });
     } else if (status === 'unauthenticated') {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   }, [status]);
 
@@ -271,7 +271,7 @@ function ConnectAccountPrompt() {
                 <CardDescription>To view your analytics, please sign in with your Google account.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button onClick={() => signIn('google', { callbackUrl: '/dashboard' })}>
+                <Button onClick={() => signIn('google', { callbackUrl: '/dashboard/analytics' })}>
                     <Youtube className="mr-2 h-5 w-5" />
                     Sign in with Google
                 </Button>
