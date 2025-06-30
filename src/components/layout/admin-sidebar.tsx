@@ -13,7 +13,6 @@ import {
 import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck, BarChart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
 
 const menuItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -64,17 +63,6 @@ export function AdminSidebar() {
                 <Settings />
                 <span>Settings</span>
               </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              onClick={() => signOut({ callbackUrl: '/' })}
-            >
-              <button>
-                <LogOut />
-                <span>Logout</span>
-              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

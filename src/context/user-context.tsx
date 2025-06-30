@@ -2,18 +2,52 @@
 'use client';
 
 import * as React from 'react';
-import { getDashboardData } from '@/app/dashboard/actions';
-import { useSession } from 'next-auth/react';
 
-type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
-type AnalyticsData = NonNullable<DashboardData>['analytics'];
-type ActivityData = NonNullable<DashboardData>['activity'];
 type UserStatus = 'active' | 'suspended' | 'deactivated';
 
+const mockData = {
+    analytics: {
+        subscribers: 123456,
+        views: 12345678,
+        mostViewedVideo: {
+            title: "My Most Viral Video Ever!",
+            views: 2300000
+        },
+        dailyData: Array.from({ length: 90 }, (_, i) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (89 - i));
+            const dayFactor = (i + 1) / 90;
+            const randomFactor = 0.8 + Math.random() * 0.4;
+            return {
+                date: date.toISOString().split('T')[0],
+                views: Math.floor((12345678 / 90) * dayFactor * randomFactor * 1.5),
+                subscribers: Math.floor((123456 / 2000) * dayFactor * randomFactor + Math.random() * 5),
+            };
+        })
+    },
+    activity: [
+        {
+          type: "New Infringement Detected",
+          details: "On website 'stolencontent.com/my-video'",
+          status: "Action Required",
+          date: `1 hour ago`,
+          variant: "destructive"
+        },
+        {
+          type: "YouTube Scan Complete",
+          details: `Channel 'Sample Creator' scanned.`,
+          status: "No Issues",
+          date: "1 day ago",
+          variant: "default"
+        },
+    ],
+    creatorName: 'Sample Creator',
+    creatorImage: 'https://placehold.co/128x128.png',
+};
+
 interface UserContextType {
-    data: DashboardData | null;
-    analytics: AnalyticsData | null;
-    activity: ActivityData | null;
+    analytics: typeof mockData.analytics | null;
+    activity: typeof mockData.activity | null;
     isLoading: boolean;
     creatorName: string | undefined;
     creatorImage: string | undefined;
@@ -24,40 +58,23 @@ interface UserContextType {
 const UserContext = React.createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-    const { data: session } = useSession();
-    const [data, setData] = React.useState<DashboardData | null>(null);
-    const [isLoading, setIsLoading] = React.useState(true);
+    const [isLoading, setIsLoading] = React.useState(false);
     const [status, setStatus] = React.useState<UserStatus>('active');
 
     React.useEffect(() => {
-        setIsLoading(true);
-
         const storedStatus = localStorage.getItem('user_status') as UserStatus;
         if (storedStatus) {
             setStatus(storedStatus);
         }
-        
-        const storedChannelData = localStorage.getItem('creator_shield_youtube_channel');
-        const localStorageChannelId = storedChannelData ? JSON.parse(storedChannelData).id : undefined;
+    }, []);
 
-        getDashboardData(localStorageChannelId).then(dashboardData => {
-            setData(dashboardData);
-            setIsLoading(false);
-        }).catch(err => {
-            console.error("Failed to fetch dashboard data:", err);
-            setData(null);
-            setIsLoading(false);
-        });
-
-    }, [status, session]);
 
     const value = {
-        data,
-        analytics: data?.analytics ?? null,
-        activity: data?.activity ?? [],
+        analytics: mockData.analytics,
+        activity: mockData.activity,
         isLoading,
-        creatorName: data?.creatorName ?? session?.user?.name ?? undefined,
-        creatorImage: data?.creatorImage ?? session?.user?.image ?? undefined,
+        creatorName: mockData.creatorName,
+        creatorImage: mockData.creatorImage,
         status,
         setStatus,
     };

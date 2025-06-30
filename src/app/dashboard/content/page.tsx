@@ -1,44 +1,22 @@
+
+'use client';
+
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, FileVideo, Globe, Youtube } from "lucide-react";
+import { PlusCircle, FileVideo, Globe, Youtube, Music, Image as ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { getAllContent, type ProtectedContent } from '@/lib/content-store';
 
-const protectedContent = [
-  {
-    title: "My Most Epic Adventure Yet!",
-    contentType: "video",
-    platform: "youtube",
-    uploadDate: "2024-05-15",
-  },
-  {
-    title: "How to Bake the Perfect Sourdough",
-    contentType: "video",
-    platform: "youtube",
-    uploadDate: "2024-04-22",
-  },
-  {
-    title: "My Travel Blog - Summer in Italy",
-    contentType: "text",
-    platform: "web",
-    uploadDate: "2024-03-10",
-  },
-  {
-    title: "Acoustic Guitar Session",
-    contentType: "audio",
-    platform: "vimeo",
-    uploadDate: "2024-02-01",
-  },
-];
-
-const platformIcons = {
+const platformIcons: Record<string, React.ReactNode> = {
     youtube: <Youtube className="h-5 w-5 text-red-500" />,
     vimeo: <FileVideo className="h-5 w-5 text-blue-400" />,
     web: <Globe className="h-5 w-5" />,
 } as const;
 
-const contentTypeBadgeVariant = {
+const contentTypeBadgeVariant: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
     video: "default",
     audio: "secondary",
     text: "outline",
@@ -47,6 +25,19 @@ const contentTypeBadgeVariant = {
 
 
 export default function ProtectedContentPage() {
+  const [content, setContent] = React.useState<ProtectedContent[]>([]);
+
+  React.useEffect(() => {
+    const loadContent = () => {
+      setContent(getAllContent());
+    };
+    loadContent();
+    window.addEventListener('storage', loadContent);
+    return () => {
+      window.removeEventListener('storage', loadContent);
+    }
+  }, []);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -74,21 +65,27 @@ export default function ProtectedContentPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {protectedContent.map((item, index) => (
-              <TableRow key={index}>
+            {content.length > 0 ? content.map((item) => (
+              <TableRow key={item.id}>
                 <TableCell className="font-medium">{item.title}</TableCell>
                 <TableCell>
-                    <Badge variant={contentTypeBadgeVariant[item.contentType as keyof typeof contentTypeBadgeVariant]}>{item.contentType}</Badge>
+                    <Badge variant={contentTypeBadgeVariant[item.contentType]}>{item.contentType}</Badge>
                 </TableCell>
                 <TableCell>
                     <div className="flex items-center gap-2">
-                        {platformIcons[item.platform as keyof typeof platformIcons]}
+                        {platformIcons[item.platform] || <FileVideo className="h-5 w-5" />}
                         <span className="capitalize">{item.platform}</span>
                     </div>
                 </TableCell>
                 <TableCell className="text-right">{new Date(item.uploadDate).toLocaleDateString()}</TableCell>
               </TableRow>
-            ))}
+            )) : (
+              <TableRow>
+                <TableCell colSpan={4} className="h-24 text-center">
+                  No content added yet.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

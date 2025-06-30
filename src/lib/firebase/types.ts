@@ -1,4 +1,3 @@
-import type { Timestamp } from 'firebase/firestore';
 
 /**
  * Represents a user in the `users` collection.
@@ -9,9 +8,10 @@ export interface User {
   displayName: string | null;
   email: string | null;
   role: 'creator' | 'admin';
-  joinDate: Timestamp;
+  joinDate: string; // Using ISO string for client-side
   platformsConnected: ('youtube' | 'instagram' | 'tiktok')[];
   youtubeId?: string;
+  status: 'active' | 'suspended' | 'deactivated';
 }
 
 /**
@@ -22,7 +22,7 @@ export interface UserAnalytics {
   subscribers: number;
   views: number;
   mostViewedVideo: string; // video ID or URL
-  lastFetched: Timestamp;
+  lastFetched: string; // Using ISO string for client-side
 }
 
 /**
@@ -37,7 +37,7 @@ export interface ProtectedContent {
   title: string;
   tags: string[];
   platform: 'youtube' | 'vimeo' | 'web';
-  uploadDate: Timestamp;
+  uploadDate: string; // Using ISO string for client-side
 }
 
 /**
@@ -50,7 +50,7 @@ export interface Violation {
   matchedURL: string;
   platform: 'youtube' | 'web' | 'instagram' | 'tiktok';
   matchScore: number; // e.g., 0.95 for 95% match
-  detectedAt: Timestamp;
+  detectedAt: string; // Using ISO string for client-side
   status: 'pending_review' | 'action_taken' | 'dismissed';
 }
 
@@ -66,7 +66,7 @@ export interface ManualReport {
   reason: string;
   evidenceLink?: string;
   formStatus: 'submitted' | 'in_review' | 'resolved' | 'rejected';
-  createdAt: Timestamp;
+  createdAt: string; // Using ISO string for client-side
 }
 
 /**
@@ -79,7 +79,7 @@ export interface AdminAction {
   adminId: User['uid'];
   status: 'warning_sent' | 'takedown_issued' | 'resolved' | 'escalated';
   warningSent: boolean;
-  deadline?: Timestamp;
-  resolutionDate: Timestamp;
+  deadline?: string; // Using ISO string for client-side
+  resolutionDate: string; // Using ISO string for client-side
   notes?: string;
 }

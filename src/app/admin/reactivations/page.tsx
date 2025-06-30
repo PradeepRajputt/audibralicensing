@@ -1,70 +1,43 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2 } from "lucide-react";
-import { approveReactivationRequest, denyReactivationRequest } from './actions';
+import { approveReactivationRequest, denyReactivationRequest, getAllReactivationRequests, type ReactivationRequest } from '@/lib/reactivations-store';
 
-// Mock data for reactivation requests. In a real app, this would be fetched from Firestore.
-const initialRequests = [
-  {
-    creatorId: "user_creator_wlallah",
-    displayName: "Online Wlallah",
-    email: "guddumis003@gmail.com",
-    avatar: "https://placehold.co/128x128.png",
-    requestDate: "2024-06-12",
-  },
-  {
-    creatorId: "user_creator_789",
-    displayName: "Bob Builds",
-    email: "bob@example.com",
-    avatar: "https://placehold.co/128x128.png",
-    requestDate: "2024-06-01",
-  },
-  {
-    creatorId: "user_creator_xyz",
-    displayName: "Deleted User",
-    email: "deleted@example.com",
-    avatar: "https://placehold.co/128x128.png",
-    requestDate: "2024-05-28",
-  },
-];
-
-type Request = typeof initialRequests[0];
 
 export default function ReactivationRequestsPage() {
   const { toast } = useToast();
-  const [requests, setRequests] = useState(initialRequests);
+  const [requests, setRequests] = useState<ReactivationRequest[]>([]);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const handleAction = async (action: 'approve' | 'deny', request: Request) => {
+  useEffect(() => {
+    setRequests(getAllReactivationRequests());
+  }, []);
+
+  const handleAction = async (action: 'approve' | 'deny', request: ReactivationRequest) => {
     setLoadingAction(`${action}-${request.creatorId}`);
     
-    let result;
+    // Simulate async action
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     if (action === 'approve') {
-      result = await approveReactivationRequest(request.creatorId, request.email, request.displayName);
+      approveReactivationRequest(request.creatorId);
     } else {
-      result = await denyReactivationRequest(request.creatorId, request.email, request.displayName);
+      denyReactivationRequest(request.creatorId);
     }
+    
+    setRequests(prev => prev.filter(r => r.creatorId !== request.creatorId));
 
-    if (result.success) {
-      toast({
-        title: "Action Successful",
-        description: result.message,
-      });
-      // Remove the request from the list after action
-      setRequests(prev => prev.filter(r => r.creatorId !== request.creatorId));
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Action Failed",
-        description: result.message,
-      });
-    }
-
+    toast({
+      title: "Action Successful",
+      description: `Request for ${request.displayName} has been ${action}d.`,
+    });
+    
     setLoadingAction(null);
   }
 

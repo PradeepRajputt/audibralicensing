@@ -6,49 +6,43 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, CheckCircle, XCircle, AlertCircle, CircleSlash } from "lucide-react";
+import { Eye, Circle } from "lucide-react";
 import Link from "next/link";
 import { getAllUsers, type User } from '@/lib/users-store';
-import { getCreatorStatuses, type CreatorStatus } from './actions';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type UserWithYTStatus = User & { ytStatus?: CreatorStatus['status'] };
-
 export default function UserManagementPage() {
-  const [users, setUsers] = React.useState<UserWithYTStatus[]>([]);
+  const [users, setUsers] = React.useState<User[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   
   React.useEffect(() => {
-    // Load initial static user data
-    const initialUsers = getAllUsers();
-    setUsers(initialUsers);
-    
-    // Fetch real-time statuses from the YouTube API via a server action
-    getCreatorStatuses(initialUsers).then(statuses => {
-      setUsers(currentUsers => 
-        currentUsers.map(user => {
-          const statusUpdate = statuses.find(s => s.uid === user.uid);
-          return statusUpdate ? { ...user, ytStatus: statusUpdate.status } : user;
-        })
-      );
+    // Simulate fetching data
+    setTimeout(() => {
+      setUsers(getAllUsers());
       setIsLoading(false);
-    });
+    }, 500);
   }, []);
-
-  const statusMap: Record<CreatorStatus['status'], { icon: React.ElementType, color: string, text: string, variant: "default" | "secondary" | "destructive" }> = {
-    'Active': { icon: CheckCircle, color: 'text-green-500', text: 'Active', variant: 'default' },
-    'Not Found': { icon: XCircle, color: 'text-red-500', text: 'Not Found', variant: 'destructive' },
-    'Not Connected': { icon: CircleSlash, color: 'text-muted-foreground', text: 'Not Connected', variant: 'secondary' },
-    'Error': { icon: AlertCircle, color: 'text-yellow-500', text: 'API Error', variant: 'secondary' },
-  };
+  
+  const getStatusInfo = (status: User['status']) => {
+    switch (status) {
+      case 'active':
+        return { variant: 'default', text: 'Active' };
+      case 'suspended':
+        return { variant: 'secondary', text: 'Suspended' };
+      case 'deactivated':
+        return { variant: 'destructive', text: 'Deactivated' };
+      default:
+        return { variant: 'outline', text: 'Unknown' };
+    }
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Creator Management</CardTitle>
         <CardDescription>
-          A list of all creators on the CreatorShield platform with their real-time YouTube status.
+          A list of all creators on the CreatorShield platform.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -58,14 +52,21 @@ export default function UserManagementPage() {
               <TableHead>User</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Join Date</TableHead>
-              <TableHead>YouTube Status</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => {
-              const statusInfo = user.ytStatus ? statusMap[user.ytStatus] : null;
-
+            {isLoading ? Array.from({ length: 3 }).map((_, index) => (
+                <TableRow key={index}>
+                    <TableCell><Skeleton className="h-10 w-48" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-10 w-10 ml-auto" /></TableCell>
+                </TableRow>
+            )) : users.map((user) => {
+              const statusInfo = getStatusInfo(user.status);
               return (
               <TableRow key={user.uid}>
                 <TableCell>
@@ -80,14 +81,10 @@ export default function UserManagementPage() {
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{new Date(user.joinDate).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  {isLoading ? <Skeleton className="h-5 w-24" /> : (
-                    statusInfo && (
-                       <Badge variant={statusInfo.variant}>
-                         <statusInfo.icon className="mr-1 h-3 w-3" />
-                         {statusInfo.text}
-                       </Badge>
-                    )
-                  )}
+                  <Badge variant={statusInfo.variant}>
+                     <Circle className="mr-1 h-3 w-3" />
+                     {statusInfo.text}
+                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="ghost" size="icon">

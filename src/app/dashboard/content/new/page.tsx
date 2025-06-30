@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { addProtectedContentAction } from "./actions";
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import { addContent } from "@/lib/content-store";
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -33,6 +35,7 @@ const formSchema = z.object({
 export default function AddContentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,25 +50,19 @@ export default function AddContentPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    try {
-      const result = await addProtectedContentAction(values);
-      if (result && result.success === false) {
-        toast({
-            variant: "destructive",
-            title: "Submission Failed",
-            description: result.message,
-        });
-      }
-    } catch (error) {
-      console.error("Submission failed:", error);
-      toast({
-          variant: "destructive",
-          title: "An unexpected error occurred",
-          description: "There was a problem submitting the form. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    addContent(values);
+
+    toast({
+        title: "Content Added",
+        description: "Your content is now being monitored by CreatorShield.",
+    });
+
+    setIsLoading(false);
+    router.push('/dashboard/content');
   }
 
   return (

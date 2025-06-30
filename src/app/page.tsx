@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield } from 'lucide-react';
+import { Shield, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -22,13 +22,47 @@ export default function Home() {
             CreatorShield is your all-in-one platform for content protection, analytics, and copyright management.
           </p>
           
-          <div className="flex justify-center gap-4">
-              <Button asChild size="lg">
-                  <Link href="/login">Login</Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                  <Link href="/register">Create an Account</Link>
-              </Button>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <Link href="/dashboard/overview" className="group">
+                  <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
+                      <CardHeader>
+                          <div className="flex justify-center mb-4">
+                              <div className="p-4 bg-accent/10 rounded-full">
+                                  <User className="w-12 h-12 text-accent" />
+                              </div>
+                          </div>
+                          <CardTitle className="text-center">Creator Dashboard</CardTitle>
+                          <CardDescription className="text-center pt-2">
+                              For content creators. Access your analytics, monitor your content, and manage copyright claims.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <Button className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors" variant="outline">
+                              Go to Creator Dashboard
+                          </Button>
+                      </CardContent>
+                  </Card>
+              </Link>
+              <Link href="/admin" className="group">
+                  <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
+                      <CardHeader>
+                          <div className="flex justify-center mb-4">
+                              <div className="p-4 bg-accent/10 rounded-full">
+                                  <UserCog className="w-12 h-12 text-accent" />
+                              </div>
+                          </div>
+                          <CardTitle className="text-center">Admin Dashboard</CardTitle>
+                          <CardDescription className="text-center pt-2">
+                              For platform administrators. Manage users, review copyright strikes, and oversee the platform.
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <Button className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors" variant="outline">
+                              Go to Admin Dashboard
+                          </Button>
+                      </CardContent>
+                  </Card>
+              </Link>
           </div>
         </div>
       </main>

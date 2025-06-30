@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
@@ -15,13 +15,21 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
   const [strike, setStrike] = useState<Report | undefined>(initialStrike);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const handleAction = (action: 'approve' | 'deny') => {
+  useEffect(() => {
+    // Keep the component state in sync if the initialStrike prop changes (e.g., via revalidation)
+    setStrike(initialStrike);
+  }, [initialStrike]);
+
+
+  const handleAction = async (action: 'approve' | 'deny') => {
     if (!strike) return;
     setLoadingAction(action);
+
+    // Simulate async action
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     updateReportStatus(strike.id, action === 'approve' ? 'approved' : 'rejected');
     
-    // After updating, we fetch the latest version to update the UI
     const updatedStrike = getReportById(strike.id);
     setStrike(updatedStrike);
 
@@ -150,4 +158,3 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
     </div>
   );
 }
-
