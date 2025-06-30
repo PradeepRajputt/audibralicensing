@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, User, UserCog } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
           
           <div className="flex justify-center gap-4">
               <Button asChild size="lg">
-                  <Link href="/login">Get Started</Link>
+                  <Link href="/login">Login</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                   <Link href="/register">Create an Account</Link>

@@ -1,19 +1,16 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
-import GoogleProvider from "next-auth/providers/google";
 import { getUserById } from '@/lib/users-store';
 
 // --- STARTUP VALIDATION ---
 if (!process.env.NEXTAUTH_SECRET) {
   throw new Error('Missing NEXTAUTH_SECRET in .env file');
 }
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    console.warn("Missing Google OAuth credentials in .env file. Google login will be disabled.");
-}
 // --- END STARTUP VALIDATION ---
 
-const providers = [
+export const authOptions: NextAuthOptions = {
+  providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -33,19 +30,7 @@ const providers = [
         return null
       }
     })
-];
-
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    providers.push(
-        GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        })
-    );
-}
-
-export const authOptions: NextAuthOptions = {
-  providers,
+  ],
   pages: {
     signIn: '/login',
   },

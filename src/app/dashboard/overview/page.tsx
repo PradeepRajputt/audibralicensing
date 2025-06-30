@@ -8,10 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/context/user-context';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LogIn } from "lucide-react";
-import { signIn } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AnalogClock } from "@/components/ui/analog-clock";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 
 function DashboardSkeleton() {
     return (
@@ -51,13 +52,18 @@ function NotConnected() {
         <Card className="text-center w-full max-w-lg mx-auto">
             <CardHeader>
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <LogIn className="w-12 h-12 text-primary" />
+                    <Youtube className="w-12 h-12 text-primary" />
                 </div>
-                <CardTitle className="mt-4">Connect Your Account</CardTitle>
+                <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
                 <CardDescription>
-                   To view your dashboard and see real-time data, please sign in with your Google account in Settings.
+                   To view your analytics, please connect your YouTube channel in the settings page.
                 </CardDescription>
             </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
         </Card>
     );
 }
