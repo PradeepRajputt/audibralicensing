@@ -24,7 +24,7 @@ let users: User[] = [
         role: 'creator',
         joinDate: new Date('2024-01-15').toISOString(),
         platformsConnected: ['youtube'],
-        youtubeChannelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw',
+        youtubeChannelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', // Google for Developers
         status: 'active',
         avatar: 'https://placehold.co/128x128.png',
     },
@@ -53,6 +53,8 @@ let users: User[] = [
     }
 ];
 
+// --- Password Utilities ---
+
 export async function hashPassword(password: string) {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
@@ -64,9 +66,17 @@ export async function verifyPassword(password: string, hash: string) {
   return isValid;
 }
 
+
+// --- User Data Access Functions ---
+
 export async function getUserByEmail(email: string): Promise<User | null> {
   const user = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
   return user || null;
+}
+
+export async function getUserById(uid: string): Promise<User | null> {
+    const user = users.find(u => u.uid === uid);
+    return user || null;
 }
 
 export async function createUser(userData: Omit<User, 'uid' | 'passwordHash'> & { password?: string }): Promise<User> {
@@ -103,4 +113,12 @@ export async function createUser(userData: Omit<User, 'uid' | 'passwordHash'> & 
   users.push(dataToStore);
   
   return dataToStore;
+}
+
+export async function getAllUsers(): Promise<User[]> {
+    return users.sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
+}
+
+export async function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): Promise<void> {
+    users = users.map(u => u.uid === uid ? { ...u, status } : u);
 }

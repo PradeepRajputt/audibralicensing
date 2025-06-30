@@ -17,25 +17,27 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<any> {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Please provide both email and password.");
+          // Returning null is the standard way to indicate a failed login attempt to NextAuth
+          return null;
         }
         
         const user = await getUserByEmail(credentials.email);
             
         if (!user) {
           console.log('No user found with email:', credentials.email);
-          throw new Error("No user found with this email.");
+          return null; // User not found
         }
 
         const isValid = await verifyPassword(credentials.password, user.passwordHash);
 
         if (!isValid) {
           console.log('Invalid password for user:', credentials.email);
-          throw new Error("Invalid credentials. Please check your email and password.");
+          return null; // Invalid credentials
         }
 
         if (user.status !== 'active') {
           console.log(`Login attempt for disabled account: ${user.email} (${user.status})`);
+          // Throw a specific error for non-active accounts to provide better user feedback
           throw new Error(`Your account is currently ${user.status}. Please contact support or request reactivation.`);
         }
 

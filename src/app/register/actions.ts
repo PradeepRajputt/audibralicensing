@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { createUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 const registerFormSchema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters."),
