@@ -12,6 +12,9 @@ const options = {
     strict: true,
     deprecationErrors: true,
   },
+  // Adding TLS options to troubleshoot SSL errors like 'DECRYPTION_FAILED_OR_BAD_RECORD_MAC'
+  tls: true,
+  tlsInsecure: true,
 };
 
 let client: MongoClient;
