@@ -1,13 +1,26 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2 } from "lucide-react";
 import { approveReactivationRequest, denyReactivationRequest } from './actions';
 import type { ReactivationRequest } from '@/lib/types';
+
+// A small component to safely render dates on the client to avoid hydration mismatch
+const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        // This will only run on the client, after the initial render
+        setFormattedDate(new Date(dateString).toLocaleDateString());
+    }, [dateString]);
+
+    // On the server and initial client render, you can return a placeholder or null
+    return <>{formattedDate}</>;
+};
 
 export function ReactivationRequestsClient({ initialRequests }: { initialRequests: ReactivationRequest[] }) {
   const { toast } = useToast();
@@ -53,13 +66,13 @@ export function ReactivationRequestsClient({ initialRequests }: { initialRequest
                   <p className="font-medium">{request.displayName}</p>
                   <p className="text-sm text-muted-foreground">{request.email}</p>
                   <p className="text-sm text-muted-foreground sm:hidden mt-1">
-                      Requested on {new Date(request.requestDate).toLocaleDateString()}
+                      Requested on <ClientFormattedDate dateString={request.requestDate} />
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <p className="text-sm text-muted-foreground hidden sm:block">
-                  Requested on {new Date(request.requestDate).toLocaleDateString()}
+                  Requested on <ClientFormattedDate dateString={request.requestDate} />
                 </p>
                 <div className="flex justify-end gap-2 ml-auto">
                   <Button
