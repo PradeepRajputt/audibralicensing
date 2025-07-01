@@ -5,7 +5,6 @@ import { google } from 'googleapis';
 import { subDays, format } from 'date-fns';
 import { getUserById } from '@/lib/users-store';
 import type { User, UserAnalytics } from '@/lib/types';
-import { unstable_noStore as noStore } from 'next/cache';
 
 /**
  * Fetches dashboard data.
@@ -14,7 +13,6 @@ import { unstable_noStore as noStore } from 'next/cache';
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
 export async function getDashboardData() {
-  noStore(); // Prevents caching of this data fetch across requests
   const userId = "user_creator_123";
   const user = await getUserById(userId);
   const finalChannelId = user?.youtubeChannelId;
