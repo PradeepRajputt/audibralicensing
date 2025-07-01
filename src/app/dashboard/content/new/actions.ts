@@ -19,11 +19,18 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
   // In a real app, you would get the authenticated user's ID
   const creatorId = "user_creator_123";
   
+  const parsed = formSchema.safeParse(values);
+
+  if (!parsed.success) {
+    const errorMessages = parsed.error.issues.map(issue => issue.message).join(', ');
+    return { success: false, message: errorMessages };
+  }
+  
   try {
-    const tagsArray = values.tags ? values.tags.split(',').map(tag => tag.trim()) : [];
+    const tagsArray = parsed.data.tags ? parsed.data.tags.split(',').map(tag => tag.trim()) : [];
     
     await createContent({
-        ...values,
+        ...parsed.data,
         tags: tagsArray,
         creatorId: creatorId,
     });

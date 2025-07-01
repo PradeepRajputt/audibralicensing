@@ -58,11 +58,15 @@ export interface Violation {
   id: string;
   _id?: any; // MongoDB ObjectId
   creatorId: User['uid'];
+  originalContentTitle: string;
+  originalContentUrl: string;
+  infringingContentSnippet: string;
   matchedURL: string;
   platform: 'youtube' | 'web' | 'instagram' | 'tiktok';
   matchScore: number; 
   detectedAt: string; // Using ISO string
   status: 'pending_review' | 'action_taken' | 'dismissed';
+  timeline: { status: string; date: string }[];
 }
 
 

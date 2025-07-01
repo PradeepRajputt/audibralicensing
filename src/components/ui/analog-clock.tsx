@@ -34,26 +34,25 @@ export function AnalogClock({ className, ...props }: React.HTMLAttributes<HTMLDi
         >
           <div
             className={cn(
-              "absolute top-1 left-1/2 -translate-x-1/2 w-0.5 h-2.5 bg-foreground/50",
-              (i + 1) % 3 === 1 && "h-4 bg-foreground"
+              "absolute top-1 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-foreground/50",
+              i % 3 === 0 && "h-3 bg-foreground"
             )}
           />
         </div>
       ))}
       <div
-        className="absolute top-1/2 left-1/2 w-1.5 h-16 bg-primary rounded-t-full origin-bottom"
+        className="absolute top-1/2 left-1/2 w-1.5 h-12 bg-primary rounded-t-full origin-bottom"
         style={{ transform: `rotate(${hourRotation}deg) translateY(-50%)` }}
       />
       <div
-        className="absolute top-1/2 left-1/2 w-1 h-[5.5rem] bg-foreground rounded-t-full origin-bottom"
+        className="absolute top-1/2 left-1/2 w-1 h-16 bg-foreground rounded-t-full origin-bottom"
         style={{ transform: `rotate(${minuteRotation}deg) translateY(-50%)` }}
       />
       <div
-        className="absolute top-1/2 left-1/2 w-0.5 h-16 bg-red-500 origin-bottom"
+        className="absolute top-1/2 left-1/2 w-0.5 h-[4.5rem] bg-red-500 origin-bottom"
         style={{ transform: `rotate(${secondRotation}deg) translateY(-50%)` }}
       />
       <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-background" />
     </div>
   );
 }
-
