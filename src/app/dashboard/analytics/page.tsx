@@ -1,11 +1,10 @@
-
 'use client';
 
 import * as React from 'react';
-import { format, subDays, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subDays, startOfWeek, startOfMonth, endOfYear } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Users, Eye, Video, Palette } from 'lucide-react';
+import { Users, Eye, Video, Palette, Youtube } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
