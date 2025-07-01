@@ -12,14 +12,15 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart } from 'lucide-react';
+import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, LayoutDashboard } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { getDashboardData } from '@/app/dashboard/actions';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Overview', icon: Home },
+  { href: '/dashboard', label: 'Dashboard', icon: Home },
+  { href: '/dashboard/overview', label: 'Overview', icon: LayoutDashboard },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },

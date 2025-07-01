@@ -13,6 +13,19 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDashboardData } from './actions';
 import type { UserAnalytics } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+
+const timezones = [
+    { value: 'UTC', label: '🌍 Coordinated Universal Time (UTC)' },
+    { value: 'America/New_York', label: '🇺🇸 New York (EST)' },
+    { value: 'Europe/London', label: '🇬🇧 London (GMT)' },
+    { value: 'Europe/Paris', label: '🇫🇷 Paris (CET)' },
+    { value: 'Asia/Kolkata', label: '🇮🇳 India (IST)' },
+    { value: 'Asia/Tokyo', label: '🇯🇵 Tokyo (JST)' },
+    { value: 'Australia/Sydney', label: '🇦🇺 Sydney (AEST)' },
+];
+
 
 function DashboardSkeleton() {
     return (
@@ -22,7 +35,7 @@ function DashboardSkeleton() {
                     <Skeleton className="h-8 w-64" />
                     <Skeleton className="h-4 w-80" />
                 </div>
-                <Skeleton className="h-24 w-[280px]" />
+                <Skeleton className="h-48 w-[280px]" />
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
@@ -47,28 +60,42 @@ function DashboardSkeleton() {
 }
 
 
-function NotConnected() {
+function NotConnected({ user }: { user?: { name?: string | null; image?: string | null } }) {
     return (
-        <Card className="text-center w-full max-w-lg mx-auto">
-            <CardHeader>
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <Youtube className="w-12 h-12 text-primary" />
+        <>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                        <AvatarImage src={user?.image ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
+                        <AvatarFallback>{user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <h1 className="text-3xl font-bold">Welcome back, {user?.name}!</h1>
+                        <p className="text-muted-foreground">Please connect your YouTube account to see your dashboard.</p>
+                    </div>
                 </div>
-                <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
-                <CardDescription>
+            </div>
+            <Card className="text-center w-full max-w-lg mx-auto mt-8">
+                <CardHeader>
+                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                        <Youtube className="w-12 h-12 text-primary" />
+                    </div>
+                    <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
+                    <CardDescription>
                    To view your analytics, please connect your YouTube channel in the settings page.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild>
-                    <Link href="/dashboard/settings">Go to Settings</Link>
-                </Button>
-            </CardContent>
-        </Card>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild>
+                        <Link href="/dashboard/settings">Go to Settings</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+        </>
     );
 }
 
-export default function DashboardOverviewPage() {
+export default function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState<{
         analytics: UserAnalytics | null;
@@ -76,6 +103,7 @@ export default function DashboardOverviewPage() {
         creatorName: string | undefined;
         creatorImage: string | undefined;
     } | null>(null);
+    const [timeZone, setTimeZone] = useState('UTC');
 
     useEffect(() => {
         async function loadData() {
@@ -91,11 +119,15 @@ export default function DashboardOverviewPage() {
         return <DashboardSkeleton />;
     }
   
-    if (!dashboardData?.analytics) {
-        return <NotConnected />;
+    if (!dashboardData) {
+        return <p>Could not load dashboard data. Please try refreshing the page.</p>
     }
   
     const { analytics, activity, creatorName, creatorImage } = dashboardData;
+  
+    if (!analytics) {
+        return <NotConnected user={{ name: creatorName, image: creatorImage}} />;
+    }
   
     return (
     <div className="space-y-8">
@@ -107,12 +139,26 @@ export default function DashboardOverviewPage() {
           </Avatar>
           <div>
             <h1 className="text-3xl font-bold">Welcome back, {creatorName}!</h1>
-            <p className="text-muted-foreground">What would you like to accomplish today?</p>
+            <p className="text-muted-foreground">Here&#39;s a snapshot of your content&#39;s performance.</p>
           </div>
         </div>
 
-        <Card className="min-w-[280px] h-36 flex items-center justify-center">
-            <AnalogClock />
+        <Card className="w-full sm:w-auto sm:min-w-[280px]">
+          <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
+              <AnalogClock timeZone={timeZone} />
+              <Select onValueChange={setTimeZone} defaultValue={timeZone}>
+                  <SelectTrigger className="w-[220px]">
+                      <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      {timezones.map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                              {tz.label}
+                          </SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+          </CardContent>
         </Card>
       </div>
 
