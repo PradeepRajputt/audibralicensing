@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
 import { useSession } from "next-auth/react"
 import { Loader2 } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 function DashboardHeader() {
   return (
@@ -24,8 +25,8 @@ export default function DashboardLayout({
   const { status } = useSession({
     required: true,
     onUnauthenticated() {
-      // The user is not authenticated, handle it here.
-      // For now, we can show a loading or redirect, but this setup assumes they are "logged in"
+      // The user is not authenticated, redirect to login
+      redirect('/login');
     },
   })
 
