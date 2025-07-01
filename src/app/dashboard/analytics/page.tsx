@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDashboardData } from '../actions';
 import type { UserAnalytics } from '@/lib/types';
+import Link from 'next/link';
 
 
 type ChartType = 'area' | 'bar' | 'line';
@@ -72,6 +73,27 @@ function AnalyticsSkeleton() {
                  <Card><CardHeader className="flex flex-row items-start justify-between gap-4"><Skeleton className="h-10 w-full" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
             </div>
         </div>
+    );
+}
+
+function NotConnected() {
+    return (
+        <Card className="text-center w-full max-w-lg mx-auto">
+            <CardHeader>
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                    <Youtube className="w-12 h-12 text-primary" />
+                </div>
+                <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
+                <CardDescription>
+                   To view your analytics, please connect your YouTube channel in the settings page.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -167,7 +189,7 @@ export default function AnalyticsPage() {
     }
     
     if (!analytics) {
-        return <div>Could not load analytics. Please connect your YouTube account in settings.</div>;
+        return <NotConnected />;
     }
 
     return (

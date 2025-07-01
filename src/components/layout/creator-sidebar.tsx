@@ -11,16 +11,15 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Activity, Youtube, ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home } from 'lucide-react';
+import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
-  { href: '/dashboard/overview', label: 'Overview', icon: Home },
-  { href: '/dashboard', label: 'Activity Feed', icon: Activity },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: Youtube },
-  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
+  { href: '/dashboard', label: 'Overview', icon: Home },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
+  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
   { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
   { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
 ];
@@ -73,6 +72,17 @@ export function CreatorSidebar() {
               <Link href="/dashboard/settings" prefetch={false}>
                 <Settings />
                 <span>Settings</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip="Logout"
+            >
+              <Link href="/">
+                <LogOut />
+                <span>Logout</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

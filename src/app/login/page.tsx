@@ -21,7 +21,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button asChild>
-            <Link href="/dashboard">Go to Creator Dashboard</Link>
+            <Link href="/dashboard/overview">Go to Creator Dashboard</Link>
           </Button>
           <Button asChild variant="outline">
             <Link href="/admin">Go to Admin Dashboard</Link>
