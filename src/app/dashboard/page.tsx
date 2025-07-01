@@ -1,4 +1,7 @@
 
+'use client';
+
+import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScanSearch, ShieldCheck, Activity, Youtube } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,7 +11,55 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDashboardData } from './actions';
-import type { User } from '@/lib/types';
+import type { User, UserAnalytics, Violation } from '@/lib/types';
+import { useSession } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
+import { signIn } from "next-auth/react";
+
+// The data fetched from the server action
+interface DashboardData {
+    analytics: UserAnalytics | null;
+    activity: {
+        type: string;
+        details: string;
+        status: string;
+        date: string;
+        variant: "destructive" | "default";
+    }[];
+    creatorName: string | null | undefined;
+    creatorImage: string | null | undefined;
+}
+
+function DashboardSkeleton() {
+    return (
+        <div className="space-y-8 animate-pulse">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-full max-w-md mt-2" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
+
 
 function NotConnected({ user }: { user?: { name?: string | null; image?: string | null } }) {
     return (
@@ -45,13 +96,30 @@ function NotConnected({ user }: { user?: { name?: string | null; image?: string 
     );
 }
 
+// This is now a Client Component that fetches its own data
+export default function DashboardPage() {
+  const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-// This is now an async Server Component
-export default async function DashboardPage() {
-  const dashboardData = await getDashboardData();
-  
+  React.useEffect(() => {
+    async function loadData() {
+      setIsLoading(true);
+      const data = await getDashboardData();
+      if(data) {
+        setDashboardData(data);
+      }
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   if (!dashboardData) {
-      return <p>Could not load dashboard data. Please try refreshing the page.</p>
+    return <p>Could not load dashboard data. Please try refreshing the page.</p>
   }
   
   const { analytics, activity, creatorName, creatorImage } = dashboardData;
