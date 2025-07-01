@@ -1,11 +1,11 @@
+'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDashboardData } from './actions';
 import DashboardClientPage from './dashboard-client-page';
 import * as React from 'react';
-
-export const dynamic = 'force-dynamic';
+import type { UserAnalytics } from '@/lib/types';
 
 // This is the loading state for the dashboard
 function DashboardSkeleton() {
@@ -38,16 +38,31 @@ function DashboardSkeleton() {
     )
 }
 
-export default async function DashboardPage() {
-  const dashboardData = await getDashboardData();
+type DashboardData = {
+  analytics: UserAnalytics | null;
+  activity: any[];
+  creatorName: string | null | undefined;
+  creatorImage: string | null | undefined;
+} | null;
+
+
+export default function DashboardPage() {
+    const [dashboardData, setDashboardData] = React.useState<DashboardData>(null);
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        async function fetchData() {
+          setIsLoading(true);
+          const data = await getDashboardData();
+          setDashboardData(data);
+          setIsLoading(false);
+        }
+        fetchData();
+    }, []);
+
+    if (isLoading) {
+        return <DashboardSkeleton />;
+    }
   
-  // The layout component handles the case where the channel is not connected.
-  // If we reach this page, we can assume the data is available.
-  // We pass it to a client component for display.
-  // The suspense boundary in the layout will show a loading state.
-  return (
-    <React.Suspense fallback={<DashboardSkeleton />}>
-        <DashboardClientPage dashboardData={dashboardData} />
-    </React.Suspense>
-  );
+    return <DashboardClientPage dashboardData={dashboardData} />;
 }
