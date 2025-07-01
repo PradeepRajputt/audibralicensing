@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ThemeSettings } from '@/components/settings/theme-settings';
 
 
 const profileFormSchema = z.object({
@@ -211,6 +212,9 @@ export default function AdminSettingsPage() {
                     </div>
                 </CardContent>
             </Card>
+            
+            <ThemeSettings />
+
         </div>
 
 

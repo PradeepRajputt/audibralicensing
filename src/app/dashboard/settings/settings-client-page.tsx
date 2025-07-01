@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { verifyYoutubeChannel, disconnectYoutubeChannelAction } from './actions';
 import { useRouter } from "next/navigation";
 import type { User } from '@/lib/types';
+import { ThemeSettings } from "@/components/settings/theme-settings";
 
 type ConnectedChannel = {
   id: string;
@@ -189,6 +190,9 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
                 </div>
             </CardContent>
         </Card>
+
+        <ThemeSettings />
+
     </div>
   )
 }
