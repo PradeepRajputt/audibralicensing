@@ -97,3 +97,17 @@ export interface ReactivationRequest {
   avatar: string;
   requestDate: string; // ISO Date string
 };
+
+/**
+ * Represents a record of a web scan attempt.
+ */
+export interface WebScan {
+  id: string;
+  userId: string;
+  pageUrl: string;
+  scanType: 'text' | 'image' | 'video';
+  status: 'completed' | 'failed';
+  matchFound: boolean;
+  matchScore?: number;
+  timestamp: string; // ISO date string
+}
