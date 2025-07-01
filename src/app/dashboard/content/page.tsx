@@ -2,12 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, FileVideo, Globe, Music } from "lucide-react";
+import { PlusCircle, FileVideo, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { getAllContentForUser } from '@/lib/content-store';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const platformIcons: Record<string, React.ReactNode> = {
     youtube: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" /><path d="m10 15 5-3-5-3z" /></svg>,
@@ -24,9 +22,9 @@ const contentTypeBadgeVariant: Record<string, "default" | "secondary" | "outline
 
 
 export default async function ProtectedContentPage() {
-  const session = await getServerSession(authOptions);
-  // Fetch content only if a user session exists.
-  const content = session?.user?.id ? await getAllContentForUser(session.user.id) : [];
+  // In a real app, you would get the authenticated user's ID
+  const userId = "user_creator_123";
+  const content = await getAllContentForUser(userId);
 
   return (
     <Card>

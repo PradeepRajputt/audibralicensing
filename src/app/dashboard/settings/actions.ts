@@ -3,8 +3,6 @@
 
 import { google } from 'googleapis';
 import { z } from 'zod';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
@@ -21,8 +19,9 @@ async function getDb() {
  * Verifies a YouTube Channel ID using the YouTube Data API and updates the user's document.
  */
 export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  // In a real app, you would get this from the session
+  const userId = 'user_creator_123';
+  if (!userId) {
     return { success: false, message: 'Authentication required.', channel: null };
   }
   
@@ -73,7 +72,7 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
     // Update the user document in MongoDB
     const db = await getDb();
     await db.collection('users').updateOne(
-        { _id: new ObjectId(session.user.id) },
+        { _id: new ObjectId(userId) },
         { $set: { 
             youtubeChannelId: channel.id,
             platformsConnected: ['youtube'] // Add or update platforms

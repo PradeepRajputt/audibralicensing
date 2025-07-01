@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
-import { addContent } from "@/lib/content-store";
+import { addProtectedContentAction } from './actions';
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -51,18 +51,23 @@ export default function AddContentPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const result = await addProtectedContentAction(values);
+
+    if (result.success) {
+        toast({
+            title: "Content Added",
+            description: "Your content is now being monitored by CreatorShield.",
+        });
+        // The action will handle the redirect, no need for router.push
+    } else {
+         toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: result.message,
+        });
+    }
     
-    addContent(values);
-
-    toast({
-        title: "Content Added",
-        description: "Your content is now being monitored by CreatorShield.",
-    });
-
     setIsLoading(false);
-    router.push('/dashboard/content');
   }
 
   return (

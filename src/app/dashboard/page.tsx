@@ -4,10 +4,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Activity, ShieldCheck, Youtube, LogIn } from "lucide-react";
+import { Activity, ShieldCheck, Youtube } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/context/user-context';
-
+import { useEffect, useState } from "react";
+import { getDashboardData } from './actions';
+import type { UserAnalytics } from '@/lib/types';
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 function DashboardSkeleton() {
     return (
@@ -34,112 +37,138 @@ function DashboardSkeleton() {
     );
 }
 
-export default function CreatorDashboardPage() {
-  const { analytics, activity, isLoading } = useUser();
-
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
-  
-  if (!analytics) {
-     return (
+function NotConnected() {
+    return (
         <Card className="text-center w-full max-w-lg mx-auto">
             <CardHeader>
-                <div className="mx-auto bg-destructive/10 p-4 rounded-full w-fit">
-                    <Youtube className="w-12 h-12 text-destructive" />
+                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                    <Youtube className="w-12 h-12 text-primary" />
                 </div>
-                <CardTitle className="mt-4">Configuration Error</CardTitle>
+                <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
                 <CardDescription>
-                   Could not fetch data from YouTube. Please ensure your `YOUTUBE_API_KEY` is set and you have connected a channel in your settings.
+                   To view your dashboard and see real-time data, please connect your YouTube channel in the settings page.
                 </CardDescription>
             </CardHeader>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/dashboard/settings">Go to Settings</Link>
+                </Button>
+            </CardContent>
         </Card>
     );
-  }
+}
 
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Views
-            </CardTitle>
-            <Youtube className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all your videos
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Monitors
-            </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+12</div>
-            <p className="text-xs text-muted-foreground">
-              Scanning across 3 platforms
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Resolved Strikes
-            </CardTitle>
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+5</div>
-            <p className="text-xs text-muted-foreground">
-              This month
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           {activity.length > 0 ? (
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
-                {activity.map((activity, index) => (
-                    <TableRow key={index}>
-                    <TableCell className="font-medium">{activity.type}</TableCell>
-                    <TableCell>{activity.details}</TableCell>
-                    <TableCell>
-                        <Badge variant={activity.variant as any}>{activity.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{activity.date}</TableCell>
+export default function CreatorDashboardPage() {
+    const [isLoading, setIsLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState<{
+        analytics: UserAnalytics | null;
+        activity: any[];
+    } | null>(null);
+
+    useEffect(() => {
+        async function loadData() {
+            setIsLoading(true);
+            const data = await getDashboardData();
+            setDashboardData(data);
+            setIsLoading(false);
+        }
+        loadData();
+    }, []);
+
+    if (isLoading) {
+        return <DashboardSkeleton />;
+    }
+  
+    if (!dashboardData?.analytics) {
+        return <NotConnected />;
+    }
+
+    const { analytics, activity } = dashboardData;
+
+    return (
+        <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                Total Views
+                </CardTitle>
+                <Youtube className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                Across all your videos
+                </p>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                Active Monitors
+                </CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">+12</div>
+                <p className="text-xs text-muted-foreground">
+                Scanning across 3 platforms
+                </p>
+            </CardContent>
+            </Card>
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                Resolved Strikes
+                </CardTitle>
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">+5</div>
+                <p className="text-xs text-muted-foreground">
+                This month
+                </p>
+            </CardContent>
+            </Card>
+        </div>
+
+        <Card>
+            <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            {activity.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Details</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Date</TableHead>
                     </TableRow>
-                ))}
-                </TableBody>
-            </Table>
-           ) : (
-            <div className="text-center py-10 text-muted-foreground">
-                <p>No recent activity to display.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
+                    </TableHeader>
+                    <TableBody>
+                    {activity.map((activity, index) => (
+                        <TableRow key={index}>
+                        <TableCell className="font-medium">{activity.type}</TableCell>
+                        <TableCell>{activity.details}</TableCell>
+                        <TableCell>
+                            <Badge variant={activity.variant as any}>{activity.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{activity.date}</TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+            ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                    <p>No recent activity to display.</p>
+                </div>
+            )}
+            </CardContent>
+        </Card>
+        </div>
+    )
 }
