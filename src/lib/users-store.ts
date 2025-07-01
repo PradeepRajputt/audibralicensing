@@ -110,7 +110,7 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<v
     noStore();
     const userIndex = users.findIndex(u => u.uid === uid);
     if (userIndex !== -1) {
-        users[userIndex] = { ...users[userIndex], ...updates };
+        users[userIndex] = { ...users[userIndex], ...updates }; 
         console.log(`Updated user ${uid} with new data.`);
     } else {
          console.error(`User with UID ${uid} not found for update.`);
