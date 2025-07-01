@@ -5,7 +5,6 @@ import * as React from 'react';
 import { useTheme } from 'next-themes';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -15,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const themes = [
     { name: 'zinc', label: 'Zinc', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(217.2 32.6% 17.5%)' } },
@@ -24,6 +24,11 @@ const themes = [
 
 export function ThemeSettings() {
   const { setTheme, theme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <Card>
@@ -34,6 +39,13 @@ export function ThemeSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {!mounted ? (
+           <div className="grid grid-cols-3 gap-4">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        ) : (
         <RadioGroup
           value={theme}
           onValueChange={setTheme}
@@ -60,6 +72,7 @@ export function ThemeSettings() {
             </Label>
           ))}
         </RadioGroup>
+        )}
       </CardContent>
     </Card>
   );
