@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,18 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDashboardData } from '../actions';
 import type { UserAnalytics } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const timezones = [
+    { value: 'UTC', label: 'UTC' },
+    { value: 'America/New_York', label: 'New York (EST)' },
+    { value: 'Europe/London', label: 'London (GMT)' },
+    { value: 'Europe/Paris', label: 'Paris (CET)' },
+    { value: 'Asia/Kolkata', label: 'India (IST)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+    { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
+];
+
 
 function DashboardSkeleton() {
     return (
@@ -75,6 +88,7 @@ export default function DashboardOverviewPage() {
         creatorName: string | undefined;
         creatorImage: string | undefined;
     } | null>(null);
+    const [timeZone, setTimeZone] = useState('UTC');
 
     useEffect(() => {
         async function loadData() {
@@ -110,9 +124,23 @@ export default function DashboardOverviewPage() {
           </div>
         </div>
 
-        <Card className="min-w-[280px] h-36 flex items-center justify-center">
-            <AnalogClock />
-        </Card>
+        <div className="flex flex-col gap-2">
+            <Card className="min-w-[280px] p-6 flex items-center justify-center">
+                <AnalogClock timeZone={timeZone} />
+            </Card>
+            <Select onValueChange={setTimeZone} defaultValue={timeZone}>
+                <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent>
+                    {timezones.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
       </div>
 
        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

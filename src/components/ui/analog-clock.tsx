@@ -4,15 +4,23 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export function AnalogClock({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  const [time, setTime] = React.useState(new Date());
+interface AnalogClockProps extends React.HTMLAttributes<HTMLDivElement> {
+  timeZone?: string;
+}
+
+export function AnalogClock({ className, timeZone = 'UTC', ...props }: AnalogClockProps) {
+  const [time, setTime] = React.useState(new Date(new Date().toLocaleString('en-US', { timeZone })));
 
   React.useEffect(() => {
     const timerId = setInterval(() => {
-      setTime(new Date());
+      // This is a common way to get a Date object that reflects the time in another timezone.
+      // It creates a string representation in the target timezone, then parses it back into a Date.
+      // The local environment's timezone is ignored, and methods like getHours() will return
+      // the hour in the target timezone.
+      setTime(new Date(new Date().toLocaleString('en-US', { timeZone })));
     }, 1000);
     return () => clearInterval(timerId);
-  }, []);
+  }, [timeZone]);
 
   const hours = time.getHours();
   const minutes = time.getMinutes();
@@ -23,8 +31,7 @@ export function AnalogClock({ className, ...props }: React.HTMLAttributes<HTMLDi
   const secondRotation = seconds * 6;
 
   return (
-    <div className={cn("relative w-32 h-32", className)} {...props}>
-      <div className="absolute inset-0 bg-secondary rounded-full border-2 border-primary/20 shadow-inner" />
+    <div className={cn("relative w-32 h-32 bg-secondary rounded-full border-4 border-primary/20 shadow-inner mx-auto", className)} {...props}>
       {/* Hour markers */}
       {Array.from({ length: 12 }).map((_, i) => (
         <div
@@ -33,30 +40,32 @@ export function AnalogClock({ className, ...props }: React.HTMLAttributes<HTMLDi
           style={{ transform: `rotate(${i * 30}deg)` }}
         >
           <div
-            className={cn(
-              "absolute top-1 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-foreground/50",
-              i % 3 === 0 && "h-3 bg-foreground"
-            )}
+            className={`absolute top-1 left-1/2 -translate-x-1/2 w-0.5 ${
+              i % 3 === 0 ? "h-3 bg-foreground" : "h-2 bg-foreground/50"
+            }`}
           />
         </div>
       ))}
-      {/* Hands */}
+
       {/* Hour Hand */}
       <div
-        className="absolute top-1/2 left-1/2 w-1.5 h-6 bg-primary rounded-t-full origin-bottom"
-        style={{ transform: `rotate(${hourRotation}deg) translateY(-50%)` }}
+        className="absolute top-1/2 left-1/2 w-1 h-8 bg-primary rounded-full origin-bottom"
+        style={{ transform: `translate(-50%, -100%) rotate(${hourRotation}deg)` }}
       />
+
       {/* Minute Hand */}
       <div
-        className="absolute top-1/2 left-1/2 w-1 h-9 bg-foreground rounded-t-full origin-bottom"
-        style={{ transform: `rotate(${minuteRotation}deg) translateY(-50%)` }}
+        className="absolute top-1/2 left-1/2 w-0.5 h-12 bg-foreground rounded-full origin-bottom"
+        style={{ transform: `translate(-50%, -100%) rotate(${minuteRotation}deg)` }}
       />
+
       {/* Second Hand */}
       <div
-        className="absolute top-1/2 left-1/2 w-0.5 h-12 bg-red-500 origin-bottom"
-        style={{ transform: `rotate(${secondRotation}deg) translateY(-50%)` }}
+        className="absolute top-1/2 left-1/2 w-0.5 h-14 bg-red-500 origin-bottom"
+        style={{ transform: `translate(-50%, -100%) rotate(${secondRotation}deg)` }}
       />
-      {/* Center dot */}
+
+      {/* Center Dot */}
       <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-background" />
     </div>
   );
