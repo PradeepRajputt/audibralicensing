@@ -28,7 +28,6 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
             displayName: validatedFields.data.displayName,
             email: validatedFields.data.email,
             password: validatedFields.data.password,
-            // New users are 'creator' by default
             role: 'creator', 
         });
 

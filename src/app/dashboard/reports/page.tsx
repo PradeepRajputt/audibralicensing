@@ -23,7 +23,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { Report } from "@/lib/reports-store";
+import type { Report } from "@/lib/types";
 import { addReport, getAllReports } from "@/lib/reports-store";
 
 

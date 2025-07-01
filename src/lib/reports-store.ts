@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Report } from '@/lib/firebase/types';
+import type { Report } from '@/lib/types';
 
 const REPORTS_KEY = 'creator_shield_reports';
 

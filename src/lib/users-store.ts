@@ -1,110 +1,92 @@
 
 'use server';
 
-import type { User } from '@/lib/firebase/types';
-import { getFirebaseAdmin } from './firebase/admin';
+import type { User } from '@/lib/types';
 import { hashPassword, verifyPassword as verify } from '@/lib/auth';
+import clientPromise from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
-/**
- * Retrieves all user documents from the 'users' collection in Firestore.
- * @returns A promise that resolves to an array of User objects.
- */
-export async function getAllUsers(): Promise<User[]> {
-  const { db } = getFirebaseAdmin();
-  const usersSnapshot = await db.collection('users').get();
-  const users: User[] = [];
-  usersSnapshot.forEach(doc => {
-    users.push({ uid: doc.id, ...doc.data() } as User);
-  });
-  return users.sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
+async function getDb() {
+  const client = await clientPromise;
+  return client.db();
 }
 
 /**
- * Retrieves a single user document by its UID from Firestore.
+ * Retrieves all user documents from the 'users' collection in MongoDB.
+ * @returns A promise that resolves to an array of User objects.
+ */
+export async function getAllUsers(): Promise<User[]> {
+  const db = await getDb();
+  const users = await db.collection<Omit<User, 'uid'>>('users').find({}).sort({ joinDate: -1 }).toArray();
+  return users.map(user => ({ ...user, uid: user._id.toString() })) as User[];
+}
+
+/**
+ * Retrieves a single user document by its UID from MongoDB.
  * @param uid The user's unique ID.
  * @returns A promise that resolves to the User object or undefined if not found.
  */
 export async function getUserById(uid: string): Promise<User | undefined> {
-  const { db } = getFirebaseAdmin();
-  const userDoc = await db.collection('users').doc(uid).get();
-  if (!userDoc.exists) {
-    return undefined;
-  }
-  return { uid: userDoc.id, ...userDoc.data() } as User;
+  if (!ObjectId.isValid(uid)) return undefined;
+  const db = await getDb();
+  const user = await db.collection<Omit<User, 'uid'>>('users').findOne({ _id: new ObjectId(uid) });
+  if (!user) return undefined;
+  return { ...user, uid: user._id.toString() } as User;
 }
 
 /**
- * Retrieves a single user document by their email from Firestore.
+ * Retrieves a single user document by their email from MongoDB.
  * @param email The user's email address.
  * @returns A promise that resolves to the User object or undefined if not found.
  */
 export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const { db } = getFirebaseAdmin();
-  const q = db.collection('users').where('email', '==', email.toLowerCase()).limit(1);
-  const querySnapshot = await q.get();
-  if (querySnapshot.empty) {
-    return undefined;
-  }
-  const userDoc = querySnapshot.docs[0];
-  return { uid: userDoc.id, ...userDoc.data() } as User;
+  const db = await getDb();
+  const user = await db.collection<Omit<User, 'uid'>>('users').findOne({ email: email.toLowerCase() });
+   if (!user) return undefined;
+  return { ...user, uid: user._id.toString() } as User;
 }
 
 /**
- * Creates a new user in Firebase Authentication and Firestore.
+ * Creates a new user in MongoDB.
  * @param userData - The data for the new user, including a plain-text password.
  * @returns A promise that resolves to the newly created User object.
- * @throws Will throw an error if Firebase is not initialized, email exists, or user creation fails.
  */
-export async function createUser(userData: Omit<User, 'uid' | 'passwordHash'> & { password: string }): Promise<User> {
-  const { auth, db } = getFirebaseAdmin();
-
-  const { email, password, displayName, role } = userData;
+export async function createUser(userData: Omit<User, 'uid' | 'passwordHash' | 'joinDate' | 'status' | 'platformsConnected' | 'avatar'> & { password: string }): Promise<User> {
+  const db = await getDb();
   
-  if (!email || !password) {
-      throw new Error("Email and password are required to create a user.");
+  if (!userData.email || !userData.password) {
+      throw new Error("Email and password are required.");
   }
 
-  const existingUserByEmail = await getUserByEmail(email);
-  if (existingUserByEmail) {
+  const existingUser = await getUserByEmail(userData.email);
+  if (existingUser) {
     throw new Error("An account with this email already exists.");
   }
   
-  const passwordHash = await hashPassword(password);
+  const passwordHash = await hashPassword(userData.password);
   
-  // Create user in Firebase Authentication
-  const userRecord = await auth.createUser({
-      email: email,
-      emailVerified: true, // Or false, depending on your flow
-      password: password,
-      displayName: displayName ?? undefined,
-      disabled: false,
-  });
-
-  // Create user document in Firestore
   const newUser: Omit<User, 'uid'> = {
-    displayName: userRecord.displayName || null,
-    email: userRecord.email!,
+    displayName: userData.displayName || null,
+    email: userData.email.toLowerCase(),
     passwordHash: passwordHash,
-    role: role || 'creator',
+    role: userData.role || 'creator',
     joinDate: new Date().toISOString(),
-    platformsConnected: userData.platformsConnected || [],
-    status: userData.status || 'active',
-    avatar: userData.avatar || `https://placehold.co/128x128.png`,
+    platformsConnected: [],
+    status: 'active',
+    avatar: `https://placehold.co/128x128.png`,
     youtubeChannelId: userData.youtubeChannelId,
   };
 
-  await db.collection('users').doc(userRecord.uid).set(newUser);
-  
-  const finalUser = await getUserById(userRecord.uid);
-  if (!finalUser) throw new Error("Failed to retrieve created user from Firestore.");
+  const result = await db.collection('users').insertOne(newUser);
+  if (!result.insertedId) throw new Error("Failed to create user in database.");
 
-  return finalUser;
+  return { ...newUser, uid: result.insertedId.toString() };
 }
 
 /**
  * Verifies a user's password.
  * @param password The plain-text password.
- * @param hash The stored password hash from Firestore.
+ * @param hash The stored password hash from the database.
  * @returns A promise resolving to true if the password is valid, false otherwise.
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
@@ -112,13 +94,13 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 /**
- * Updates a user's status in Firestore.
+ * Updates a user's status in MongoDB.
  * @param uid The ID of the user to update.
  * @param status The new status for the user.
  */
 export async function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): Promise<void> {
-    const { db } = getFirebaseAdmin();
-    const userRef = db.collection('users').doc(uid);
-    await userRef.update({ status });
+    if (!ObjectId.isValid(uid)) return;
+    const db = await getDb();
+    await db.collection('users').updateOne({ _id: new ObjectId(uid) }, { $set: { status } });
     console.log(`Updated status for user ${uid} to ${status}`);
 }

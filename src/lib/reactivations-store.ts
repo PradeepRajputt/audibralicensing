@@ -1,6 +1,6 @@
 
 'use server';
-import type { ReactivationRequest } from '@/lib/firebase/types';
+import type { ReactivationRequest } from '@/lib/types';
 
 // In-memory store for prototype purposes. NOT persistent.
 let requests: ReactivationRequest[] = [

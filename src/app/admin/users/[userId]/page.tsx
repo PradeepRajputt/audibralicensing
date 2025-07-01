@@ -2,8 +2,8 @@
 import DetailsClientPage from './details-client-page';
 import { getUserById } from '@/lib/users-store';
 
-export default function UserDetailsPage({ params }: { params: { userId: string } }) {
-  const user = getUserById(params.userId);
+export default async function UserDetailsPage({ params }: { params: { userId: string } }) {
+  const user = await getUserById(params.userId);
 
   return <DetailsClientPage initialUser={user} userId={params.userId} />;
 }

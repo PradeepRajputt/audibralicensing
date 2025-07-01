@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast";
 import { suspendCreator, liftSuspension, deactivateCreator } from './actions';
-import type { User } from '@/lib/firebase/types';
+import type { User } from '@/lib/types';
 
 
 const platformIcons = {

@@ -1,6 +1,6 @@
 
 'use client';
-import type { ProtectedContent } from '@/lib/firebase/types';
+import type { ProtectedContent } from '@/lib/types';
 
 const CONTENT_KEY = 'creator_shield_content';
 

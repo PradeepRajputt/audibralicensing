@@ -2,11 +2,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { updateUserStatus as dbUpdateUserStatus } from '@/lib/users-store';
+import { updateUserStatus } from '@/lib/users-store';
 
 export async function suspendCreator(creatorId: string) {
   try {
-    dbUpdateUserStatus(creatorId, 'suspended');
+    await updateUserStatus(creatorId, 'suspended');
     revalidatePath(`/admin/users/${creatorId}`);
     revalidatePath('/admin/users');
     return { success: true, message: 'Creator has been suspended for 24 hours.' };
@@ -17,7 +17,7 @@ export async function suspendCreator(creatorId: string) {
 
 export async function liftSuspension(creatorId: string) {
   try {
-    dbUpdateUserStatus(creatorId, 'active');
+    await updateUserStatus(creatorId, 'active');
     revalidatePath(`/admin/users/${creatorId}`);
     revalidatePath('/admin/users');
     return { success: true, message: 'Creator suspension has been lifted.' };
@@ -28,7 +28,7 @@ export async function liftSuspension(creatorId: string) {
 
 export async function deactivateCreator(creatorId: string) {
     try {
-        dbUpdateUserStatus(creatorId, 'deactivated');
+        await updateUserStatus(creatorId, 'deactivated');
         revalidatePath(`/admin/users/${creatorId}`);
         revalidatePath('/admin/users');
         return { success: true, message: 'Creator has been deactivated.' };

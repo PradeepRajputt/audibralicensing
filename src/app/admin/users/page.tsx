@@ -7,12 +7,12 @@ import { Eye } from "lucide-react";
 import Link from "next/link";
 import { Badge } from '@/components/ui/badge';
 import { getAllUsers } from '@/lib/users-store';
-import type { User } from '@/lib/firebase/types';
+import type { User } from '@/lib/types';
 
 // This is now a Server Component
-export default function UserManagementPage() {
+export default async function UserManagementPage() {
   // Fetch data directly on the server
-  const users = getAllUsers();
+  const users = await getAllUsers();
   
   const getStatusInfo = (status: User['status']) => {
     switch (status) {

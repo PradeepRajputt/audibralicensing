@@ -1,4 +1,5 @@
 
+
 /**
  * Represents a user in the `users` collection.
  * Path: /users/{uid}
@@ -9,7 +10,7 @@ export interface User {
   email: string | null;
   passwordHash: string;
   role: 'creator' | 'admin';
-  joinDate: string; // Using ISO string for client-side
+  joinDate: string; // Using ISO string
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
   youtubeChannelId?: string;
   status: 'active' | 'suspended' | 'deactivated';
@@ -37,7 +38,7 @@ export interface UserAnalytics {
  * Represents a piece of protected content.
  */
 export interface ProtectedContent {
-  id: string; // Using simple ID for localStorage
+  id: string;
   creatorId: User['uid'];
   contentType: 'video' | 'audio' | 'text' | 'image';
   videoURL?: string;
@@ -57,7 +58,7 @@ export interface Violation {
   matchedURL: string;
   platform: 'youtube' | 'web' | 'instagram' | 'tiktok';
   matchScore: number; 
-  detectedAt: string; // Using ISO string for client-side
+  detectedAt: string; // Using ISO string
   status: 'pending_review' | 'action_taken' | 'dismissed';
 }
 

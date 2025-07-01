@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Check, X, Loader2 } from "lucide-react";
 import { approveReactivationRequest, denyReactivationRequest } from './actions';
-import type { ReactivationRequest } from '@/lib/firebase/types';
+import type { ReactivationRequest } from '@/lib/types';
 
 export function ReactivationRequestsClient({ initialRequests }: { initialRequests: ReactivationRequest[] }) {
   const { toast } = useToast();
