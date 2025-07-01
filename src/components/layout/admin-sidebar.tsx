@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -10,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck, BarChart } from 'lucide-react';
+import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -20,6 +21,7 @@ const menuItems = [
   { href: '/admin/users', label: 'Creator Management', icon: Users },
   { href: '/admin/strikes', label: 'Strike Requests', icon: Gavel },
   { href: '/admin/reactivations', label: 'Reactivation Requests', icon: UserCheck },
+  { href: '/admin/feedback', label: 'Creator Feedback', icon: MessageSquareQuote },
 ];
 
 export function AdminSidebar() {

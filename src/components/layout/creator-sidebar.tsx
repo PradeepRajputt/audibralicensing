@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -12,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Link as LinkIcon } from 'lucide-react';
+import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Link as LinkIcon, MessageSquareHeart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import type { User } from '@/lib/types';
@@ -26,6 +27,7 @@ const menuItems = [
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
   { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
   { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
+  { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
 
 export function CreatorSidebar({ user }: { user: User | undefined }) {

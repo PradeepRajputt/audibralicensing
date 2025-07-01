@@ -111,3 +111,27 @@ export interface WebScan {
   matchScore?: number;
   timestamp: string; // ISO date string
 }
+
+export interface FeedbackReply {
+  replyId: string;
+  adminName: string; // 'Admin' for now
+  message: string;
+  mediaUrl?: string; // URL for image/video attachment
+  timestamp: string;
+}
+
+export interface Feedback {
+  feedbackId: string;
+  creatorId: string;
+  creatorName: string; // Denormalized for easy display
+  avatar: string;
+  rating: number;
+  title: string;
+  tags: string[];
+  description: string;
+  message?: string; // Optional message to admin
+  response: FeedbackReply[];
+  isReadByCreator: boolean;
+  timestamp: string;
+}
+
