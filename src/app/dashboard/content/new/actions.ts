@@ -4,7 +4,9 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { addContent } from '@/lib/content-store';
+import { createContent } from '@/lib/content-store';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -15,8 +17,21 @@ const formSchema = z.object({
 });
 
 export async function addProtectedContentAction(values: z.infer<typeof formSchema>) {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    return { success: false, message: 'Authentication required.' };
+  }
+  
   try {
-    addContent(values);
+    const tagsArray = values.tags ? values.tags.split(',').map(tag => tag.trim()) : [];
+    
+    await createContent({
+        ...values,
+        tags: tagsArray,
+        creatorId: session.user.id,
+    });
+    
   } catch (error) {
     console.error('Error adding protected content:', error);
     if (error instanceof Error) {

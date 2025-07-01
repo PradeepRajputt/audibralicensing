@@ -1,17 +1,16 @@
 
-'use client';
-
-import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, FileVideo, Globe, Youtube, Music, Image as ImageIcon } from "lucide-react";
+import { PlusCircle, FileVideo, Globe, Music } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { getAllContent, type ProtectedContent } from '@/lib/content-store';
+import { getAllContentForUser } from '@/lib/content-store';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const platformIcons: Record<string, React.ReactNode> = {
-    youtube: <Youtube className="h-5 w-5 text-red-500" />,
+    youtube: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-red-500"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" /><path d="m10 15 5-3-5-3z" /></svg>,
     vimeo: <FileVideo className="h-5 w-5 text-blue-400" />,
     web: <Globe className="h-5 w-5" />,
 } as const;
@@ -24,19 +23,10 @@ const contentTypeBadgeVariant: Record<string, "default" | "secondary" | "outline
 } as const;
 
 
-export default function ProtectedContentPage() {
-  const [content, setContent] = React.useState<ProtectedContent[]>([]);
-
-  React.useEffect(() => {
-    const loadContent = () => {
-      setContent(getAllContent());
-    };
-    loadContent();
-    window.addEventListener('storage', loadContent);
-    return () => {
-      window.removeEventListener('storage', loadContent);
-    }
-  }, []);
+export default async function ProtectedContentPage() {
+  const session = await getServerSession(authOptions);
+  // Fetch content only if a user session exists.
+  const content = session?.user?.id ? await getAllContentForUser(session.user.id) : [];
 
   return (
     <Card>

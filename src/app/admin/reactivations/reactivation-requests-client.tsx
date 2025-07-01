@@ -18,8 +18,8 @@ export function ReactivationRequestsClient({ initialRequests }: { initialRequest
     setLoadingAction(`${action}-${request.creatorId}`);
     
     const result = action === 'approve' 
-      ? await approveReactivationRequest(request.creatorId)
-      : await denyReactivationRequest(request.creatorId);
+      ? await approveReactivationRequest(request.creatorId, request.email, request.displayName)
+      : await denyReactivationRequest(request.creatorId, request.email, request.displayName);
     
     if (result.success) {
         toast({

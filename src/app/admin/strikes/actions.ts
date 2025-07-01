@@ -1,25 +1,36 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { updateReportStatus } from '@/lib/reports-store';
+
 
 /**
- * Simulates approving a copyright strike request.
- * In a real app, this would trigger a takedown notice.
+ * Approves a copyright strike request.
  */
 export async function approveStrikeRequest(strikeId: string) {
-  console.log(`Simulating approval for strike request: ${strikeId}`);
-  // In a real app, you would update the strike document in Firestore
-  // and potentially call a service to issue a takedown.
-  revalidatePath('/admin/strikes');
-  return { success: true, message: 'Strike request has been approved and takedown initiated.' };
+  try {
+    await updateReportStatus(strikeId, 'approved');
+    revalidatePath('/admin/strikes');
+    revalidatePath(`/admin/strikes/${strikeId}`);
+    return { success: true, message: 'Strike request has been approved.' };
+  } catch (error) {
+    console.error("Error approving strike request:", error);
+    return { success: false, message: 'Failed to approve strike request.' };
+  }
 }
 
 /**
- * Simulates denying a copyright strike request.
+ * Denies a copyright strike request.
  */
 export async function denyStrikeRequest(strikeId: string) {
-  console.log(`Simulating denial for strike request: ${strikeId}`);
-  // In a real app, you would update the strike document in Firestore.
-  revalidatePath('/admin/strikes');
-  return { success: true, message: 'Strike request has been denied.' };
+  try {
+    await updateReportStatus(strikeId, 'rejected');
+    revalidatePath('/admin/strikes');
+    revalidatePath(`/admin/strikes/${strikeId}`);
+    return { success: true, message: 'Strike request has been denied.' };
+  } catch (error) {
+    console.error("Error denying strike request:", error);
+    return { success: false, message: 'Failed to deny strike request.' };
+  }
 }

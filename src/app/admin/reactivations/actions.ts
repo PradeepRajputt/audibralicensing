@@ -4,11 +4,16 @@
 import { revalidatePath } from 'next/cache';
 import { updateUserStatus } from '@/lib/users-store';
 import { removeReactivationRequest } from '@/lib/reactivations-store';
+import { sendReactivationApprovalEmail, sendReactivationDenialEmail } from '@/lib/services/backend-services';
 
-export async function approveReactivationRequest(creatorId: string) {
+export async function approveReactivationRequest(creatorId: string, email: string, name: string) {
   try {
-    updateUserStatus(creatorId, 'active');
-    removeReactivationRequest(creatorId);
+    await updateUserStatus(creatorId, 'active');
+    await removeReactivationRequest(creatorId);
+    
+    // Attempt to send email but don't fail the whole action if it errors
+    await sendReactivationApprovalEmail({ to: email, name });
+    
     revalidatePath('/admin/reactivations');
     revalidatePath('/admin/users');
     revalidatePath(`/admin/users/${creatorId}`);
@@ -19,9 +24,13 @@ export async function approveReactivationRequest(creatorId: string) {
   }
 }
 
-export async function denyReactivationRequest(creatorId: string) {
+export async function denyReactivationRequest(creatorId: string, email: string, name: string) {
   try {
-    removeReactivationRequest(creatorId);
+    await removeReactivationRequest(creatorId);
+
+    // Attempt to send email but don't fail the whole action if it errors
+    await sendReactivationDenialEmail({ to: email, name });
+
     revalidatePath('/admin/reactivations');
     return { success: true, message: 'Reactivation request has been denied.' };
   } catch(error) {

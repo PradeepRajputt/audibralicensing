@@ -8,7 +8,7 @@ import { ObjectId } from 'mongodb';
 
 async function getDb() {
   const client = await clientPromise;
-  return client.db();
+  return client.db("creator-shield-db");
 }
 
 /**
@@ -17,8 +17,13 @@ async function getDb() {
  */
 export async function getAllUsers(): Promise<User[]> {
   const db = await getDb();
-  const users = await db.collection<Omit<User, 'uid'>>('users').find({}).sort({ joinDate: -1 }).toArray();
-  return users.map(user => ({ ...user, uid: user._id.toString() })) as User[];
+  const usersCollection = db.collection('users');
+  const users = await usersCollection.find({}).sort({ joinDate: -1 }).toArray();
+  
+  return users.map(user => {
+    const { _id, ...rest } = user;
+    return { ...rest, uid: _id.toString() } as User;
+  });
 }
 
 /**
@@ -29,9 +34,11 @@ export async function getAllUsers(): Promise<User[]> {
 export async function getUserById(uid: string): Promise<User | undefined> {
   if (!ObjectId.isValid(uid)) return undefined;
   const db = await getDb();
-  const user = await db.collection<Omit<User, 'uid'>>('users').findOne({ _id: new ObjectId(uid) });
+  const user = await db.collection('users').findOne({ _id: new ObjectId(uid) });
   if (!user) return undefined;
-  return { ...user, uid: user._id.toString() } as User;
+  
+  const { _id, ...rest } = user;
+  return { ...rest, uid: _id.toString() } as User;
 }
 
 /**
@@ -41,9 +48,11 @@ export async function getUserById(uid: string): Promise<User | undefined> {
  */
 export async function getUserByEmail(email: string): Promise<User | undefined> {
   const db = await getDb();
-  const user = await db.collection<Omit<User, 'uid'>>('users').findOne({ email: email.toLowerCase() });
+  const user = await db.collection('users').findOne({ email: email.toLowerCase() });
    if (!user) return undefined;
-  return { ...user, uid: user._id.toString() } as User;
+  
+  const { _id, ...rest } = user;
+  return { ...rest, uid: _id.toString() } as User;
 }
 
 /**
@@ -65,7 +74,7 @@ export async function createUser(userData: Omit<User, 'uid' | 'passwordHash' | '
   
   const passwordHash = await hashPassword(userData.password);
   
-  const newUser: Omit<User, 'uid'> = {
+  const newUser: Omit<User, 'uid' | '_id'> = {
     displayName: userData.displayName || null,
     email: userData.email.toLowerCase(),
     passwordHash: passwordHash,

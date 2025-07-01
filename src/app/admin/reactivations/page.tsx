@@ -3,9 +3,8 @@ import { getAllReactivationRequests } from '@/lib/reactivations-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReactivationRequestsClient } from './reactivation-requests-client';
 
-export default function ReactivationRequestsPage() {
-  // Fetch data on the server
-  const requests = getAllReactivationRequests();
+export default async function ReactivationRequestsPage() {
+  const requests = await getAllReactivationRequests();
 
   return (
     <Card>
@@ -16,7 +15,6 @@ export default function ReactivationRequestsPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Pass server-fetched data to the client component */}
         <ReactivationRequestsClient initialRequests={requests} />
       </CardContent>
     </Card>

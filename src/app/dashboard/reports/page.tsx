@@ -24,11 +24,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Report } from "@/lib/types";
-import { addReport, getAllReports } from "@/lib/reports-store";
-
+import { getReportsForUser } from "@/lib/reports-store";
+import { submitManualReportAction } from './actions';
+import { useSession } from "next-auth/react";
 
 const formSchema = z.object({
-  platform: z.string({ required_error: "Please select a platform." }),
+  platform: z.string({ required_error: "Please select a platform." }).min(1, "Please select a platform."),
   suspectUrl: z.string().url({ message: "Please enter a valid URL." }),
   reason: z.string().min(10, {
     message: "Reason must be at least 10 characters.",
@@ -38,8 +39,11 @@ const formSchema = z.object({
 
 export default function SubmitReportPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
   const { toast } = useToast();
+  const { data: session } = useSession();
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,31 +53,41 @@ export default function SubmitReportPage() {
     },
   });
 
-  const loadReports = () => {
-    setSubmittedReports(getAllReports());
+   const loadReports = async () => {
+    if (!session?.user?.id) return;
+    setIsFetching(true);
+    const reports = await getReportsForUser(session.user.id);
+    setSubmittedReports(reports);
+    setIsFetching(false);
   };
 
   useEffect(() => {
-    loadReports();
-    // Listen for storage changes to update the list in real-time
-    window.addEventListener('storage', loadReports);
-    return () => {
-      window.removeEventListener('storage', loadReports);
-    };
-  }, []);
+    if(session?.user?.id) {
+        loadReports();
+    }
+  }, [session]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     
-    addReport(values);
+    const result = await submitManualReportAction(values);
 
-    toast({
+    if (result.success) {
+      toast({
         title: "Report Submitted",
-        description: "Your report has been sent to the admin for review.",
-    });
-
-    form.reset();
-    loadReports(); // Refresh the list
+        description: result.message,
+      });
+      form.reset();
+      loadReports(); // Refresh the list
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: result.message,
+        });
+    }
+    
     setIsLoading(false);
   }
 
@@ -183,7 +197,11 @@ export default function SubmitReportPage() {
           <CardDescription>A log of your manually submitted reports and their status.</CardDescription>
         </CardHeader>
         <CardContent>
-          {submittedReports.length > 0 ? (
+          {isFetching ? (
+            <div className="text-center py-10 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+            </div>
+          ) : submittedReports.length > 0 ? (
             <Table>
                 <TableHeader>
                 <TableRow>

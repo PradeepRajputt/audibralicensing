@@ -6,6 +6,7 @@
  */
 export interface User {
   uid: string;
+  _id?: any; // MongoDB ObjectId
   displayName: string | null;
   email: string | null;
   passwordHash: string;
@@ -39,6 +40,7 @@ export interface UserAnalytics {
  */
 export interface ProtectedContent {
   id: string;
+  _id?: any; // MongoDB ObjectId
   creatorId: User['uid'];
   contentType: 'video' | 'audio' | 'text' | 'image';
   videoURL?: string;
@@ -54,6 +56,7 @@ export interface ProtectedContent {
  */
 export interface Violation {
   id: string;
+  _id?: any; // MongoDB ObjectId
   creatorId: User['uid'];
   matchedURL: string;
   platform: 'youtube' | 'web' | 'instagram' | 'tiktok';
@@ -68,6 +71,8 @@ export interface Violation {
  */
 export interface Report {
   id: string;
+  _id?: any; // MongoDB ObjectId
+  creatorId: string;
   creatorName: string; // denormalized for simplicity
   platform: string;
   suspectUrl: string;

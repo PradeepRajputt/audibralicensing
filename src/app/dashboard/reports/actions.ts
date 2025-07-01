@@ -1,55 +1,39 @@
+
 'use server';
 
 import { z } from 'zod';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { triggerFastApiForNewReport } from '@/lib/services/backend-services';
-import type { ManualReport } from '@/lib/firebase/types';
+import { revalidatePath } from 'next/cache';
+import { createReport } from '@/lib/reports-store';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-// Let's assume we have a way to get the current user's ID.
-// For now, we'll mock it.
-const MOCK_CREATOR_ID = 'user_creator_123';
 
 const formSchema = z.object({
-  platform: z.string(),
-  suspectUrl: z.string().url(),
-  reason: z.string().min(10),
+  platform: z.string({required_error: "Please select a platform."}).min(1, "Please select a platform."),
+  suspectUrl: z.string().url({ message: 'Please enter a valid URL.' }),
+  reason: z.string().min(10, { message: 'Reason must be at least 10 characters.' }),
 });
 
 export async function submitManualReportAction(values: z.infer<typeof formSchema>) {
-  if (!db) {
-    const message = "Firebase is not configured. Please add your Firebase environment variables to the .env file.";
-    console.error(message);
-    return { success: false, message };
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.id) {
+    return { success: false, message: "You must be logged in to submit a report." };
   }
 
   try {
-    const newReportData: Omit<ManualReport, 'reportId'> = {
-      creatorId: MOCK_CREATOR_ID,
-      platform: values.platform,
-      suspectURL: values.suspectUrl,
-      reason: values.reason,
-      formStatus: 'submitted',
-      createdAt: Timestamp.now(),
-    };
+    await createReport({
+      ...values,
+      creatorId: session.user.id,
+      creatorName: session.user.name || 'Unknown Creator'
+    });
+    
+    revalidatePath('/dashboard/reports');
+    return { success: true, message: 'Report submitted and sent for admin review.' };
 
-    // 1. Save the manual report to Firestore
-    const docRef = await addDoc(collection(db, 'manualReports'), newReportData);
-    console.log(`Manual report saved with ID: ${docRef.id}`);
-
-    // 2. Trigger the FastAPI backend for analysis
-    const fullReport: ManualReport = {
-      ...newReportData,
-      reportId: docRef.id,
-    };
-    await triggerFastApiForNewReport(fullReport);
-
-    return { success: true, message: 'Report submitted and sent for analysis.' };
   } catch (error) {
     console.error('Error submitting manual report:', error);
-    if (error instanceof Error) {
-        return { success: false, message: error.message };
-    }
-    return { success: false, message: 'An unknown error occurred. Please try again.' };
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    return { success: false, message: errorMessage };
   }
 }

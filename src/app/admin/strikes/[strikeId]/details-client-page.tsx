@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
-import { getReportById, updateReportStatus, type Report } from '@/lib/reports-store';
 import { ArrowLeft, Check, X, Loader2, User, Calendar, Link as LinkIcon, FileText } from "lucide-react";
 import Link from 'next/link';
+import type { Report } from '@/lib/types';
+import { approveStrikeRequest, denyStrikeRequest } from '../actions';
 
 export default function StrikeDetailsClientPage({ initialStrike }: { initialStrike: Report | undefined }) {
   const { toast } = useToast();
@@ -16,7 +17,6 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   useEffect(() => {
-    // Keep the component state in sync if the initialStrike prop changes (e.g., via revalidation)
     setStrike(initialStrike);
   }, [initialStrike]);
 
@@ -24,19 +24,23 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
   const handleAction = async (action: 'approve' | 'deny') => {
     if (!strike) return;
     setLoadingAction(action);
-
-    // Simulate async action
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    updateReportStatus(strike.id, action === 'approve' ? 'approved' : 'rejected');
-    
-    const updatedStrike = getReportById(strike.id);
-    setStrike(updatedStrike);
+    const result = action === 'approve' ? await approveStrikeRequest(strike.id) : await denyStrikeRequest(strike.id);
 
-    toast({
-      title: "Action Successful",
-      description: `Strike request has been ${action}d.`,
-    });
+    if (result.success) {
+      toast({
+        title: "Action Successful",
+        description: result.message,
+      });
+      // Optimistically update status
+      setStrike(prev => prev ? { ...prev, status: action === 'approve' ? 'approved' : 'rejected' } : undefined);
+    } else {
+      toast({
+          variant: 'destructive',
+          title: "Action Failed",
+          description: result.message
+      });
+    }
     
     setLoadingAction(null);
   };

@@ -1,28 +1,31 @@
 
 'use server';
 import type { ReactivationRequest } from '@/lib/types';
+import clientPromise from '@/lib/mongodb';
 
-// In-memory store for prototype purposes. NOT persistent.
-let requests: ReactivationRequest[] = [
-    {
-        creatorId: "user_creator_xyz", 
-        displayName: "Deleted User",
-        email: "deleted@example.com",
-        avatar: "https://placehold.co/128x128.png",
-        requestDate: new Date('2024-05-28').toISOString(),
-    }
-];
-
-export function getAllReactivationRequests(): ReactivationRequest[] {
-    return requests;
+async function getDb() {
+  const client = await clientPromise;
+  return client.db("creator-shield-db");
 }
 
-export function addReactivationRequest(request: ReactivationRequest) {
-  if (!requests.some(r => r.creatorId === request.creatorId)) {
-    requests.push(request);
-  }
+export async function getAllReactivationRequests(): Promise<ReactivationRequest[]> {
+    const db = await getDb();
+    const requests = await db.collection('reactivationRequests').find({}).sort({ requestDate: -1 }).toArray();
+    // Assuming creatorId is a string, no need for ObjectId mapping if it's not the primary _id
+    return requests as unknown as ReactivationRequest[];
 }
 
-export function removeReactivationRequest(creatorId: string) {
-    requests = requests.filter(r => r.creatorId !== creatorId);
+export async function addReactivationRequest(request: Omit<ReactivationRequest, 'requestDate'>): Promise<void> {
+    const db = await getDb();
+    // Use upsert to avoid duplicate requests for the same user
+    await db.collection('reactivationRequests').updateOne(
+        { creatorId: request.creatorId },
+        { $set: { ...request, requestDate: new Date().toISOString() } },
+        { upsert: true }
+    );
+}
+
+export async function removeReactivationRequest(creatorId: string): Promise<void> {
+    const db = await getDb();
+    await db.collection('reactivationRequests').deleteOne({ creatorId });
 }
