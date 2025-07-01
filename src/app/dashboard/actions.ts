@@ -7,21 +7,79 @@ import { getUserById } from '@/lib/users-store';
 import type { User, UserAnalytics } from '@/lib/types';
 
 /**
- * Fetches dashboard data using the public YouTube Data API.
- * It uses the channel ID associated with the currently 'logged-in' user.
- * @returns An object containing analytics and activity data, or null if an error occurs or no channel is connected.
+ * Fetches dashboard data.
+ * NOTE: This function now returns mock data to avoid YouTube API quota issues during development.
+ * The original API call logic is commented out below for reference.
+ * @returns An object containing analytics and activity data, or null if an error occurs.
  */
 export async function getDashboardData() {
-  // In a real app, you would get this from the session
   const userId = "user_creator_123";
   const user = await getUserById(userId);
   const finalChannelId = user?.youtubeChannelId;
 
-  // If no API key is set, or if the user hasn't connected their channel, return a structure
-  // that allows the UI to show the user's name even if analytics can't be fetched.
-  if (!process.env.YOUTUBE_API_KEY || !finalChannelId) {
-      console.log('YouTube API Key or Channel ID is not configured for the user. This is an expected state if a channel is not yet connected.');
+  // If no channel is connected, return the basic user info.
+  if (!finalChannelId) {
+      console.log('YouTube Channel ID is not configured for the user. Showing connect prompt.');
       return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
+  }
+
+  // --- MOCK DATA SECTION ---
+  // Return realistic mock data to avoid hitting API quotas during development.
+  console.log(`Returning mock data for channel ID: ${finalChannelId}`);
+
+  const mockAnalytics: UserAnalytics = {
+    subscribers: 124567,
+    views: 9876543,
+    mostViewedVideo: {
+      title: 'My Most Epic Adventure Yet!',
+      views: 1200345
+    },
+    dailyData: Array.from({ length: 90 }, (_, i) => {
+        const date = subDays(new Date(), 89 - i);
+        // Simulate non-linear growth, making recent days more active
+        const dayFactor = (i + 1) / 90; // Ramps from 0 to 1
+        const randomFactor = 0.8 + Math.random() * 0.4; // Fluctuation
+        
+        const dailyViews = Math.max(0, Math.floor((1500000 / 90) * dayFactor * randomFactor * 1.5));
+        const dailySubscribers = Math.max(0, Math.floor((12000 / 200) * dayFactor * randomFactor + Math.random() * 5));
+        return {
+          date: format(date, 'yyyy-MM-dd'),
+          views: dailyViews,
+          subscribers: dailySubscribers,
+        };
+    }),
+  };
+
+  const mockActivity = [
+    {
+      type: "New Infringement Detected",
+      details: "On website 'stolencontent.com/my-video'",
+      status: "Action Required",
+      date: `1 hour ago`,
+      variant: "destructive"
+    },
+    {
+      type: "YouTube Scan Complete",
+      details: `Channel '${user?.displayName || 'Your Channel'}' scanned.`,
+      status: "No Issues",
+      date: "1 day ago",
+      variant: "default"
+    },
+  ] as const;
+
+  return { 
+    analytics: mockAnalytics, 
+    activity: mockActivity, 
+    creatorName: user?.displayName, 
+    creatorImage: user?.avatar 
+  };
+  // --- END MOCK DATA SECTION ---
+
+  /*
+  // --- ORIGINAL YOUTUBE API LOGIC (COMMENTED OUT) ---
+  if (!process.env.YOUTUBE_API_KEY) {
+    console.log('YouTube API Key is not configured. This is an expected state if a channel is not yet connected.');
+    return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
   }
   
   try {
@@ -123,4 +181,5 @@ export async function getDashboardData() {
     // If API call fails, return a consistent structure. UI will handle the null analytics.
     return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
   }
+  */
 }
