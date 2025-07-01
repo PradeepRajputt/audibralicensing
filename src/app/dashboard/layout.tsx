@@ -4,9 +4,6 @@
 import * as React from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
-import { useSession } from "next-auth/react"
-import { Loader2 } from 'lucide-react';
-import { redirect } from 'next/navigation';
 
 function DashboardHeader() {
   return (
@@ -22,22 +19,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      // The user is not authenticated, redirect to login
-      redirect('/login');
-    },
-  })
-
-  if (status === "loading") {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <SidebarProvider>
       <CreatorSidebar />
