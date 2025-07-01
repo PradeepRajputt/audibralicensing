@@ -116,4 +116,5 @@ export function CreatorSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  
+  );
+}

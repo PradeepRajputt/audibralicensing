@@ -83,3 +83,21 @@ export async function getViolationsForUser(creatorId: string): Promise<Violation
     const userViolations = violations.filter(v => v.creatorId === creatorId);
     return JSON.parse(JSON.stringify(userViolations.sort((a,b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime())));
 }
+
+export async function updateViolationStatus(violationId: string, status: Violation['status']): Promise<void> {
+    const violationIndex = violations.findIndex(v => v.id === violationId);
+    if (violationIndex !== -1) {
+        violations[violationIndex].status = status;
+        const timelineEvent = { status: status.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase()), date: new Date().toISOString() };
+        
+        // Check if the last timeline event is the same as the one we are adding to avoid duplicates on fast clicks
+        const lastTimelineEvent = violations[violationIndex].timeline[violations[violationIndex].timeline.length - 1];
+        if (lastTimelineEvent.status.toLowerCase().replace(/ /g, '_') !== status) {
+             violations[violationIndex].timeline.push(timelineEvent);
+        }
+
+    } else {
+        console.error(`Violation with ID ${violationId} not found.`);
+        throw new Error("Violation not found and could not be updated.");
+    }
+}

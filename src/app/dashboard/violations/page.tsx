@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, FileText, Video, Image as ImageIcon } from "lucide-react";
+import { MoreHorizontal, FileText, Video as FileVideo, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -18,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { Violation } from '@/lib/types';
-import { getViolationsForUser } from '@/lib/violations-store';
+import { getViolationsForUser, updateViolationStatus } from '@/lib/violations-store';
 import Image from 'next/image';
 
 const statusMapping: Record<Violation['status'], { text: string; variant: "secondary" | "default" | "outline" }> = {
@@ -35,6 +34,9 @@ const platformIcons: Record<string, React.ReactNode> = {
     web: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-globe h-5 w-5"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>,
 } as const;
 
+function formatStatus(status: string) {
+    return status.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
+}
 
 export default function ViolationsPage() {
     const { toast } = useToast();
@@ -45,15 +47,37 @@ export default function ViolationsPage() {
         getViolationsForUser(userId).then(setViolations);
     }, []);
 
-    const handleAction = (action: string, url: string) => {
-        toast({
-            title: `Action: ${action}`,
-            description: `An action has been simulated for the violation at: ${url}`,
-        });
-        if (action === 'Dismiss') {
-            setViolations(prev => prev.map(v => v.matchedURL === url ? {...v, status: 'dismissed'} : v));
+    const handleAction = async (action: 'dismiss' | 'report', violationId: string) => {
+        let newStatus: Violation['status'] = 'pending_review';
+        let toastTitle = '';
+        let toastDescription = '';
+
+        if (action === 'dismiss') {
+            newStatus = 'dismissed';
+            toastTitle = 'Violation Dismissed';
+            toastDescription = 'You will no longer see this violation.'
+        } else if (action === 'report') {
+            newStatus = 'action_taken';
+            toastTitle = 'Violation Reported';
+            toastDescription = 'A report has been generated for this violation.'
         }
-    }
+        
+        try {
+            await updateViolationStatus(violationId, newStatus);
+            setViolations(prev => prev.map(v => v.id === violationId ? {...v, status: newStatus, timeline: [...v.timeline, { status: newStatus, date: new Date().toISOString() }]} : v));
+            toast({
+                title: toastTitle,
+                description: toastDescription,
+            });
+
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: "Action Failed",
+                description: "Could not update the violation status. Please try again.",
+            });
+        }
+    };
 
   return (
     <Card>
@@ -77,68 +101,69 @@ export default function ViolationsPage() {
           </TableHeader>
           <TableBody>
             {violations.length > 0 ? violations.map((item) => {
-                const statusInfo = statusMapping[item.status]
-              return (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                        {item.infringingContentSnippet.startsWith('https://') ? (
-                           <Image src={item.infringingContentSnippet} alt="Matched content" width={64} height={64} className="rounded-md object-cover h-16 w-16" data-ai-hint="video content" />
-                        ) : (
-                            <div className="h-16 w-16 bg-muted rounded-md flex items-center justify-center p-2">
-                               <FileText className="h-8 w-8 text-muted-foreground" />
+                const statusInfo = statusMapping[item.status];
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">
+                        <div className="flex items-center gap-3">
+                            {item.infringingContentSnippet.startsWith('https://') ? (
+                               <Image src={item.infringingContentSnippet} alt="Matched content" width={64} height={64} className="rounded-md object-cover h-16 w-16" data-ai-hint="video content" />
+                            ) : (
+                                <div className="h-16 w-16 bg-muted rounded-md flex items-center justify-center p-2">
+                                   <FileText className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                            )}
+                             <div>
+                                <a href={item.originalContentUrl} target="_blank" rel="noopener noreferrer" className="hover:underline font-semibold">{item.originalContentTitle}</a>
+                                <p className="text-xs text-muted-foreground truncate max-w-xs">{item.infringingContentSnippet.startsWith('https://') ? 'Image/Video match' : `Text: "${item.infringingContentSnippet}"`}</p>
                             </div>
-                        )}
-                         <div>
-                            <a href={item.originalContentUrl} target="_blank" rel="noopener noreferrer" className="hover:underline font-semibold">{item.originalContentTitle}</a>
-                            <p className="text-xs text-muted-foreground truncate max-w-xs">{item.infringingContentSnippet.startsWith('https://') ? 'Image/Video match' : `Text: "${item.infringingContentSnippet}"`}</p>
                         </div>
-                    </div>
-                </TableCell>
-                <TableCell>
-                    <a href={item.matchedURL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
-                        {item.matchedURL}
-                    </a>
-                    <div className="flex items-center gap-1.5 mt-1">
-                        {platformIcons[item.platform]}
-                        <span className="text-xs text-muted-foreground capitalize">{item.platform}</span>
-                    </div>
-                </TableCell>
-                <TableCell>{(item.matchScore * 100).toFixed(0)}%</TableCell>
-                <TableCell>
-                  <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                   {item.timeline.map((event, i) => (
-                      <div key={i}>{new Date(event.date).toLocaleDateString()}: {event.status}</div>
-                    ))}
-                </TableCell>
-                <TableCell className="text-right">
-                    {item.status === 'pending_review' ? (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/dashboard/reports">Generate Report</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleAction('Dismiss', item.matchedURL)} className="text-destructive focus:text-destructive">
-                                    Dismiss Violation
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    ) : (
-                        <span>-</span>
-                    )}
-                </TableCell>
-              </TableRow>
-            )}) : (
+                    </TableCell>
+                    <TableCell>
+                        <a href={item.matchedURL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
+                            {item.matchedURL}
+                        </a>
+                        <div className="flex items-center gap-1.5 mt-1">
+                            {platformIcons[item.platform]}
+                            <span className="text-xs text-muted-foreground capitalize">{item.platform}</span>
+                        </div>
+                    </TableCell>
+                    <TableCell>{(item.matchScore * 100).toFixed(0)}%</TableCell>
+                    <TableCell>
+                      <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                       {item.timeline.map((event, i) => (
+                          <div key={i}>{new Date(event.date).toLocaleDateString()}: {formatStatus(event.status)}</div>
+                        ))}
+                    </TableCell>
+                    <TableCell className="text-right">
+                        {item.status === 'pending_review' ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/dashboard/reports">Generate Report</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleAction('dismiss', item.id)} className="text-destructive focus:text-destructive">
+                                        Dismiss Violation
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <span>-</span>
+                        )}
+                    </TableCell>
+                  </TableRow>
+                )
+            }) : (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
                   No violations detected yet.
@@ -149,130 +174,5 @@ export default function ViolationsPage() {
         </Table>
       </CardContent>
     </Card>
-  );
-}
-
-```
-  </change>
-  <change>
-    <file>/src/components/layout/creator-sidebar.tsx</file>
-    <content><![CDATA[
-'use client';
-
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-} from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { getDashboardData } from '@/app/dashboard/actions';
-
-const menuItems = [
-  { href: '/dashboard', label: 'Overview', icon: Home },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
-  { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
-  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
-  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
-  { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
-];
-
-export function CreatorSidebar() {
-  const pathname = usePathname();
-  const [creatorName, setCreatorName] = useState<string | null>(null);
-  const [creatorImage, setCreatorImage] = useState<string | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadCreatorInfo() {
-      // In a real app with auth, this might come from a session context
-      const data = await getDashboardData();
-      setCreatorName(data?.creatorName ?? 'Creator');
-      setCreatorImage(data?.creatorImage);
-      setIsLoading(false);
-    }
-    loadCreatorInfo();
-  }, []);
-
-  return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="flex items-center gap-3 p-2">
-            {isLoading ? (
-                <>
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-3 w-32" />
-                    </div>
-                </>
-            ) : (
-                <>
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={creatorImage ?? undefined} alt={creatorName ?? 'Creator'} data-ai-hint="profile picture" />
-                        <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                        <span className="font-semibold text-sidebar-foreground truncate">{creatorName || 'CreatorShield'}</span>
-                        <span className="text-xs text-sidebar-foreground/70">Creator Dashboard</span>
-                    </div>
-                </>
-            )}
-        </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarMenu className="gap-4">
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.label}
-              >
-                <Link href={item.href} prefetch={false}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu className="gap-4">
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === '/dashboard/settings'}
-              tooltip="Settings"
-            >
-              <Link href="/dashboard/settings" prefetch={false}>
-                <Settings />
-                <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Logout"
-            >
-              <Link href="/">
-                <LogOut />
-                <span>Logout</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
   );
 }
