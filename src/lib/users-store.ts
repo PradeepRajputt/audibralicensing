@@ -1,112 +1,136 @@
 
+'use server';
+
 import type { User } from '@/lib/firebase/types';
-import { hashPassword } from '@/lib/auth';
+import { getFirebaseAdmin } from './firebase/admin';
+import { hashPassword, verifyPassword as verify } from '@/lib/auth';
 
-// This is a simplified, in-memory user store for the prototype.
-// It acts as a mock database. The data is NOT persistent across server restarts.
-// In a real app, this module would interact with a database like Firestore.
-let users: User[] = [
-    {
-        uid: 'user_admin_001',
-        displayName: 'Admin User',
-        email: 'admin@creatorshield.com',
-        passwordHash: '$2a$10$8.B./LpC5g.c5n7b0i.vbu.q5xK.6L7qF.tX.uX/JkZ.xYp1h4i', // aatharv@1111
-        role: 'admin',
-        joinDate: new Date('2024-01-01').toISOString(),
-        platformsConnected: [],
-        status: 'active',
-        avatar: 'https://placehold.co/128x128.png',
-    },
-    {
-        uid: 'user_creator_123',
-        displayName: 'Sample Creator',
-        email: 'creator@example.com',
-        passwordHash: '$2a$10$8.B./LpC5g.c5n7b0i.vbu.q5xK.6L7qF.tX.uX/JkZ.xYp1h4i', // aatharv@1111
-        role: 'creator',
-        joinDate: new Date('2024-01-15').toISOString(),
-        platformsConnected: ['youtube'],
-        youtubeChannelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', // Google for Developers
-        status: 'active',
-        avatar: 'https://placehold.co/128x128.png',
-    },
-    {
-        uid: 'user_creator_456',
-        displayName: 'Alice Vlogs',
-        email: 'alice@example.com',
-        passwordHash: '$2a$10$8.B./LpC5g.c5n7b0i.vbu.q5xK.6L7qF.tX.uX/JkZ.xYp1h4i',
-        role: 'creator',
-        joinDate: new Date('2024-02-20').toISOString(),
-        platformsConnected: ['instagram'],
-        status: 'active',
-        avatar: 'https://placehold.co/128x128.png'
-    },
-    {
-        uid: 'user_creator_789',
-        displayName: 'Bob Builds',
-        email: 'bob@example.com',
-        passwordHash: '$2a$10$8.B./LpC5g.c5n7b0i.vbu.q5xK.6L7qF.tX.uX/JkZ.xYp1h4i',
-        role: 'creator',
-        joinDate: new Date('2024-03-10').toISOString(),
-        platformsConnected: ['youtube', 'web'],
-        youtubeChannelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw',
-        status: 'suspended',
-        avatar: 'https://placehold.co/128x128.png'
-    },
-    {
-        uid: 'user_creator_xyz',
-        displayName: 'Deleted User',
-        email: 'deleted@example.com',
-        passwordHash: '$2a$10$8.B./LpC5g.c5n7b0i.vbu.q5xK.6L7qF.tX.uX/JkZ.xYp1h4i',
-        role: 'creator',
-        joinDate: new Date('2024-04-01').toISOString(),
-        platformsConnected: [],
-        status: 'deactivated',
-        avatar: 'https://placehold.co/128x128.png',
-    }
-];
-
-// --- Data Access Functions (Server-Only) ---
-
-export function getAllUsers(): User[] {
-    return users.sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
+/**
+ * Retrieves all user documents from the 'users' collection in Firestore.
+ * @returns A promise that resolves to an array of User objects.
+ */
+export async function getAllUsers(): Promise<User[]> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    console.error("Firestore not initialized for getAllUsers");
+    return [];
+  }
+  const usersSnapshot = await adminDb.collection('users').get();
+  const users: User[] = [];
+  usersSnapshot.forEach(doc => {
+    users.push({ uid: doc.id, ...doc.data() } as User);
+  });
+  return users.sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
 }
 
-export function getUserById(uid: string): User | undefined {
-    return users.find(u => u.uid === uid);
+/**
+ * Retrieves a single user document by its UID from Firestore.
+ * @param uid The user's unique ID.
+ * @returns A promise that resolves to the User object or undefined if not found.
+ */
+export async function getUserById(uid: string): Promise<User | undefined> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return undefined;
+  const userDoc = await adminDb.collection('users').doc(uid).get();
+  if (!userDoc.exists) {
+    return undefined;
+  }
+  return { uid: userDoc.id, ...userDoc.data() } as User;
 }
 
-export function getUserByEmail(email: string): User | undefined {
-  return users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+/**
+ * Retrieves a single user document by their email from Firestore.
+ * @param email The user's email address.
+ * @returns A promise that resolves to the User object or undefined if not found.
+ */
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return undefined;
+  const q = adminDb.collection('users').where('email', '==', email.toLowerCase()).limit(1);
+  const querySnapshot = await q.get();
+  if (querySnapshot.empty) {
+    return undefined;
+  }
+  const userDoc = querySnapshot.docs[0];
+  return { uid: userDoc.id, ...userDoc.data() } as User;
 }
 
+/**
+ * Creates a new user in Firebase Authentication and Firestore.
+ * @param userData - The data for the new user, including a plain-text password.
+ * @returns A promise that resolves to the newly created User object.
+ * @throws Will throw an error if Firebase is not initialized, email exists, or user creation fails.
+ */
 export async function createUser(userData: Omit<User, 'uid' | 'passwordHash'> & { password: string }): Promise<User> {
-  const existingUser = getUserByEmail(userData.email!);
-  if (existingUser) {
+  const { auth, db } = getFirebaseAdmin();
+  if (!auth || !db) {
+    throw new Error('Firebase Admin not initialized. Cannot create user.');
+  }
+
+  const { email, password, displayName, role } = userData;
+  
+  if (!email || !password) {
+      throw new Error("Email and password are required to create a user.");
+  }
+
+  const existingUserByEmail = await getUserByEmail(email);
+  if (existingUserByEmail) {
     throw new Error("An account with this email already exists.");
   }
   
-  const passwordHash = await hashPassword(userData.password);
+  const passwordHash = await hashPassword(password);
   
-  const newUser: User = {
-    uid: `user_creator_${Date.now()}`,
-    displayName: userData.displayName || null,
-    email: userData.email,
-    passwordHash,
-    role: userData.role || 'creator',
+  // Create user in Firebase Authentication
+  const userRecord = await auth.createUser({
+      email: email,
+      emailVerified: true, // Or false, depending on your flow
+      password: password,
+      displayName: displayName ?? undefined,
+      disabled: false,
+  });
+
+  // Create user document in Firestore
+  const newUser: Omit<User, 'uid'> = {
+    displayName: userRecord.displayName || null,
+    email: userRecord.email!,
+    passwordHash: passwordHash,
+    role: role || 'creator',
     joinDate: new Date().toISOString(),
     platformsConnected: userData.platformsConnected || [],
     status: userData.status || 'active',
     avatar: userData.avatar || `https://placehold.co/128x128.png`,
+    youtubeChannelId: userData.youtubeChannelId,
   };
 
-  users.push(newUser);
-  return newUser;
+  await db.collection('users').doc(userRecord.uid).set(newUser);
+  
+  const finalUser = await getUserById(userRecord.uid);
+  if (!finalUser) throw new Error("Failed to retrieve created user from Firestore.");
+
+  return finalUser;
 }
 
+/**
+ * Verifies a user's password.
+ * @param password The plain-text password.
+ * @param hash The stored password hash from Firestore.
+ * @returns A promise resolving to true if the password is valid, false otherwise.
+ */
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return verify(password, hash);
+}
 
-export function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): void {
-    const userIndex = users.findIndex(u => u.uid === uid);
-    if (userIndex !== -1) {
-        users[userIndex].status = status;
+/**
+ * Updates a user's status in Firestore.
+ * @param uid The ID of the user to update.
+ * @param status The new status for the user.
+ */
+export async function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): Promise<void> {
+    const { adminDb } = getFirebaseAdmin();
+    if (!adminDb) {
+        throw new Error("Firebase not initialized. Cannot update user status.");
     }
+    const userRef = adminDb.collection('users').doc(uid);
+    await userRef.update({ status });
+    console.log(`Updated status for user ${uid} to ${status}`);
 }

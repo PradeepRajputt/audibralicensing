@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { createUser } from '@/lib/users-store';
+import { createUser, getUserByEmail } from '@/lib/users-store';
 
 const registerFormSchema = z.object({
   displayName: z.string().min(2, "Name must be at least 2 characters."),
@@ -19,15 +19,17 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
             return { success: false, message: firstError };
         }
         
+        const existingUser = await getUserByEmail(validatedFields.data.email);
+        if (existingUser) {
+            return { success: false, message: "An account with this email already exists." };
+        }
+        
         await createUser({
             displayName: validatedFields.data.displayName,
             email: validatedFields.data.email,
             password: validatedFields.data.password,
-            role: 'creator',
-            joinDate: new Date().toISOString(),
-            platformsConnected: [],
-            status: 'active',
-            avatar: `https://placehold.co/128x128.png`,
+            // New users are 'creator' by default
+            role: 'creator', 
         });
 
     } catch (error) {
@@ -35,8 +37,8 @@ export async function registerUser(values: z.infer<typeof registerFormSchema>) {
         if (error instanceof Error) {
             return { success: false, message: error.message };
         }
-        return { success: false, message: 'An unknown error occurred.' };
+        return { success: false, message: 'An unknown error occurred during registration.' };
     }
     
-    return { success: true };
+    return { success: true, message: 'Registration successful!' };
 }

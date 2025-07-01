@@ -1,11 +1,10 @@
 
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserByEmail } from '@/lib/users-store';
-import { verifyPassword } from '@/lib/auth';
+import { getUserByEmail, verifyPassword } from '@/lib/users-store';
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET || 'your_default_secret_for_development_ creatorshield',
+  secret: process.env.NEXTAUTH_SECRET || 'your_default_secret_for_development_creatorshield',
   session: {
     strategy: "jwt",
   },
@@ -21,10 +20,9 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Please enter your email and password.");
         }
         
-        const user = getUserByEmail(credentials.email);
+        const user = await getUserByEmail(credentials.email);
             
         if (!user) {
-          // Use standard error for NextAuth to handle
           throw new Error("No user found with that email.");
         }
 
@@ -33,9 +31,12 @@ export const authOptions: NextAuthOptions = {
         if (!isValid) {
           throw new Error("Invalid password.");
         }
-
+        
         if (user.status !== 'active') {
-          throw new Error(`Your account is currently ${user.status}. Please contact support or request reactivation.`);
+          if (user.status === 'deactivated') {
+             throw new Error(`Your account has been deactivated. Please contact support or submit a reactivation request.`);
+          }
+          throw new Error(`Your account is currently ${user.status}. Please contact support.`);
         }
 
         // Return a serializable user object for the session token on success
