@@ -1,3 +1,4 @@
+
 import 'dotenv/config'; 
 import * as admin from 'firebase-admin';
 import type { App } from 'firebase-admin/app';
@@ -10,6 +11,7 @@ interface FirebaseAdmin {
   db: Firestore;
 }
 
+// Check for missing environment variables at module load time.
 const missingEnv: string[] = [];
 if (!process.env.FIREBASE_PROJECT_ID) missingEnv.push('FIREBASE_PROJECT_ID');
 if (!process.env.FIREBASE_CLIENT_EMAIL) missingEnv.push('FIREBASE_CLIENT_EMAIL');
@@ -32,10 +34,12 @@ export function getFirebaseAdmin(): FirebaseAdmin {
   }
 
   if (missingEnv.length > 0) {
-    throw new Error(`Firebase Admin initialization failed. Missing environment variables: ${missingEnv.join(', ')}. Please add them to your .env file.`);
+    throw new Error(`Firebase Admin initialization failed. Missing environment variables: ${missingEnv.join(', ')}. Please make sure they are set in your .env file.`);
   }
 
   try {
+    // This is the crucial part. Environment variables often escape newlines as "\\n".
+    // We need to replace them back to actual newline characters "\n" for the PEM key to be valid.
     const privateKey = (process.env.FIREBASE_PRIVATE_KEY as string).replace(/\\n/g, '\n');
 
     const serviceAccount: admin.ServiceAccount = {
@@ -55,6 +59,9 @@ export function getFirebaseAdmin(): FirebaseAdmin {
     };
   } catch (error: any) {
     console.error("Firebase Admin SDK initialization error:", error.message);
+    if (error.message?.includes('PEM')) {
+        throw new Error(`Firebase Admin initialization failed: Invalid Private Key. Please ensure the FIREBASE_PRIVATE_KEY in your .env file is correctly formatted and enclosed in double quotes.`);
+    }
     throw new Error(`Firebase Admin initialization failed. Please check your service account credentials. Details: ${error.message}`);
   }
 }
