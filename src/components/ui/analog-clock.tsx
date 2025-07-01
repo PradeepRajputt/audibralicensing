@@ -40,18 +40,23 @@ export function AnalogClock({ className, ...props }: React.HTMLAttributes<HTMLDi
           />
         </div>
       ))}
+      {/* Hands */}
+      {/* Hour Hand */}
       <div
-        className="absolute top-1/2 left-1/2 w-1.5 h-8 bg-primary rounded-t-full origin-bottom"
+        className="absolute top-1/2 left-1/2 w-1.5 h-6 bg-primary rounded-t-full origin-bottom"
         style={{ transform: `rotate(${hourRotation}deg) translateY(-50%)` }}
       />
+      {/* Minute Hand */}
       <div
-        className="absolute top-1/2 left-1/2 w-1 h-12 bg-foreground rounded-t-full origin-bottom"
+        className="absolute top-1/2 left-1/2 w-1 h-9 bg-foreground rounded-t-full origin-bottom"
         style={{ transform: `rotate(${minuteRotation}deg) translateY(-50%)` }}
       />
+      {/* Second Hand */}
       <div
-        className="absolute top-1/2 left-1/2 w-0.5 h-14 bg-red-500 origin-bottom"
+        className="absolute top-1/2 left-1/2 w-0.5 h-12 bg-red-500 origin-bottom"
         style={{ transform: `rotate(${secondRotation}deg) translateY(-50%)` }}
       />
+      {/* Center dot */}
       <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-background" />
     </div>
   );
