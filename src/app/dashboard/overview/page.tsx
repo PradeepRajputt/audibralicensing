@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,7 +67,7 @@ function NotConnected() {
     );
 }
 
-export default function OverviewPage() {
+export default function DashboardOverviewPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState<{
         analytics: UserAnalytics | null;

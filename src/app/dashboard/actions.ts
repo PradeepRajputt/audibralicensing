@@ -1,22 +1,26 @@
-
 'use server';
 
 import { google } from 'googleapis';
 import { subDays, format } from 'date-fns';
+import { getUserById } from '@/lib/users-store';
+import type { User, UserAnalytics } from '@/lib/types';
 
 /**
  * Fetches dashboard data using the public YouTube Data API.
- * It uses the provided channel ID, or falls back to the one in the .env file.
- * @param channelId The optional YouTube channel ID to fetch data for.
- * @returns An object containing analytics and activity data, or null if an error occurs.
+ * It uses the channel ID associated with the currently 'logged-in' user.
+ * @returns An object containing analytics and activity data, or null if an error occurs or no channel is connected.
  */
-export async function getDashboardData(channelId?: string) {
-  const finalChannelId = channelId || process.env.YOUTUBE_CHANNEL_ID;
+export async function getDashboardData() {
+  // In a real app, you would get this from the session
+  const userId = "user_creator_123";
+  const user = await getUserById(userId);
+  const finalChannelId = user?.youtubeChannelId;
 
+  // If no API key is set, or if the user hasn't connected their channel, return a structure
+  // that allows the UI to show the user's name even if analytics can't be fetched.
   if (!process.env.YOUTUBE_API_KEY || !finalChannelId) {
-      console.error('YouTube API Key or Channel ID is not configured.');
-      // Return null to allow the UI to show a configuration error state.
-      return null;
+      console.error('YouTube API Key or Channel ID is not configured for the user.');
+      return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
   }
   
   try {
@@ -84,7 +88,7 @@ export async function getDashboardData(channelId?: string) {
         });
     }
 
-    const analytics = {
+    const analytics: UserAnalytics = {
       subscribers: totalSubs,
       views: totalViews,
       mostViewedVideo: {
@@ -112,10 +116,10 @@ export async function getDashboardData(channelId?: string) {
         },
     ] as const;
 
-    return { analytics, activity, creatorName: channel.snippet.title, creatorImage: channel.snippet.thumbnails?.default?.url };
+    return { analytics, activity, creatorName: user?.displayName, creatorImage: user?.avatar };
   } catch (error) {
     console.error('Error fetching YouTube data:', error);
-    // If API call fails, return null. UI will show an error or prompt.
-    return null;
+    // If API call fails, return a consistent structure. UI will handle the null analytics.
+    return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
   }
 }
