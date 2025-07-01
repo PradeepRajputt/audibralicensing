@@ -1,29 +1,46 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, ScanSearch, FileVideo, ShieldAlert, FileText, Settings } from "lucide-react";
-import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Youtube, Instagram, ShieldCheck, Globe } from "lucide-react";
 
-const overviewLinks = [
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart },
-  { href: "/dashboard/content", label: "My Content", icon: FileVideo },
-  { href: "/dashboard/monitoring", label: "Web Monitoring", icon: ScanSearch },
-  { href: "/dashboard/violations", label: "Violations", icon: ShieldAlert },
-  { href: "/dashboard/reports", label: "Submit Report", icon: FileText },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+const quickLinks = [
+  {
+    href: "https://studio.youtube.com/",
+    label: "YouTube Studio",
+    description: "Manage your YouTube channel, videos, and analytics.",
+    icon: Youtube,
+  },
+  {
+    href: "https://www.facebook.com/creators/tools/instagram",
+    label: "Instagram Creator Tools",
+    description: "Access tools and resources for growing on Instagram.",
+    icon: Instagram,
+  },
+  {
+    href: "https://www.tiktok.com/creators/",
+    label: "TikTok Creator Portal",
+    description: "Find tips, tricks, and updates for TikTok creators.",
+    icon: Globe, // Using Globe as a placeholder for TikTok
+  },
+  {
+    href: "https://support.google.com/youtube/answer/2807622",
+    label: "YouTube Copyright School",
+    description: "Learn the basics of copyright to avoid issues.",
+    icon: ShieldCheck,
+  },
 ];
 
-export default function DashboardOverviewPage() {
+export default function QuickLinksPage() {
   return (
     <div className="space-y-6">
        <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold">Quick Links</h1>
         <p className="text-muted-foreground">
-          Quick links to all sections of your Creator Dashboard.
+          Helpful external resources for content creators.
         </p>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {overviewLinks.map((item) => (
-            <Link href={item.href} key={item.href} className="group">
+        {quickLinks.map((item) => (
+            <a href={item.href} key={item.href} className="group" target="_blank" rel="noopener noreferrer">
                 <Card className="h-full text-center transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1 flex flex-col">
                     <CardHeader className="flex-1">
                         <div className="flex justify-center mb-4">
@@ -32,9 +49,10 @@ export default function DashboardOverviewPage() {
                             </div>
                         </div>
                         <CardTitle>{item.label}</CardTitle>
+                        <CardDescription className="pt-2">{item.description}</CardDescription>
                     </CardHeader>
                 </Card>
-            </Link>
+            </a>
         ))}
       </div>
     </div>

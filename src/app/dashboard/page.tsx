@@ -8,23 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AnalogClock } from "@/components/ui/analog-clock";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getDashboardData } from './actions';
 import type { UserAnalytics } from '@/lib/types';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-
-const timezones = [
-    { value: 'UTC', label: '🌍 Coordinated Universal Time (UTC)' },
-    { value: 'America/New_York', label: '🇺🇸 New York (EST)' },
-    { value: 'Europe/London', label: '🇬🇧 London (GMT)' },
-    { value: 'Europe/Paris', label: '🇫🇷 Paris (CET)' },
-    { value: 'Asia/Kolkata', label: '🇮🇳 India (IST)' },
-    { value: 'Asia/Tokyo', label: '🇯🇵 Tokyo (JST)' },
-    { value: 'Australia/Sydney', label: '🇦🇺 Sydney (AEST)' },
-];
 
 
 function DashboardSkeleton() {
@@ -35,7 +22,6 @@ function DashboardSkeleton() {
                     <Skeleton className="h-8 w-64" />
                     <Skeleton className="h-4 w-80" />
                 </div>
-                <Skeleton className="h-48 w-[280px]" />
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
@@ -103,7 +89,6 @@ export default function DashboardPage() {
         creatorName: string | undefined;
         creatorImage: string | undefined;
     } | null>(null);
-    const [timeZone, setTimeZone] = useState('UTC');
 
     useEffect(() => {
         async function loadData() {
@@ -131,8 +116,7 @@ export default function DashboardPage() {
   
     return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+       <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={creatorImage ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
             <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
@@ -142,25 +126,6 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">Here&#39;s a snapshot of your content&#39;s performance.</p>
           </div>
         </div>
-
-        <Card className="w-full sm:w-auto sm:min-w-[280px]">
-          <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
-              <AnalogClock timeZone={timeZone} />
-              <Select onValueChange={setTimeZone} defaultValue={timeZone}>
-                  <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      {timezones.map((tz) => (
-                          <SelectItem key={tz.value} value={tz.value}>
-                              {tz.label}
-                          </SelectItem>
-                      ))}
-                  </SelectContent>
-              </Select>
-          </CardContent>
-        </Card>
-      </div>
 
        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>

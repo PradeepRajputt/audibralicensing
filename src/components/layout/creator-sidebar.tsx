@@ -12,15 +12,15 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, LayoutDashboard } from 'lucide-react';
+import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Link as LinkIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import NextLink from 'next/link';
 import { useEffect, useState } from 'react';
 import { getDashboardData } from '@/app/dashboard/actions';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/overview', label: 'Overview', icon: LayoutDashboard },
+  { href: '/dashboard/overview', label: 'Quick Links', icon: LinkIcon },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
@@ -80,10 +80,10 @@ export function CreatorSidebar() {
                 isActive={pathname === item.href}
                 tooltip={item.label}
               >
-                <Link href={item.href} prefetch={false}>
+                <NextLink href={item.href} prefetch={false}>
                   <item.icon />
                   <span>{item.label}</span>
-                </Link>
+                </NextLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -97,10 +97,10 @@ export function CreatorSidebar() {
               isActive={pathname === '/dashboard/settings'}
               tooltip="Settings"
             >
-              <Link href="/dashboard/settings" prefetch={false}>
+              <NextLink href="/dashboard/settings" prefetch={false}>
                 <Settings />
                 <span>Settings</span>
-              </Link>
+              </NextLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
            <SidebarMenuItem>
@@ -108,10 +108,10 @@ export function CreatorSidebar() {
               asChild
               tooltip="Logout"
             >
-              <Link href="/">
+              <NextLink href="/">
                 <LogOut />
                 <span>Logout</span>
-              </Link>
+              </NextLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
