@@ -2,19 +2,18 @@
 'use client';
 
 import * as React from 'react';
-import { format, subDays, startOfWeek, startOfMonth, endOfYear } from 'date-fns';
+import { format, subDays, startOfWeek, startOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Users, Eye, Video, Palette } from 'lucide-react';
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { UserAnalytics } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
 
 type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
@@ -90,7 +89,7 @@ export default function AnalyticsClientPage({ initialAnalytics }: { initialAnaly
 
             if (aggregation === 'week') {
                 key = format(startOfWeek(itemDate, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-            } else {
+            } else { // month
                 key = format(startOfMonth(itemDate), 'yyyy-MM-dd');
             }
 
@@ -127,7 +126,8 @@ export default function AnalyticsClientPage({ initialAnalytics }: { initialAnaly
     }
 
     if (!analytics) {
-        return <p>Could not load analytics data. Please make sure your channel is connected and has data available.</p>
+         // This case should be handled by the parent layout's lock screen
+        return <p>Could not load analytics data.</p>
     }
 
     return (
@@ -161,7 +161,7 @@ export default function AnalyticsClientPage({ initialAnalytics }: { initialAnaly
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{analytics?.subscribers.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{analytics.subscribers.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Total all-time subscribers</p>
                 </CardContent>
                 </Card>
@@ -171,7 +171,7 @@ export default function AnalyticsClientPage({ initialAnalytics }: { initialAnaly
                     <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{analytics?.views.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Across all your videos</p>
                 </CardContent>
                 </Card>
@@ -181,8 +181,8 @@ export default function AnalyticsClientPage({ initialAnalytics }: { initialAnaly
                     <Video className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-lg font-bold truncate">{analytics?.mostViewedVideo.title}</div>
-                    <p className="text-xs text-muted-foreground">{'number' === typeof analytics?.mostViewedVideo.views ? analytics?.mostViewedVideo.views.toLocaleString() : 'N/A'} views</p>
+                    <div className="text-lg font-bold truncate">{analytics.mostViewedVideo.title}</div>
+                    <p className="text-xs text-muted-foreground">{'number' === typeof analytics.mostViewedVideo.views ? analytics.mostViewedVideo.views.toLocaleString() : 'N/A'} views</p>
                 </CardContent>
                 </Card>
             </div>

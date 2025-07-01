@@ -1,6 +1,7 @@
 
+
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Youtube, Instagram, ShieldCheck, Globe } from "lucide-react";
+import { Youtube, Instagram, ShieldCheck, Globe, Link as LinkIcon } from "lucide-react";
 
 const quickLinks = [
   {

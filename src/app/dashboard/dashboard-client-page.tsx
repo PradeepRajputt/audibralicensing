@@ -18,13 +18,12 @@ type DashboardData = {
 
 export default function DashboardClientPage({ dashboardData }: { dashboardData: DashboardData }) {
 
+  // This case is handled by the parent layout and page now, but as a fallback:
   if (!dashboardData || !dashboardData.analytics) {
-    // This case should not be hit if layout logic is correct,
-    // but it's a safe fallback.
     return (
         <div className="space-y-8">
             <h1 className="text-2xl font-bold">Welcome!</h1>
-            <p className="text-muted-foreground">Could not load dashboard data. Please make sure your channel is connected in settings.</p>
+            <p className="text-muted-foreground">Could not load dashboard data. Please connect your channel in settings to see analytics.</p>
         </div>
     )
   }
@@ -35,7 +34,7 @@ export default function DashboardClientPage({ dashboardData }: { dashboardData: 
     <div className="space-y-8">
        <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={creatorImage ?? undefined} alt="User Avatar" data-ai-hint="profile picture"/>
+            <AvatarImage src={creatorImage ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
             <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
           </Avatar>
           <div>
