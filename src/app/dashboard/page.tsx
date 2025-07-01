@@ -8,15 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { getDashboardData } from './actions';
-import type { User, UserAnalytics, Violation } from '@/lib/types';
-import { useSession } from 'next-auth/react';
-import { Loader2 } from 'lucide-react';
-import { signIn } from "next-auth/react";
+import type { UserAnalytics } from '@/lib/types';
 
-// The data fetched from the server action
 interface DashboardData {
     analytics: UserAnalytics | null;
     activity: {
@@ -60,43 +54,6 @@ function DashboardSkeleton() {
     )
 }
 
-
-function NotConnected({ user }: { user?: { name?: string | null; image?: string | null } }) {
-    return (
-        <>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-16 w-16">
-                        <AvatarImage src={user?.image ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
-                        <AvatarFallback>{user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h1 className="text-3xl font-bold">Welcome back, {user?.name}!</h1>
-                        <p className="text-muted-foreground">Please connect your YouTube account to see your dashboard.</p>
-                    </div>
-                </div>
-            </div>
-            <Card className="text-center w-full max-w-lg mx-auto mt-8">
-                <CardHeader>
-                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                        <Youtube className="w-12 h-12 text-primary" />
-                    </div>
-                    <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
-                    <CardDescription>
-                   To view your analytics, please connect your YouTube channel in the settings page.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild>
-                        <Link href="/dashboard/settings">Go to Settings</Link>
-                    </Button>
-                </CardContent>
-            </Card>
-        </>
-    );
-}
-
-// This is now a Client Component that fetches its own data
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -118,15 +75,11 @@ export default function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
-  if (!dashboardData) {
-    return <p>Could not load dashboard data. Please try refreshing the page.</p>
+  if (!dashboardData || !dashboardData.analytics) {
+    return <p className="text-muted-foreground">Could not load dashboard data. Please make sure your channel is connected.</p>
   }
   
   const { analytics, activity, creatorName, creatorImage } = dashboardData;
-  
-  if (!analytics) {
-      return <NotConnected user={{ name: creatorName, image: creatorImage}} />;
-  }
   
   return (
     <div className="space-y-8">
@@ -225,4 +178,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

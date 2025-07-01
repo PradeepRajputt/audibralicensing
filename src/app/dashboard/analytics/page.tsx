@@ -1,10 +1,11 @@
+
 'use client';
 
 import * as React from 'react';
 import { format, subDays, startOfWeek, startOfMonth, endOfYear } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Users, Eye, Video, Palette, Youtube } from 'lucide-react';
+import { Users, Eye, Video, Palette } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDashboardData } from '../actions';
 import type { UserAnalytics } from '@/lib/types';
-import Link from 'next/link';
 
 
 type ChartType = 'area' | 'bar' | 'line';
@@ -72,27 +72,6 @@ function AnalyticsSkeleton() {
                  <Card><CardHeader className="flex flex-row items-start justify-between gap-4"><Skeleton className="h-10 w-full" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
             </div>
         </div>
-    );
-}
-
-function NotConnected() {
-    return (
-        <Card className="text-center w-full max-w-lg mx-auto">
-            <CardHeader>
-                <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
-                    <Youtube className="w-12 h-12 text-primary" />
-                </div>
-                <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
-                <CardDescription>
-                   To view your analytics, please connect your YouTube channel in the settings page.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button asChild>
-                    <Link href="/dashboard/settings">Go to Settings</Link>
-                </Button>
-            </CardContent>
-        </Card>
     );
 }
 
@@ -187,9 +166,10 @@ export default function AnalyticsPage() {
         return <AnalyticsSkeleton />;
     }
     
-    if (!analytics) {
-        return <NotConnected />;
-    }
+    // This case is now handled by the layout.
+    // if (!analytics) {
+    //     return <NotConnected />;
+    // }
 
     return (
         <div className="space-y-6">
@@ -222,7 +202,7 @@ export default function AnalyticsPage() {
                     <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{analytics.subscribers.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{analytics?.subscribers.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Total all-time subscribers</p>
                 </CardContent>
                 </Card>
@@ -232,7 +212,7 @@ export default function AnalyticsPage() {
                     <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
+                    <div className="text-2xl font-bold">{analytics?.views.toLocaleString()}</div>
                     <p className="text-xs text-muted-foreground">Across all your videos</p>
                 </CardContent>
                 </Card>
@@ -242,8 +222,8 @@ export default function AnalyticsPage() {
                     <Video className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-lg font-bold truncate">{analytics.mostViewedVideo.title}</div>
-                    <p className="text-xs text-muted-foreground">{'number' === typeof analytics.mostViewedVideo.views ? analytics.mostViewedVideo.views.toLocaleString() : 'N/A'} views</p>
+                    <div className="text-lg font-bold truncate">{analytics?.mostViewedVideo.title}</div>
+                    <p className="text-xs text-muted-foreground">{'number' === typeof analytics?.mostViewedVideo.views ? analytics?.mostViewedVideo.views.toLocaleString() : 'N/A'} views</p>
                 </CardContent>
                 </Card>
             </div>
