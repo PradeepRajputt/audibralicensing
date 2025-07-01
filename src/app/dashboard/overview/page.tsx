@@ -59,16 +59,16 @@ function DashboardSkeleton() {
 }
 
 
-function NotConnected() {
+function AnalyticsUnavailable() {
     return (
         <Card className="text-center w-full max-w-lg mx-auto">
             <CardHeader>
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
                     <Youtube className="w-12 h-12 text-primary" />
                 </div>
-                <CardTitle className="mt-4">Connect Your YouTube Channel</CardTitle>
+                <CardTitle className="mt-4">Analytics Unavailable</CardTitle>
                 <CardDescription>
-                   To view your analytics, please connect your YouTube channel in the settings page.
+                   We couldn't load your YouTube analytics data. Please make sure your channel is correctly connected in the settings.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -105,7 +105,7 @@ export default function DashboardOverviewPage() {
     }
   
     if (!dashboardData?.analytics) {
-        return <NotConnected />;
+        return <AnalyticsUnavailable />;
     }
   
     const { analytics, activity, creatorName, creatorImage } = dashboardData;
@@ -123,7 +123,6 @@ export default function DashboardOverviewPage() {
             <p className="text-muted-foreground">What would you like to accomplish today?</p>
           </div>
         </div>
-
         <div className="flex flex-col gap-2">
             <Card className="min-w-[280px] p-6 flex items-center justify-center">
                 <AnalogClock timeZone={timeZone} />
