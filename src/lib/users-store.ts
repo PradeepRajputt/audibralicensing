@@ -24,8 +24,8 @@ let users: User[] = [
     passwordHash: "hashed_password_creator",
     role: 'creator',
     joinDate: new Date('2024-01-15T10:00:00Z').toISOString(),
-    platformsConnected: ['youtube'],
-    youtubeChannelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', // Example: GoogleDevelopers
+    platformsConnected: [],
+    youtubeChannelId: undefined, 
     status: 'active',
     avatar: 'https://placehold.co/128x128.png',
   },
@@ -110,5 +110,18 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<v
     } else {
          console.error(`User with UID ${uid} not found for update.`);
         throw new Error('User not found.');
+    }
+}
+
+/**
+ * Removes the YouTube channel connection from a user.
+ */
+export async function disconnectYoutubeChannel(uid: string): Promise<void> {
+    const userIndex = users.findIndex(u => u.uid === uid);
+    if (userIndex > -1) {
+        users[userIndex].youtubeChannelId = undefined;
+        users[userIndex].platformsConnected = users[userIndex].platformsConnected.filter(p => p !== 'youtube');
+    } else {
+        throw new Error("User not found for disconnect.");
     }
 }

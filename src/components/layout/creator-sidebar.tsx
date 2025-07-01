@@ -15,8 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Link as LinkIcon } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
-import { useEffect, useState } from 'react';
-import { getDashboardData } from '@/app/dashboard/actions';
+import type { User } from '@/lib/types';
+
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -28,22 +28,11 @@ const menuItems = [
   { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
 ];
 
-export function CreatorSidebar() {
+export function CreatorSidebar({ user }: { user: User | undefined }) {
   const pathname = usePathname();
-  const [creatorName, setCreatorName] = useState<string | null>(null);
-  const [creatorImage, setCreatorImage] = useState<string | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadCreatorInfo() {
-      // In a real app with auth, this might come from a session context
-      const data = await getDashboardData();
-      setCreatorName(data?.creatorName ?? 'Creator');
-      setCreatorImage(data?.creatorImage);
-      setIsLoading(false);
-    }
-    loadCreatorInfo();
-  }, []);
+  const isLoading = !user; 
+  const creatorName = user?.displayName;
+  const creatorImage = user?.avatar;
 
   return (
     <Sidebar>

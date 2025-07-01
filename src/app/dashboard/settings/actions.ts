@@ -4,7 +4,7 @@
 import { google } from 'googleapis';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { getUserById, updateUser } from '@/lib/users-store';
+import { getUserById, updateUser, disconnectYoutubeChannel as disconnect } from '@/lib/users-store';
 
 const formSchema = z.object({
   channelId: z.string().min(10, { message: 'Please enter a valid Channel ID.' }),
@@ -72,15 +72,14 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
     }
 
     await updateUser(userId, {
+        displayName: channel.snippet.title ?? user?.displayName,
         youtubeChannelId: channel.id,
-        avatar: channel.snippet.thumbnails?.default?.url,
+        avatar: channel.snippet.thumbnails?.default?.url ?? user?.avatar,
         platformsConnected: platforms,
     });
     
     // Revalidate paths to reflect changes across the app
-    revalidatePath('/dashboard/settings');
-    revalidatePath('/dashboard/overview');
-    revalidatePath('/dashboard/analytics');
+    revalidatePath('/dashboard', 'layout');
 
     return {
       success: true,
@@ -105,4 +104,18 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
       channel: null,
     };
   }
+}
+
+
+export async function disconnectYoutubeChannelAction() {
+    // In a real app, you would get this from the session
+    const userId = 'user_creator_123';
+    try {
+        await disconnect(userId);
+        revalidatePath('/dashboard', 'layout'); 
+        return { success: true, message: "YouTube channel has been disconnected." }
+    } catch(error) {
+        console.error("Error disconnecting channel:", error);
+        return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred."}
+    }
 }

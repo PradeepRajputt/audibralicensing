@@ -6,14 +6,14 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Youtube } from 'lucide-react';
+import { Youtube, Loader2, ShieldCheck, Trash2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { verifyYoutubeChannel } from './actions';
+import { verifyYoutubeChannel, disconnectYoutubeChannelAction } from './actions';
 import { useRouter } from "next/navigation";
 import type { User } from '@/lib/types';
 
@@ -32,6 +32,7 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
     const router = useRouter();
     const [connectedChannel, setConnectedChannel] = React.useState<ConnectedChannel | null>(null);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -40,13 +41,13 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
     // Effect to initialize the connected channel from user prop
     React.useEffect(() => {
         if (user?.youtubeChannelId) {
-            // In a real app, you might want to fetch channel details here if they aren't stored with the user
-            // For now, we'll assume they are available or we can construct them
              setConnectedChannel({
                 id: user.youtubeChannelId,
                 name: user.displayName || 'YouTube Channel',
                 avatar: user.avatar || '',
              });
+        } else {
+          setConnectedChannel(null);
         }
     }, [user]);
 
@@ -57,18 +58,23 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
             toast({ title: "Success!", description: state.message });
             setConnectedChannel(state.channel);
             setIsDialogOpen(false);
-            // We can re-fetch data on the dashboard pages by redirecting/refreshing
-            router.refresh();
+            // Re-fetching is handled by revalidatePath in the action, 
+            // no need for router.refresh() if pages are server components.
         } else if (!state.success) {
             toast({ variant: 'destructive', title: "Verification Failed", description: state.message });
         }
     }, [state, toast, router]);
     
-    const handleDisconnect = () => {
-        // This would be a server action in a real app to clear the youtubeChannelId from the user document
-        console.log("Simulating disconnect");
-        setConnectedChannel(null);
-        toast({ title: "Platform Disconnected", description: "Your YouTube channel has been disconnected. (Simulated)" });
+    const handleDisconnect = async () => {
+        setIsActionLoading(true);
+        const result = await disconnectYoutubeChannelAction();
+        if (result.success) {
+            setConnectedChannel(null);
+            toast({ title: "Platform Disconnected", description: result.message });
+        } else {
+            toast({ variant: 'destructive', title: "Action Failed", description: result.message });
+        }
+        setIsActionLoading(false);
     }
   
     const onPasswordChangeClick = () => {
@@ -150,7 +156,10 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
                                  <AvatarImage src={connectedChannel.avatar} data-ai-hint="channel icon" />
                                  <AvatarFallback>{connectedChannel.name.charAt(0)}</AvatarFallback>
                              </Avatar>
-                             <Button variant="destructive" onClick={handleDisconnect}>Disconnect</Button>
+                             <Button variant="destructive" onClick={handleDisconnect} disabled={isActionLoading}>
+                                 {isActionLoading && <Loader2 className="mr-2 animate-spin" />}
+                                 Disconnect
+                            </Button>
                          </div>
                     ) : (
                         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -185,4 +194,3 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
     </div>
   )
 }
-
