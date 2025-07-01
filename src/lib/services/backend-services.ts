@@ -1,12 +1,11 @@
 /**
  * @file This file contains server-side functions for interacting with external services
- * like a FastAPI backend, YouTube Data API, and SendGrid for emails. These functions
- * are designed to be used by Next.js API Routes, simulating the behavior of
- * traditional cloud functions.
+ * like a FastAPI backend, YouTube Data API, and SendGrid for emails.
  */
-import { Timestamp } from 'firebase-admin/firestore';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
-import type { User, Violation, UserAnalytics } from '@/lib/firebase/types';
+'use server';
+
+import { createViolation } from '@/lib/violations-store';
+import type { Violation } from '@/lib/types';
 import sgMail from '@sendgrid/mail';
 
 // Initialize SendGrid
@@ -19,28 +18,23 @@ if (process.env.SENDGRID_API_KEY) {
  * This function is intended to be called by a webhook from our FastAPI service.
  */
 export async function processViolationFromFastApi(violationData: Omit<Violation, 'id' | 'detectedAt'> & { creatorEmail: string }) {
-  const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) {
-    const message = "Firebase is not configured. Cannot process violation.";
-    console.error(message);
-    return { success: false, error: message };
-  }
-  
   if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-    console.error('SendGrid environment variables are not fully configured.');
-    // Still save to DB even if email fails
+    console.error('SendGrid environment variables are not fully configured. Email will not be sent.');
+    // Still save to in-memory store even if email fails
   }
 
   try {
-    // 1. Store the violation in Firestore
-    const newViolation: Omit<Violation, 'id'> = {
-        ...violationData,
-        detectedAt: Timestamp.now().toDate().toISOString(),
-    }
-    const docRef = await adminDb.collection('violations').add(newViolation);
-    console.log(`Stored violation with ID: ${docRef.id}`);
+    // 1. Store the violation in the in-memory store
+    const newViolation = await createViolation({
+      creatorId: violationData.creatorId,
+      matchedURL: violationData.matchedURL,
+      platform: violationData.platform,
+      matchScore: violationData.matchScore,
+      status: violationData.status,
+    });
+    console.log(`Stored violation with ID: ${newViolation.id}`);
 
-    // 2. Send an email alert via SendGrid
+    // 2. Send an email alert via SendGrid (if configured)
     if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
         const msg = {
             to: violationData.creatorEmail,
@@ -60,7 +54,7 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
         await sgMail.send(msg);
         console.log(`Sent violation alert email to ${violationData.creatorEmail}`);
     }
-    return { success: true, violationId: docRef.id };
+    return { success: true, violationId: newViolation.id };
   } catch (error) {
     console.error('Error processing violation or sending email:', error);
     return { success: false, error: (error as Error).message };
@@ -68,62 +62,15 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
 }
 
 /**
- * Fetches the latest YouTube analytics for all users with a connected YouTube ID
- * and updates their `analytics` subcollection in Firestore.
+ * MOCK: Fetches the latest YouTube analytics for all users.
  * This is designed to be run by a scheduled cron job.
+ * In this version, it's a no-op as there is no database.
  */
 export async function updateAllUserAnalytics() {
-  const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) {
-    const message = "Firebase is not configured. Cannot update analytics.";
-    console.error(message);
-    return { success: false, updated: 0, total: 0, error: message };
-  }
-
-  const usersRef = adminDb.collection('users');
-  // Find all users who have a youtubeId
-  const q = usersRef.where('youtubeId', '!=', null);
-  const querySnapshot = await q.get();
-
-  if (querySnapshot.empty) {
-    console.log('No users with YouTube IDs found to update.');
-    return { success: true, updated: 0, total: querySnapshot.size };
-  }
-  
-  let updatedCount = 0;
-  for (const userDoc of querySnapshot.docs) {
-      const user = userDoc.data() as User;
-      try {
-        // In a real app, you would call the YouTube Data API here.
-        // For this example, we'll use mock data.
-        const mockAnalytics = {
-            subscribers: Math.floor(Math.random() * 100000),
-            views: Math.floor(Math.random() * 10000000),
-            mostViewedVideo: 'dQw4w9WgXcQ', // Mock video ID
-        };
-
-        const analyticsData: Omit<UserAnalytics, 'lastFetched'> = {
-            subscribers: mockAnalytics.subscribers,
-            views: mockAnalytics.views,
-            mostViewedVideo: mockAnalytics.mostViewedVideo,
-        };
-
-        const analyticsRef = adminDb.collection('users').doc(user.uid).collection('analytics').doc('youtube');
-        
-        await analyticsRef.set({
-            ...analyticsData,
-            lastFetched: Timestamp.now(),
-        }, { merge: true });
-
-        console.log(`Updated analytics for user ${user.uid}`);
-        updatedCount++;
-      } catch(error) {
-        console.error(`Failed to update analytics for user ${user.uid}:`, error);
-      }
-  }
-
-  return { success: true, updated: updatedCount, total: querySnapshot.size };
+  console.log('Skipping analytics update: No database connected.');
+  return { success: true, updated: 0, total: 0 };
 }
+
 
 /**
  * Sends an email to a creator informing them that their reactivation request was approved.
