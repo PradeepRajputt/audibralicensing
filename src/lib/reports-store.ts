@@ -2,53 +2,68 @@
 'use server';
 
 import type { Report } from '@/lib/types';
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
 
-async function getDb() {
-  const client = await clientPromise;
-  return client.db("creator-shield-db");
-}
+let reports: Report[] = [
+  {
+    id: "report_initial_1",
+    creatorId: "user_creator_123",
+    creatorName: "Sample Creator",
+    platform: "youtube",
+    suspectUrl: "https://youtube.com/watch?v=fake123",
+    reason: "This is a direct reupload of my video.",
+    status: "approved",
+    submitted: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString() // 2 days ago
+  },
+  {
+    id: "report_initial_2",
+    creatorId: "user_creator_456",
+    creatorName: "Alice Vlogs",
+    platform: "instagram",
+    suspectUrl: "https://instagram.com/p/reel456",
+    reason: "They used my background music without credit.",
+    status: "rejected",
+    submitted: new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)).toISOString() // 7 days ago
+  },
+  {
+    id: "report_initial_3",
+    creatorId: "user_creator_123",
+    creatorName: "Sample Creator",
+    platform: "web",
+    suspectUrl: "https://thissiteisstealing.com/my-article",
+    reason: "Copied my entire blog post word for word.",
+    status: "in_review",
+    submitted: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString() // 1 day ago
+  },
+];
+
 
 export async function getAllReports(): Promise<Report[]> {
-    const db = await getDb();
-    const reports = await db.collection('reports').find({}).sort({ submitted: -1 }).toArray();
-    return reports.map(r => {
-        const { _id, ...rest } = r;
-        return { ...rest, id: _id.toString() } as unknown as Report;
-    });
+    return JSON.parse(JSON.stringify(reports.sort((a, b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime())));
 }
 
 export async function getReportsForUser(creatorId: string): Promise<Report[]> {
-    const db = await getDb();
-    const reports = await db.collection('reports').find({ creatorId }).sort({ submitted: -1 }).toArray();
-    return reports.map(r => {
-        const { _id, ...rest } = r;
-        return { ...rest, id: _id.toString() } as unknown as Report;
-    });
+    const userReports = reports.filter(r => r.creatorId === creatorId);
+    return JSON.parse(JSON.stringify(userReports.sort((a, b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime())));
 }
 
 export async function getReportById(id: string): Promise<Report | undefined> {
-    if (!ObjectId.isValid(id)) return undefined;
-    const db = await getDb();
-    const report = await db.collection('reports').findOne({ _id: new ObjectId(id) });
-    if (!report) return undefined;
-    const { _id, ...rest } = report;
-    return { ...rest, id: _id.toString() } as unknown as Report;
+    const report = reports.find(r => r.id === id);
+    return report ? JSON.parse(JSON.stringify(report)) : undefined;
 }
 
 export async function createReport(data: Omit<Report, 'id' | 'submitted' | 'status'>): Promise<void> {
-    const db = await getDb();
-    const newReport = {
+    const newReport: Report = {
         ...data,
+        id: `report_${Date.now()}`,
         status: 'in_review' as const,
         submitted: new Date().toISOString(),
     };
-    await db.collection('reports').insertOne(newReport);
+    reports.unshift(newReport);
 }
 
 export async function updateReportStatus(reportId: string, status: 'approved' | 'rejected'): Promise<void> {
-    if (!ObjectId.isValid(reportId)) return;
-    const db = await getDb();
-    await db.collection('reports').updateOne({ _id: new ObjectId(reportId) }, { $set: { status } });
+    const reportIndex = reports.findIndex(r => r.id === reportId);
+    if (reportIndex !== -1) {
+        reports[reportIndex].status = status;
+    }
 }

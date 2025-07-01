@@ -1,31 +1,34 @@
 
 'use server';
 import type { ReactivationRequest } from '@/lib/types';
-import clientPromise from '@/lib/mongodb';
 
-async function getDb() {
-  const client = await clientPromise;
-  return client.db("creator-shield-db");
-}
+let reactivationRequests: ReactivationRequest[] = [
+    {
+      creatorId: 'user_creator_deactivated',
+      displayName: 'Online Wlallah',
+      email: 'guddumis003@gmail.com',
+      avatar: 'https://placehold.co/128x128.png',
+      requestDate: new Date('2024-06-12T10:00:00Z').toISOString(),
+    },
+];
 
 export async function getAllReactivationRequests(): Promise<ReactivationRequest[]> {
-    const db = await getDb();
-    const requests = await db.collection('reactivationRequests').find({}).sort({ requestDate: -1 }).toArray();
-    // Assuming creatorId is a string, no need for ObjectId mapping if it's not the primary _id
-    return requests as unknown as ReactivationRequest[];
+    return JSON.parse(JSON.stringify(reactivationRequests));
 }
 
 export async function addReactivationRequest(request: Omit<ReactivationRequest, 'requestDate'>): Promise<void> {
-    const db = await getDb();
-    // Use upsert to avoid duplicate requests for the same user
-    await db.collection('reactivationRequests').updateOne(
-        { creatorId: request.creatorId },
-        { $set: { ...request, requestDate: new Date().toISOString() } },
-        { upsert: true }
-    );
+    const existingIndex = reactivationRequests.findIndex(r => r.creatorId === request.creatorId);
+    const newRequest = {
+        ...request,
+        requestDate: new Date().toISOString(),
+    };
+    if (existingIndex > -1) {
+        reactivationRequests[existingIndex] = newRequest;
+    } else {
+        reactivationRequests.push(newRequest);
+    }
 }
 
 export async function removeReactivationRequest(creatorId: string): Promise<void> {
-    const db = await getDb();
-    await db.collection('reactivationRequests').deleteOne({ creatorId });
+    reactivationRequests = reactivationRequests.filter(r => r.creatorId !== creatorId);
 }

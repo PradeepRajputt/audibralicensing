@@ -1,49 +1,107 @@
+'use server';
 
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { google } from 'googleapis';
+import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
+import { getUserById, updateUser } from '@/lib/users-store';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
-}
+const formSchema = z.object({
+  channelId: z.string().min(10, { message: 'Please enter a valid Channel ID.' }),
+});
 
-const uri = process.env.MONGODB_URI;
+/**
+ * Verifies a YouTube Channel ID using the YouTube Data API and updates the user's document.
+ */
+export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
+  // In a real app, you would get this from the session
+  const userId = 'user_creator_123';
+  if (!userId) {
+    return { success: false, message: 'Authentication required.', channel: null };
+  }
+  
+  const validatedFields = formSchema.safeParse({
+    channelId: formData.get('channelId'),
+  });
 
-// More robust options for serverless environments
-const options = {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-  // Set a max idle time to prevent the server from closing idle connections
-  // which can cause issues in serverless environments.
-  maxIdleTimeMS: 80000,
-  // Set timeouts to prevent the application from hanging
-  connectTimeoutMS: 10000, 
-  socketTimeoutMS: 45000,
-};
-
-
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable so that the value
-  // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  let globalWithMongo = global as typeof globalThis & {
-    _mongoClientPromise?: Promise<MongoClient>
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      message: 'Invalid Channel ID provided.',
+      channel: null,
+    };
   }
 
-  if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    globalWithMongo._mongoClientPromise = client.connect();
-  }
-  clientPromise = globalWithMongo._mongoClientPromise;
-} else {
-  // In production mode, it's best to not use a global variable.
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
-}
+  const { channelId } = validatedFields.data;
 
-// Export a module-scoped MongoClient promise. By doing this in a
-// separate module, the client can be shared across functions.
-export default clientPromise;
+  if (!process.env.YOUTUBE_API_KEY) {
+    console.error('YouTube API Key is not configured in .env file.');
+    return {
+      success: false,
+      message: 'Server configuration error. Cannot verify channel.',
+      channel: null,
+    };
+  }
+
+  try {
+    const youtube = google.youtube({
+      version: 'v3',
+      auth: process.env.YOUTUBE_API_KEY,
+    });
+
+    const response = await youtube.channels.list({
+      id: [channelId],
+      part: ['snippet', 'id'],
+    });
+
+    const channel = response.data.items?.[0];
+
+    if (!channel || !channel.id || !channel.snippet) {
+      return {
+        success: false,
+        message: 'Channel not found. Please check the Channel ID.',
+        channel: null,
+      };
+    }
+    
+    // Update the user document in the in-memory store
+    const user = await getUserById(userId);
+    const platforms = user?.platformsConnected || [];
+    if (!platforms.includes('youtube')) {
+        platforms.push('youtube');
+    }
+
+    await updateUser(userId, {
+        youtubeChannelId: channel.id,
+        avatar: channel.snippet.thumbnails?.default?.url,
+        platformsConnected: platforms,
+    });
+    
+    // Revalidate paths to reflect changes across the app
+    revalidatePath('/dashboard/settings');
+    revalidatePath('/dashboard/overview');
+    revalidatePath('/dashboard/analytics');
+
+    return {
+      success: true,
+      message: 'Channel verified and connected successfully!',
+      channel: {
+        id: channel.id,
+        name: channel.snippet.title ?? 'Untitled Channel',
+        avatar: channel.snippet.thumbnails?.default?.url ?? '',
+      },
+    };
+  } catch (error) {
+    console.error('Error verifying YouTube channel:', error);
+    let message = 'Failed to verify channel due to an API error.';
+    if (error instanceof Error && (error as any).code === 400) {
+        message = 'The provided Channel ID is invalid. Please double-check it.'
+    } else if (error instanceof Error && error.message.includes('API key not valid')) {
+        message = 'The YouTube API key is invalid or has expired. Please check server configuration.'
+    }
+    return {
+      success: false,
+      message,
+      channel: null,
+    };
+  }
+}

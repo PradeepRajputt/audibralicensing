@@ -1,20 +1,14 @@
+
 'use server';
 
 import { google } from 'googleapis';
 import { z } from 'zod';
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
 import { revalidatePath } from 'next/cache';
-import { getUserById } from '@/lib/users-store';
+import { getUserById, updateUser } from '@/lib/users-store';
 
 const formSchema = z.object({
   channelId: z.string().min(10, { message: 'Please enter a valid Channel ID.' }),
 });
-
-async function getDb() {
-  const client = await clientPromise;
-  return client.db("creator-shield-db");
-}
 
 /**
  * Verifies a YouTube Channel ID using the YouTube Data API and updates the user's document.
@@ -70,23 +64,18 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
       };
     }
     
-    // Update the user document in MongoDB
-    const db = await getDb();
+    // Update the user document in the in-memory store
     const user = await getUserById(userId);
     const platforms = user?.platformsConnected || [];
     if (!platforms.includes('youtube')) {
         platforms.push('youtube');
     }
 
-    await db.collection('users').updateOne(
-        { _id: new ObjectId(userId) },
-        { $set: { 
-            youtubeChannelId: channel.id,
-            // also update avatar to youtube channel's avatar
-            avatar: channel.snippet.thumbnails?.default?.url,
-            platformsConnected: platforms,
-        } }
-    );
+    await updateUser(userId, {
+        youtubeChannelId: channel.id,
+        avatar: channel.snippet.thumbnails?.default?.url,
+        platformsConnected: platforms,
+    });
     
     // Revalidate paths to reflect changes across the app
     revalidatePath('/dashboard/settings');
