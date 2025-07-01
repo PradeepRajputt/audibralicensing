@@ -27,6 +27,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -167,6 +168,7 @@ export function ContentClientPage({ initialContent }: { initialContent: Protecte
                       {formatDistanceToNow(new Date(item.lastChecked), { addSuffix: true })}
                   </TableCell>
                   <TableCell className="text-right">
+                    <AlertDialog open={isDeleting === item.id} onOpenChange={(open) => !open && setIsDeleting(null)}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -197,7 +199,7 @@ export function ContentClientPage({ initialContent }: { initialContent: Protecte
                         </AlertDialogTrigger>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <AlertDialog open={isDeleting === item.id} onOpenChange={(open) => !open && setIsDeleting(null)}>
+                    
                         <AlertDialogContent>
                             <AlertDialogHeader>
                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
