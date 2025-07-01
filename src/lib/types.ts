@@ -43,11 +43,13 @@ export interface ProtectedContent {
   _id?: any; // MongoDB ObjectId
   creatorId: User['uid'];
   contentType: 'video' | 'audio' | 'text' | 'image';
-  videoURL?: string;
+  videoURL?: string; // Should be renamed to contentURL
   title: string;
   tags: string[];
   platform: 'youtube' | 'vimeo' | 'web';
   uploadDate: string; // Using ISO string for client-side
+  status: 'active' | 'inactive';
+  lastChecked: string;
 }
 
 
