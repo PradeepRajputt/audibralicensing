@@ -50,18 +50,15 @@ function ColorPicker({ color, setColor }: { color: string, setColor: (color: str
 }
 
 export default function AnalyticsClientPage({ initialAnalytics }: { initialAnalytics: UserAnalytics | null }) {
-    const [analytics, setAnalytics] = React.useState(initialAnalytics);
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
     const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
     const [subscribersChartType, setSubscribersChartType] = React.useState<ChartType>('line');
     const [aggregation, setAggregation] = React.useState<AggregationType>("day");
     const [viewsColor, setViewsColor] = React.useState('hsl(var(--chart-1))');
     const [subscribersColor, setSubscribersColor] = React.useState('hsl(var(--chart-2))');
-
-    React.useEffect(() => {
-        setAnalytics(initialAnalytics);
-    }, [initialAnalytics]);
-
+    
+    // Use the prop directly. The parent Server Component will re-render and pass a fresh prop.
+    const analytics = initialAnalytics;
 
     const chartConfig = {
         views: { label: 'Views', color: viewsColor },
