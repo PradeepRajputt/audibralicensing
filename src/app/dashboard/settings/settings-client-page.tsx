@@ -2,13 +2,14 @@
 'use client';
 
 import * as React from "react";
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Youtube } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +35,7 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
     const { toast } = useToast();
     const formRef = React.useRef<HTMLFormElement>(null);
 
-    const [state, formAction] = React.useActionState(verifyYoutubeChannel, null);
+    const [state, formAction] = useActionState(verifyYoutubeChannel, null);
 
     // Effect to initialize the connected channel from user prop
     React.useEffect(() => {
@@ -184,3 +185,4 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
     </div>
   )
 }
+
