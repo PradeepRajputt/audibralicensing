@@ -19,14 +19,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Report } from "@/lib/types";
 import { getReportsForUser } from "@/lib/reports-store";
 import { submitManualReportAction } from './actions';
-import { useSession } from "next-auth/react";
 
 const formSchema = z.object({
   platform: z.string({ required_error: "Please select a platform." }).min(1, "Please select a platform."),
@@ -42,8 +41,6 @@ export default function SubmitReportPage() {
   const [isFetching, setIsFetching] = useState(true);
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
   const { toast } = useToast();
-  const { data: session } = useSession();
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,19 +50,18 @@ export default function SubmitReportPage() {
     },
   });
 
-   const loadReports = async () => {
-    if (!session?.user?.id) return;
+   const loadReports = useCallback(async () => {
+    // In a real app, you would get the authenticated user's ID
+    const userId = "user_creator_123";
     setIsFetching(true);
-    const reports = await getReportsForUser(session.user.id);
+    const reports = await getReportsForUser(userId);
     setSubmittedReports(reports);
     setIsFetching(false);
-  };
+  }, []);
 
   useEffect(() => {
-    if(session?.user?.id) {
-        loadReports();
-    }
-  }, [session]);
+    loadReports();
+  }, [loadReports]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {

@@ -5,14 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ScanSearch, ShieldCheck, Activity, Youtube } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/context/user-context';
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AnalogClock } from "@/components/ui/analog-clock";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
+import { getDashboardData } from '../actions';
+import type { UserAnalytics } from '@/lib/types';
 
 function DashboardSkeleton() {
     return (
@@ -69,17 +69,35 @@ function NotConnected() {
 }
 
 export default function OverviewPage() {
-  const { analytics, activity, isLoading, creatorName, creatorImage } = useUser();
- 
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
+    const [isLoading, setIsLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState<{
+        analytics: UserAnalytics | null;
+        activity: any[];
+        creatorName: string | undefined;
+        creatorImage: string | undefined;
+    } | null>(null);
+
+    useEffect(() => {
+        async function loadData() {
+            setIsLoading(true);
+            const data = await getDashboardData();
+            setDashboardData(data);
+            setIsLoading(false);
+        }
+        loadData();
+    }, []);
+
+    if (isLoading) {
+        return <DashboardSkeleton />;
+    }
   
-  if (!analytics) {
-    return <NotConnected />;
-  }
+    if (!dashboardData?.analytics) {
+        return <NotConnected />;
+    }
   
-  return (
+    const { analytics, activity, creatorName, creatorImage } = dashboardData;
+  
+    return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">

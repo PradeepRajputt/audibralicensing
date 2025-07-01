@@ -14,7 +14,9 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/context/user-context';
+import { getDashboardData } from '../actions';
+import type { UserAnalytics } from '@/lib/types';
+
 
 type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
@@ -63,7 +65,7 @@ function AnalyticsSkeleton() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-40" /><Skeleton className="h-3 w-20 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-40" /><Skeleton className="h-3 w-20 mt-2" /></CardContent></Card>
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
                  <Card><CardHeader className="flex flex-row items-start justify-between gap-4"><Skeleton className="h-10 w-full" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
@@ -74,7 +76,8 @@ function AnalyticsSkeleton() {
 }
 
 export default function AnalyticsPage() {
-    const { analytics, isLoading } = useUser();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [analytics, setAnalytics] = React.useState<UserAnalytics | null>(null);
 
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
     const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
@@ -82,6 +85,16 @@ export default function AnalyticsPage() {
     const [aggregation, setAggregation] = React.useState<AggregationType>("day");
     const [viewsColor, setViewsColor] = React.useState('hsl(var(--chart-1))');
     const [subscribersColor, setSubscribersColor] = React.useState('hsl(var(--chart-2))');
+
+    React.useEffect(() => {
+        async function loadData() {
+            setIsLoading(true);
+            const data = await getDashboardData();
+            setAnalytics(data?.analytics ?? null);
+            setIsLoading(false);
+        }
+        loadData();
+    }, []);
 
     const chartConfig = {
         views: { label: 'Views', color: viewsColor },
@@ -271,4 +284,3 @@ export default function AnalyticsPage() {
         </div>
     );
 }
-

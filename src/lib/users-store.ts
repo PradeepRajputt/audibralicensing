@@ -2,7 +2,6 @@
 'use server';
 
 import type { User } from '@/lib/types';
-import { hashPassword, verifyPassword as verify } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
@@ -53,53 +52,6 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
   
   const { _id, ...rest } = user;
   return { ...rest, uid: _id.toString() } as User;
-}
-
-/**
- * Creates a new user in MongoDB.
- * @param userData - The data for the new user, including a plain-text password.
- * @returns A promise that resolves to the newly created User object.
- */
-export async function createUser(userData: Omit<User, 'uid' | 'passwordHash' | 'joinDate' | 'status' | 'platformsConnected' | 'avatar'> & { password: string }): Promise<User> {
-  const db = await getDb();
-  
-  if (!userData.email || !userData.password) {
-      throw new Error("Email and password are required.");
-  }
-
-  const existingUser = await getUserByEmail(userData.email);
-  if (existingUser) {
-    throw new Error("An account with this email already exists.");
-  }
-  
-  const passwordHash = await hashPassword(userData.password);
-  
-  const newUser: Omit<User, 'uid' | '_id'> = {
-    displayName: userData.displayName || null,
-    email: userData.email.toLowerCase(),
-    passwordHash: passwordHash,
-    role: userData.role || 'creator',
-    joinDate: new Date().toISOString(),
-    platformsConnected: [],
-    status: 'active',
-    avatar: `https://placehold.co/128x128.png`,
-    youtubeChannelId: userData.youtubeChannelId,
-  };
-
-  const result = await db.collection('users').insertOne(newUser);
-  if (!result.insertedId) throw new Error("Failed to create user in database.");
-
-  return { ...newUser, uid: result.insertedId.toString() };
-}
-
-/**
- * Verifies a user's password.
- * @param password The plain-text password.
- * @param hash The stored password hash from the database.
- * @returns A promise resolving to true if the password is valid, false otherwise.
- */
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return verify(password, hash);
 }
 
 /**

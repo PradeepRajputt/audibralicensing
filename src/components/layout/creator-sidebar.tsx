@@ -11,7 +11,6 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useUser } from '@/context/user-context';
 import { Activity, Youtube, ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -28,7 +27,8 @@ const menuItems = [
 
 export function CreatorSidebar() {
   const pathname = usePathname();
-  const { creatorName, creatorImage } = useUser();
+  const creatorName = "Creator";
+  const creatorImage = undefined;
 
   return (
     <Sidebar>
