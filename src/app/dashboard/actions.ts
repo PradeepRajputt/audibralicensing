@@ -1,3 +1,4 @@
+
 'use server';
 
 import { google } from 'googleapis';
@@ -19,7 +20,7 @@ export async function getDashboardData() {
   // If no API key is set, or if the user hasn't connected their channel, return a structure
   // that allows the UI to show the user's name even if analytics can't be fetched.
   if (!process.env.YOUTUBE_API_KEY || !finalChannelId) {
-      console.error('YouTube API Key or Channel ID is not configured for the user.');
+      console.log('YouTube API Key or Channel ID is not configured for the user. This is an expected state if a channel is not yet connected.');
       return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
   }
   
