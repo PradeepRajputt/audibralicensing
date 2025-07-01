@@ -1,6 +1,7 @@
 
 'use server';
 import type { ProtectedContent } from '@/lib/types';
+import { unstable_noStore as noStore } from 'next/cache';
 
 // In-memory array to store protected content
 let protectedContent: ProtectedContent[] = [
@@ -47,6 +48,7 @@ let protectedContent: ProtectedContent[] = [
 ];
 
 export async function getAllContentForUser(userId: string): Promise<ProtectedContent[]> {
+    noStore();
     const userContent = protectedContent.filter(c => c.creatorId === userId);
     return JSON.parse(JSON.stringify(userContent));
 }

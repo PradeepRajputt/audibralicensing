@@ -2,6 +2,7 @@
 'use server';
 
 import type { Report } from '@/lib/types';
+import { unstable_noStore as noStore } from 'next/cache';
 
 let reports: Report[] = [
   {
@@ -38,15 +39,18 @@ let reports: Report[] = [
 
 
 export async function getAllReports(): Promise<Report[]> {
+    noStore();
     return JSON.parse(JSON.stringify(reports.sort((a, b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime())));
 }
 
 export async function getReportsForUser(creatorId: string): Promise<Report[]> {
+    noStore();
     const userReports = reports.filter(r => r.creatorId === creatorId);
     return JSON.parse(JSON.stringify(userReports.sort((a, b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime())));
 }
 
 export async function getReportById(id: string): Promise<Report | undefined> {
+    noStore();
     const report = reports.find(r => r.id === id);
     return report ? JSON.parse(JSON.stringify(report)) : undefined;
 }

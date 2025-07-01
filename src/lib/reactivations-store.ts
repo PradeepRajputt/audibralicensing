@@ -1,6 +1,7 @@
 
 'use server';
 import type { ReactivationRequest } from '@/lib/types';
+import { unstable_noStore as noStore } from 'next/cache';
 
 let reactivationRequests: ReactivationRequest[] = [
     {
@@ -13,6 +14,7 @@ let reactivationRequests: ReactivationRequest[] = [
 ];
 
 export async function getAllReactivationRequests(): Promise<ReactivationRequest[]> {
+    noStore();
     return JSON.parse(JSON.stringify(reactivationRequests));
 }
 

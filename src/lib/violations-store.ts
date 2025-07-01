@@ -1,6 +1,7 @@
 
 'use server';
 import type { Violation } from '@/lib/types';
+import { unstable_noStore as noStore } from 'next/cache';
 
 // In-memory array to store violations
 let violations: Violation[] = [
@@ -80,6 +81,7 @@ export async function createViolation(data: Omit<Violation, 'id' | 'detectedAt' 
 }
 
 export async function getViolationsForUser(creatorId: string): Promise<Violation[]> {
+    noStore();
     const userViolations = violations.filter(v => v.creatorId === creatorId);
     return JSON.parse(JSON.stringify(userViolations.sort((a,b) => new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime())));
 }

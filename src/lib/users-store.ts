@@ -3,6 +3,7 @@
 
 import type { User } from '@/lib/types';
 import { addReactivationRequest } from './reactivations-store';
+import { unstable_noStore as noStore } from 'next/cache';
 
 // In-memory array to store users
 let users: User[] = [
@@ -59,6 +60,7 @@ let users: User[] = [
  * @returns A promise that resolves to an array of User objects.
  */
 export async function getAllUsers(): Promise<User[]> {
+  noStore();
   // Simulate DB async operation and return a deep copy
   return JSON.parse(JSON.stringify(users.sort((a,b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime())));
 }
@@ -69,6 +71,7 @@ export async function getAllUsers(): Promise<User[]> {
  * @returns A promise that resolves to the User object or undefined if not found.
  */
 export async function getUserById(uid: string): Promise<User | undefined> {
+  noStore();
   const user = users.find(u => u.uid === uid);
   return user ? JSON.parse(JSON.stringify(user)) : undefined;
 }
