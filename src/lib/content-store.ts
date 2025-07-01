@@ -54,6 +54,7 @@ export async function getAllContentForUser(userId: string): Promise<ProtectedCon
 }
 
 export async function createContent(data: Omit<ProtectedContent, 'id' | 'uploadDate'>): Promise<ProtectedContent> {
+    noStore();
     const newContent: ProtectedContent = {
         ...data,
         id: `content_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,

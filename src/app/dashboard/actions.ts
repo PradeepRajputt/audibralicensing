@@ -1,25 +1,26 @@
 
 'use server';
 
-import { google } from 'googleapis';
 import { subDays, format } from 'date-fns';
 import { getUserById } from '@/lib/users-store';
-import type { User, UserAnalytics } from '@/lib/types';
+import type { UserAnalytics } from '@/lib/types';
+import { unstable_noStore as noStore } from 'next/cache';
 
 /**
  * Fetches dashboard data.
  * NOTE: This function now returns mock data to avoid YouTube API quota issues during development.
- * The original API call logic is commented out below for reference.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
 export async function getDashboardData() {
+  noStore();
+  // In a real app, this would come from the session.
   const userId = "user_creator_123";
   const user = await getUserById(userId);
   const finalChannelId = user?.youtubeChannelId;
 
   // If no channel is connected, return the basic user info.
   if (!finalChannelId) {
-      console.log('YouTube Channel ID is not configured for the user. Showing connect prompt.');
+      console.log('YouTube Channel ID is not configured for the user.');
       return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
   }
 

@@ -56,6 +56,7 @@ export async function getReportById(id: string): Promise<Report | undefined> {
 }
 
 export async function createReport(data: Omit<Report, 'id' | 'submitted' | 'status'>): Promise<void> {
+    noStore();
     const newReport: Report = {
         ...data,
         id: `report_${Date.now()}`,
@@ -66,6 +67,7 @@ export async function createReport(data: Omit<Report, 'id' | 'submitted' | 'stat
 }
 
 export async function updateReportStatus(reportId: string, status: 'approved' | 'rejected'): Promise<void> {
+    noStore();
     const reportIndex = reports.findIndex(r => r.id === reportId);
     if (reportIndex !== -1) {
         reports[reportIndex].status = status;

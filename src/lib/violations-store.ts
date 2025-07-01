@@ -70,6 +70,7 @@ let violations: Violation[] = [
 ];
 
 export async function createViolation(data: Omit<Violation, 'id' | 'detectedAt' | 'timeline'>): Promise<Violation> {
+    noStore();
     const newViolation: Violation = {
         ...data,
         id: `violation_${Date.now()}`,
@@ -87,6 +88,7 @@ export async function getViolationsForUser(creatorId: string): Promise<Violation
 }
 
 export async function updateViolationStatus(violationId: string, status: Violation['status']): Promise<void> {
+    noStore();
     const violationIndex = violations.findIndex(v => v.id === violationId);
     if (violationIndex !== -1) {
         violations[violationIndex].status = status;

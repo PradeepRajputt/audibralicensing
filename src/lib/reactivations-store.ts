@@ -19,6 +19,7 @@ export async function getAllReactivationRequests(): Promise<ReactivationRequest[
 }
 
 export async function addReactivationRequest(request: Omit<ReactivationRequest, 'requestDate'>): Promise<void> {
+    noStore();
     const existingIndex = reactivationRequests.findIndex(r => r.creatorId === request.creatorId);
     const newRequest = {
         ...request,
@@ -32,5 +33,6 @@ export async function addReactivationRequest(request: Omit<ReactivationRequest, 
 }
 
 export async function removeReactivationRequest(creatorId: string): Promise<void> {
+    noStore();
     reactivationRequests = reactivationRequests.filter(r => r.creatorId !== creatorId);
 }
