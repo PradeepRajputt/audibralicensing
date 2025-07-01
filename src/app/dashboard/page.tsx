@@ -1,7 +1,4 @@
 
-'use client';
-
-import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScanSearch, ShieldCheck, Activity, Youtube } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,20 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getDashboardData } from './actions';
-import type { UserAnalytics } from '@/lib/types';
-
-interface DashboardData {
-    analytics: UserAnalytics | null;
-    activity: {
-        type: string;
-        details: string;
-        status: string;
-        date: string;
-        variant: "destructive" | "default";
-    }[];
-    creatorName: string | null | undefined;
-    creatorImage: string | null | undefined;
-}
 
 function DashboardSkeleton() {
     return (
@@ -54,29 +37,18 @@ function DashboardSkeleton() {
     )
 }
 
-export default function DashboardPage() {
-  const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      const data = await getDashboardData();
-      if(data) {
-        setDashboardData(data);
-      }
-      setIsLoading(false);
-    }
-    loadData();
-  }, []);
-
-
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
-
+export default async function DashboardPage() {
+  const dashboardData = await getDashboardData();
+  
   if (!dashboardData || !dashboardData.analytics) {
-    return <p className="text-muted-foreground">Could not load dashboard data. Please make sure your channel is connected.</p>
+    // This case should not be hit if layout logic is correct,
+    // but it's a safe fallback.
+    return (
+        <div className="space-y-8">
+            <h1 className="text-2xl font-bold">Welcome!</h1>
+            <p className="text-muted-foreground">Could not load dashboard data. Please make sure your channel is connected in settings.</p>
+        </div>
+    )
   }
   
   const { analytics, activity, creatorName, creatorImage } = dashboardData;
@@ -85,7 +57,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
        <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16">
-            <AvatarImage src={creatorImage ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
+            <AvatarImage src={creatorImage ?? undefined} alt="User Avatar" data-ai-hint="profile picture"/>
             <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
           </Avatar>
           <div>

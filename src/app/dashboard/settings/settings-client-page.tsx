@@ -40,10 +40,10 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
 
     // Effect to initialize the connected channel from user prop
     React.useEffect(() => {
-        if (user?.youtubeChannelId) {
+        if (user?.youtubeChannelId && user?.displayName) {
              setConnectedChannel({
                 id: user.youtubeChannelId,
-                name: user.displayName || 'YouTube Channel',
+                name: user.displayName,
                 avatar: user.avatar || '',
              });
         } else {
@@ -56,10 +56,8 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
         if (!state) return;
         if (state.success && state.channel) {
             toast({ title: "Success!", description: state.message });
-            setConnectedChannel(state.channel);
             setIsDialogOpen(false);
-            // Re-fetching is handled by revalidatePath in the action, 
-            // no need for router.refresh() if pages are server components.
+            router.refresh(); 
         } else if (!state.success) {
             toast({ variant: 'destructive', title: "Verification Failed", description: state.message });
         }
@@ -69,8 +67,8 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
         setIsActionLoading(true);
         const result = await disconnectYoutubeChannelAction();
         if (result.success) {
-            setConnectedChannel(null);
             toast({ title: "Platform Disconnected", description: result.message });
+            router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Action Failed", description: result.message });
         }
