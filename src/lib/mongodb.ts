@@ -6,16 +6,22 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI;
+
+// More robust options for serverless environments
 const options = {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
   },
-  // Adding TLS options to troubleshoot SSL errors like 'DECRYPTION_FAILED_OR_BAD_RECORD_MAC'
-  tls: true,
-  tlsInsecure: true,
+  // Set a max idle time to prevent the server from closing idle connections
+  // which can cause issues in serverless environments.
+  maxIdleTimeMS: 80000,
+  // Set timeouts to prevent the application from hanging
+  connectTimeoutMS: 10000, 
+  socketTimeoutMS: 45000,
 };
+
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
