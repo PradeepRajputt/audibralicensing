@@ -36,6 +36,7 @@ import type { Feedback, FeedbackReply } from '@/lib/types';
 import { getAllFeedback } from '@/lib/feedback-store';
 import { replyToFeedbackAction } from './actions';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 export default function AdminFeedbackPage() {
   const [feedbackList, setFeedbackList] = React.useState<Feedback[]>([]);
@@ -192,7 +193,7 @@ export default function AdminFeedbackPage() {
             {selectedFeedback?.message && (
                <div>
                 <h4 className="font-semibold mb-1">Private Message to Admin:</h4>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap italic bg-muted/50 p-2 rounded-md">{selectedFeedback.message}</p>
+                <p className="text-sm text-muted-foreground italic bg-muted/50 p-2 rounded-md">{selectedFeedback.message}</p>
               </div>
             )}
             <div className="space-y-2">
