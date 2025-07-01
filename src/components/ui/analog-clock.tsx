@@ -17,7 +17,14 @@ export function AnalogClock({ className, timeZone = 'UTC', ...props }: AnalogClo
     // This function now runs only on the client
     const updateClock = () => {
       // This creates a string representation in the target timezone, then parses it back.
-      setTime(new Date(new Date().toLocaleString('en-US', { timeZone })));
+      // This is a workaround for the lack of a direct way to get a Date object in a specific timezone in JS.
+      try {
+        const strTime = new Date().toLocaleString('en-US', { timeZone });
+        setTime(new Date(strTime));
+      } catch (e) {
+        console.error("Invalid time zone:", timeZone);
+        setTime(new Date()); // Fallback to local time
+      }
     };
 
     // Set the initial time as soon as the component mounts
@@ -40,7 +47,7 @@ export function AnalogClock({ className, timeZone = 'UTC', ...props }: AnalogClo
   const secondRotation = seconds * 6;
 
   return (
-    <div className={cn("relative w-24 h-24 bg-secondary rounded-full border-4 border-primary/20 shadow-inner mx-auto", className)} {...props}>
+    <div className={cn("relative w-32 h-32 bg-secondary rounded-full border-4 border-primary/20 shadow-inner", className)} {...props}>
       {/* Hour markers */}
       {Array.from({ length: 12 }).map((_, i) => (
         <div
@@ -49,8 +56,8 @@ export function AnalogClock({ className, timeZone = 'UTC', ...props }: AnalogClo
           style={{ transform: `rotate(${i * 30}deg)` }}
         >
           <div
-            className={`absolute top-1 left-1/2 -translate-x-1/2 w-0.5 ${
-              i % 3 === 0 ? "h-2 bg-foreground" : "h-1 bg-foreground/50"
+            className={`absolute top-1.5 left-1/2 -translate-x-1/2 w-0.5 ${
+              i % 3 === 0 ? "h-3 bg-foreground" : "h-1.5 bg-foreground/50"
             }`}
           />
         </div>
@@ -61,26 +68,27 @@ export function AnalogClock({ className, timeZone = 'UTC', ...props }: AnalogClo
         <>
            {/* Hour Hand */}
           <div
-            className="absolute top-1/2 left-1/2 w-1 h-6 bg-primary rounded-full origin-bottom"
+            className="absolute top-1/2 left-1/2 w-1 h-8 bg-primary rounded-full origin-bottom"
             style={{ transform: `translate(-50%, -100%) rotate(${hourRotation}deg)`, transition: 'transform 0.5s ease-out' }}
           />
 
           {/* Minute Hand */}
           <div
-            className="absolute top-1/2 left-1/2 w-0.5 h-8 bg-foreground rounded-full origin-bottom"
+            className="absolute top-1/2 left-1/2 w-0.5 h-10 bg-foreground rounded-full origin-bottom"
             style={{ transform: `translate(-50%, -100%) rotate(${minuteRotation}deg)`, transition: 'transform 0.5s ease-out' }}
           />
 
           {/* Second Hand */}
           <div
-            className="absolute top-1/2 left-1/2 w-0.5 h-10 bg-red-500 origin-bottom"
+            className="absolute top-1/2 left-1/2 w-0.5 h-12 bg-red-500 origin-bottom"
             style={{ transform: `translate(-50%, -100%) rotate(${secondRotation}deg)`, transition: 'transform 0.2s linear' }}
           />
         </>
       )}
 
       {/* Center Dot */}
-      <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-background" />
+      <div
+        className="absolute top-1/2 left-1/2 w-2.5 h-2.5 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-background" />
     </div>
   );
 }
