@@ -4,8 +4,6 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { deleteContentById, requestRescan, updateContentTags } from '@/lib/content-store';
-import { ProtectedContent } from '@/lib/types';
-
 
 export async function deleteContentAction(id: string) {
   try {

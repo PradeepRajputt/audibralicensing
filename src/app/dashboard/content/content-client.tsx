@@ -31,7 +31,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Edit, Trash2, RefreshCw, Video, Music, FileText, Image as ImageIcon, Youtube, Globe } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, RefreshCw, FileVideo, Music, FileText, Image as ImageIcon, Youtube, Globe, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -39,6 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { deleteContentAction, rescanContentAction, updateContentTagsAction } from './actions';
 import type { ProtectedContent } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
+import Image from 'next/image';
 
 const platformIcons: Record<string, React.ReactNode> = {
     youtube: <Youtube className="h-5 w-5 text-red-500" />,
@@ -106,7 +107,7 @@ export function ContentClientPage({ initialContent }: { initialContent: Protecte
 
       if (result.success) {
           toast({ title: "Success", description: result.message });
-          setContent(prev => prev.map(item => item.id === isEditing.id ? { ...item, tags: formData.get('tags') as string | string[] } : item));
+          setContent(prev => prev.map(item => item.id === isEditing.id ? { ...item, tags: (formData.get('tags') as string).split(',').map(t=>t.trim()) } : item));
           setIsEditing(null);
       } else {
           toast({ variant: 'destructive', title: "Error", description: result.message });
@@ -235,7 +236,7 @@ export function ContentClientPage({ initialContent }: { initialContent: Protecte
           <form onSubmit={handleUpdateTags} className="space-y-4 py-4">
               <div className="space-y-2">
                  <Label htmlFor="tags">Tags</Label>
-                 <Input name="tags" id="tags" defaultValue={isEditing?.tags.join(', ')} placeholder="adventure, travel, vlog" />
+                 <Input name="tags" id="tags" defaultValue={Array.isArray(isEditing?.tags) ? isEditing.tags.join(', ') : ''} placeholder="adventure, travel, vlog" />
                  <p className="text-sm text-muted-foreground">Comma-separated tags to help identify your content.</p>
               </div>
             <DialogFooter>
