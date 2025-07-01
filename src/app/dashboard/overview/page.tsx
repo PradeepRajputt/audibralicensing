@@ -34,7 +34,10 @@ function DashboardSkeleton() {
                     <Skeleton className="h-8 w-64" />
                     <Skeleton className="h-4 w-80" />
                 </div>
-                <Skeleton className="h-24 w-[280px]" />
+                 <div className="flex flex-col gap-2">
+                    <Skeleton className="h-32 w-[280px]" />
+                    <Skeleton className="h-10 w-[280px]" />
+                </div>
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
@@ -104,8 +107,8 @@ export default function DashboardOverviewPage() {
         return <DashboardSkeleton />;
     }
   
-    if (!dashboardData?.analytics) {
-        return <AnalyticsUnavailable />;
+    if (!dashboardData) {
+        return <p>Could not load dashboard data. Please try refreshing the page.</p>
     }
   
     const { analytics, activity, creatorName, creatorImage } = dashboardData;
@@ -123,6 +126,7 @@ export default function DashboardOverviewPage() {
             <p className="text-muted-foreground">What would you like to accomplish today?</p>
           </div>
         </div>
+
         <div className="flex flex-col gap-2">
             <Card className="min-w-[280px] p-6 flex items-center justify-center">
                 <AnalogClock timeZone={timeZone} />
@@ -142,87 +146,91 @@ export default function DashboardOverviewPage() {
         </div>
       </div>
 
-       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Views
-            </CardTitle>
-            <Youtube className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all your videos
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Monitors
-            </CardTitle>
-            <ScanSearch className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+12</div>
-            <p className="text-xs text-muted-foreground">
-              Scanning across 3 platforms
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Resolved Strikes
-            </CardTitle>
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+5</div>
-            <p className="text-xs text-muted-foreground">
-              This month
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {!analytics ? <AnalyticsUnavailable /> : (
+        <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total Views
+                </CardTitle>
+                <Youtube className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  Across all your videos
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Active Monitors
+                </CardTitle>
+                <ScanSearch className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+12</div>
+                <p className="text-xs text-muted-foreground">
+                  Scanning across 3 platforms
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Resolved Strikes
+                </CardTitle>
+                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">+5</div>
+                <p className="text-xs text-muted-foreground">
+                  This month
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           {activity.length > 0 ? (
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Details</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
-                {activity.map((activity, index) => (
-                    <TableRow key={index}>
-                    <TableCell className="font-medium">{activity.type}</TableCell>
-                    <TableCell>{activity.details}</TableCell>
-                    <TableCell>
-                        <Badge variant={activity.variant as any}>{activity.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{activity.date}</TableCell>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {activity.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                    <TableRow>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Details</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Date</TableHead>
                     </TableRow>
-                ))}
-                </TableBody>
-            </Table>
-           ) : (
-            <div className="text-center py-10 text-muted-foreground">
-                <p>No recent activity to display.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                    {activity.map((activity, index) => (
+                        <TableRow key={index}>
+                        <TableCell className="font-medium">{activity.type}</TableCell>
+                        <TableCell>{activity.details}</TableCell>
+                        <TableCell>
+                            <Badge variant={activity.variant as any}>{activity.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{activity.date}</TableCell>
+                        </TableRow>
+                    ))}
+                    </TableBody>
+                </Table>
+              ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                    <p>No recent activity to display.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

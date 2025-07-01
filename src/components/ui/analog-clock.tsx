@@ -9,29 +9,38 @@ interface AnalogClockProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function AnalogClock({ className, timeZone = 'UTC', ...props }: AnalogClockProps) {
-  const [time, setTime] = React.useState(new Date(new Date().toLocaleString('en-US', { timeZone })));
+  // Initialize time to null to prevent hydration mismatch.
+  // The clock hands will only render on the client after mount.
+  const [time, setTime] = React.useState<Date | null>(null);
 
   React.useEffect(() => {
-    const timerId = setInterval(() => {
-      // This is a common way to get a Date object that reflects the time in another timezone.
-      // It creates a string representation in the target timezone, then parses it back into a Date.
-      // The local environment's timezone is ignored, and methods like getHours() will return
-      // the hour in the target timezone.
+    // This function now runs only on the client
+    const updateClock = () => {
+      // This creates a string representation in the target timezone, then parses it back.
       setTime(new Date(new Date().toLocaleString('en-US', { timeZone })));
-    }, 1000);
+    };
+
+    // Set the initial time as soon as the component mounts
+    updateClock();
+
+    // Set up the interval to update the time every second
+    const timerId = setInterval(updateClock, 1000);
+    
+    // Cleanup the interval when the component unmounts
     return () => clearInterval(timerId);
   }, [timeZone]);
 
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const seconds = time.getSeconds();
+  const hours = time ? time.getHours() : 0;
+  const minutes = time ? time.getMinutes() : 0;
+  const seconds = time ? time.getSeconds() : 0;
 
+  // Calculate rotation degrees for each hand
   const hourRotation = (hours % 12 + minutes / 60) * 30;
   const minuteRotation = minutes * 6;
   const secondRotation = seconds * 6;
 
   return (
-    <div className={cn("relative w-32 h-32 bg-secondary rounded-full border-4 border-primary/20 shadow-inner mx-auto", className)} {...props}>
+    <div className={cn("relative w-24 h-24 bg-secondary rounded-full border-4 border-primary/20 shadow-inner mx-auto", className)} {...props}>
       {/* Hour markers */}
       {Array.from({ length: 12 }).map((_, i) => (
         <div
@@ -41,32 +50,37 @@ export function AnalogClock({ className, timeZone = 'UTC', ...props }: AnalogClo
         >
           <div
             className={`absolute top-1 left-1/2 -translate-x-1/2 w-0.5 ${
-              i % 3 === 0 ? "h-3 bg-foreground" : "h-2 bg-foreground/50"
+              i % 3 === 0 ? "h-2 bg-foreground" : "h-1 bg-foreground/50"
             }`}
           />
         </div>
       ))}
+      
+      {/* Render hands only when time is available on the client */}
+      {time && (
+        <>
+           {/* Hour Hand */}
+          <div
+            className="absolute top-1/2 left-1/2 w-1 h-6 bg-primary rounded-full origin-bottom"
+            style={{ transform: `translate(-50%, -100%) rotate(${hourRotation}deg)`, transition: 'transform 0.5s ease-out' }}
+          />
 
-      {/* Hour Hand */}
-      <div
-        className="absolute top-1/2 left-1/2 w-1 h-8 bg-primary rounded-full origin-bottom"
-        style={{ transform: `translate(-50%, -100%) rotate(${hourRotation}deg)` }}
-      />
+          {/* Minute Hand */}
+          <div
+            className="absolute top-1/2 left-1/2 w-0.5 h-8 bg-foreground rounded-full origin-bottom"
+            style={{ transform: `translate(-50%, -100%) rotate(${minuteRotation}deg)`, transition: 'transform 0.5s ease-out' }}
+          />
 
-      {/* Minute Hand */}
-      <div
-        className="absolute top-1/2 left-1/2 w-0.5 h-12 bg-foreground rounded-full origin-bottom"
-        style={{ transform: `translate(-50%, -100%) rotate(${minuteRotation}deg)` }}
-      />
-
-      {/* Second Hand */}
-      <div
-        className="absolute top-1/2 left-1/2 w-0.5 h-14 bg-red-500 origin-bottom"
-        style={{ transform: `translate(-50%, -100%) rotate(${secondRotation}deg)` }}
-      />
+          {/* Second Hand */}
+          <div
+            className="absolute top-1/2 left-1/2 w-0.5 h-10 bg-red-500 origin-bottom"
+            style={{ transform: `translate(-50%, -100%) rotate(${secondRotation}deg)`, transition: 'transform 0.2s linear' }}
+          />
+        </>
+      )}
 
       {/* Center Dot */}
-      <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-background" />
+      <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-primary rounded-full -translate-x-1/2 -translate-y-1/2 border-2 border-background" />
     </div>
   );
 }
