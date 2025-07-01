@@ -3,17 +3,29 @@
 
 import { google } from 'googleapis';
 import { z } from 'zod';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import clientPromise from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 const formSchema = z.object({
   channelId: z.string().min(10, { message: 'Please enter a valid Channel ID.' }),
 });
 
+async function getDb() {
+  const client = await clientPromise;
+  return client.db("creator-shield-db");
+}
+
 /**
- * Verifies a YouTube Channel ID using the YouTube Data API.
- * @param channelId The ID of the YouTube channel to verify.
- * @returns An object with success status, and channel data or an error message.
+ * Verifies a YouTube Channel ID using the YouTube Data API and updates the user's document.
  */
 export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { success: false, message: 'Authentication required.', channel: null };
+  }
+  
   const validatedFields = formSchema.safeParse({
     channelId: formData.get('channelId'),
   });
@@ -45,7 +57,7 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
 
     const response = await youtube.channels.list({
       id: [channelId],
-      part: ['snippet'],
+      part: ['snippet', 'id'],
     });
 
     const channel = response.data.items?.[0];
@@ -57,10 +69,23 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
         channel: null,
       };
     }
+    
+    // Update the user document in MongoDB
+    const db = await getDb();
+    await db.collection('users').updateOne(
+        { _id: new ObjectId(session.user.id) },
+        { $set: { 
+            youtubeChannelId: channel.id,
+            platformsConnected: ['youtube'] // Add or update platforms
+        } }
+    );
+    
+    // It's better not to revalidate the path here, as it can cause a full page reload
+    // during a form action. Let the client-side state handle the UI update.
 
     return {
       success: true,
-      message: 'Channel verified successfully!',
+      message: 'Channel verified and connected successfully!',
       channel: {
         id: channel.id,
         name: channel.snippet.title,
@@ -69,9 +94,13 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
     };
   } catch (error) {
     console.error('Error verifying YouTube channel:', error);
+    let message = 'Failed to verify channel due to an API error.';
+    if (error instanceof Error && error.message.includes('API key not valid')) {
+        message = 'The YouTube API key is invalid or has expired. Please check server configuration.'
+    }
     return {
       success: false,
-      message: 'Failed to verify channel due to an API error.',
+      message,
       channel: null,
     };
   }

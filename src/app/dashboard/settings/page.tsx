@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { verifyYoutubeChannel } from './actions';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 
 const LOCAL_STORAGE_KEY = 'creator_shield_youtube_channel';
@@ -63,13 +63,20 @@ export default function SettingsPage() {
         setConnectedChannel(null);
         toast({ title: "Platform Disconnected", description: "Your YouTube channel has been disconnected." });
     }
+  
+    const onPasswordChangeClick = () => {
+        toast({
+            title: "Forgot Password",
+            description: "In a real app, this would handle password changes or resets."
+        });
+    }
 
   return (
     <div className="space-y-6">
         <div className="space-y-2">
             <h1 className="text-2xl font-bold">Settings</h1>
             <p className="text-muted-foreground">
-                Manage your connected platforms for content monitoring.
+                Manage your profile and connected platforms.
             </p>
         </div>
          <Separator />
@@ -96,6 +103,16 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </CardContent>
+            <CardFooter className="border-t pt-6 flex justify-between">
+                <div>
+                     <h3 className="font-medium">Account Security</h3>
+                    <p className="text-sm text-muted-foreground">Manage your password and sign out.</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={onPasswordChangeClick}>Change Password</Button>
+                    <Button variant="destructive" onClick={() => signOut({ callbackUrl: '/' })}>Sign Out</Button>
+                </div>
+            </CardFooter>
         </Card>
 
         <Card>

@@ -2,52 +2,16 @@
 'use client';
 
 import * as React from 'react';
+import { getDashboardData } from '@/app/dashboard/actions';
+import { useSession } from 'next-auth/react';
+import type { UserAnalytics } from '@/lib/types';
+import type { Session } from 'next-auth';
 
 type UserStatus = 'active' | 'suspended' | 'deactivated';
 
-const mockData = {
-    analytics: {
-        subscribers: 123456,
-        views: 12345678,
-        mostViewedVideo: {
-            title: "My Most Viral Video Ever!",
-            views: 2300000
-        },
-        dailyData: Array.from({ length: 90 }, (_, i) => {
-            const date = new Date();
-            date.setDate(date.getDate() - (89 - i));
-            const dayFactor = (i + 1) / 90;
-            const randomFactor = 0.8 + Math.random() * 0.4;
-            return {
-                date: date.toISOString().split('T')[0],
-                views: Math.floor((12345678 / 90) * dayFactor * randomFactor * 1.5),
-                subscribers: Math.floor((123456 / 2000) * dayFactor * randomFactor + Math.random() * 5),
-            };
-        })
-    },
-    activity: [
-        {
-          type: "New Infringement Detected",
-          details: "On website 'stolencontent.com/my-video'",
-          status: "Action Required",
-          date: `1 hour ago`,
-          variant: "destructive"
-        },
-        {
-          type: "YouTube Scan Complete",
-          details: `Channel 'Sample Creator' scanned.`,
-          status: "No Issues",
-          date: "1 day ago",
-          variant: "default"
-        },
-    ],
-    creatorName: 'Sample Creator',
-    creatorImage: 'https://placehold.co/128x128.png',
-};
-
 interface UserContextType {
-    analytics: typeof mockData.analytics | null;
-    activity: typeof mockData.activity | null;
+    analytics: UserAnalytics | null;
+    activity: any[] | null; // Replace with a strong type if you have one
     isLoading: boolean;
     creatorName: string | undefined;
     creatorImage: string | undefined;
@@ -58,25 +22,68 @@ interface UserContextType {
 const UserContext = React.createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [status, setStatus] = React.useState<UserStatus>('active');
+    const { data: session, status: sessionStatus } = useSession();
+    const [isLoading, setIsLoading] = React.useState(true);
+    const [dashboardData, setDashboardData] = React.useState<{
+        analytics: UserAnalytics | null;
+        activity: any[] | null;
+        creatorName: string | undefined;
+        creatorImage: string | undefined;
+    }>({
+        analytics: null,
+        activity: null,
+        creatorName: undefined,
+        creatorImage: undefined,
+    });
+    
+    const [userStatus, setUserStatus] = React.useState<UserStatus>('active');
 
     React.useEffect(() => {
         const storedStatus = localStorage.getItem('user_status') as UserStatus;
         if (storedStatus) {
-            setStatus(storedStatus);
+            setUserStatus(storedStatus);
         }
     }, []);
 
+    React.useEffect(() => {
+        async function loadData() {
+            if (sessionStatus === 'authenticated' && session?.user) {
+                setIsLoading(true);
+                try {
+                    const data = await getDashboardData((session.user as any).youtubeChannelId);
+                    if (data) {
+                        setDashboardData({
+                            analytics: data.analytics,
+                            activity: data.activity,
+                            creatorName: data.creatorName,
+                            creatorImage: data.creatorImage
+                        });
+                    } else {
+                        // Handle case where data could not be fetched (e.g. no API key)
+                         setDashboardData({ analytics: null, activity: [], creatorName: session.user.name ?? undefined, creatorImage: session.user.image ?? undefined});
+                    }
+                } catch (error) {
+                    console.error("Failed to load user dashboard data:", error);
+                    setDashboardData({ analytics: null, activity: [], creatorName: session.user.name ?? undefined, creatorImage: session.user.image ?? undefined});
+                } finally {
+                    setIsLoading(false);
+                }
+            } else if (sessionStatus === 'unauthenticated') {
+                setIsLoading(false);
+            }
+        }
+        loadData();
+    }, [session, sessionStatus]);
+
 
     const value = {
-        analytics: mockData.analytics,
-        activity: mockData.activity,
+        analytics: dashboardData.analytics,
+        activity: dashboardData.activity,
         isLoading,
-        creatorName: mockData.creatorName,
-        creatorImage: mockData.creatorImage,
-        status,
-        setStatus,
+        creatorName: dashboardData.creatorName,
+        creatorImage: dashboardData.creatorImage,
+        status: userStatus,
+        setStatus: setUserStatus,
     };
 
     return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
