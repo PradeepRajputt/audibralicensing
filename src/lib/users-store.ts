@@ -10,12 +10,8 @@ import { hashPassword, verifyPassword as verify } from '@/lib/auth';
  * @returns A promise that resolves to an array of User objects.
  */
 export async function getAllUsers(): Promise<User[]> {
-  const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) {
-    console.error("Firestore not initialized for getAllUsers");
-    return [];
-  }
-  const usersSnapshot = await adminDb.collection('users').get();
+  const { db } = getFirebaseAdmin();
+  const usersSnapshot = await db.collection('users').get();
   const users: User[] = [];
   usersSnapshot.forEach(doc => {
     users.push({ uid: doc.id, ...doc.data() } as User);
@@ -29,9 +25,8 @@ export async function getAllUsers(): Promise<User[]> {
  * @returns A promise that resolves to the User object or undefined if not found.
  */
 export async function getUserById(uid: string): Promise<User | undefined> {
-  const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) return undefined;
-  const userDoc = await adminDb.collection('users').doc(uid).get();
+  const { db } = getFirebaseAdmin();
+  const userDoc = await db.collection('users').doc(uid).get();
   if (!userDoc.exists) {
     return undefined;
   }
@@ -44,9 +39,8 @@ export async function getUserById(uid: string): Promise<User | undefined> {
  * @returns A promise that resolves to the User object or undefined if not found.
  */
 export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) return undefined;
-  const q = adminDb.collection('users').where('email', '==', email.toLowerCase()).limit(1);
+  const { db } = getFirebaseAdmin();
+  const q = db.collection('users').where('email', '==', email.toLowerCase()).limit(1);
   const querySnapshot = await q.get();
   if (querySnapshot.empty) {
     return undefined;
@@ -63,9 +57,6 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
  */
 export async function createUser(userData: Omit<User, 'uid' | 'passwordHash'> & { password: string }): Promise<User> {
   const { auth, db } = getFirebaseAdmin();
-  if (!auth || !db) {
-    throw new Error('Firebase Admin not initialized. Cannot create user.');
-  }
 
   const { email, password, displayName, role } = userData;
   
@@ -126,11 +117,8 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * @param status The new status for the user.
  */
 export async function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): Promise<void> {
-    const { adminDb } = getFirebaseAdmin();
-    if (!adminDb) {
-        throw new Error("Firebase not initialized. Cannot update user status.");
-    }
-    const userRef = adminDb.collection('users').doc(uid);
+    const { db } = getFirebaseAdmin();
+    const userRef = db.collection('users').doc(uid);
     await userRef.update({ status });
     console.log(`Updated status for user ${uid} to ${status}`);
 }

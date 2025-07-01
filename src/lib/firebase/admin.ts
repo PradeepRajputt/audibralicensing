@@ -1,49 +1,8 @@
-
-import 'dotenv/config'; // Ensures .env variables are loaded at the very start
+import 'dotenv/config'; 
 import * as admin from 'firebase-admin';
 import type { App } from 'firebase-admin/app';
 import type { Auth } from 'firebase-admin/auth';
 import type { Firestore } from 'firebase-admin/firestore';
-
-// --- Check for essential environment variables
-const requiredEnv = [
-  'FIREBASE_PROJECT_ID',
-  'FIREBASE_CLIENT_EMAIL',
-  'FIREBASE_PRIVATE_KEY',
-];
-
-const missingEnv = requiredEnv.filter(key => !process.env[key]);
-
-if (missingEnv.length > 0) {
-  const message = `Firebase Admin initialization failed. Missing environment variables: ${missingEnv.join(', ')}. Please check your .env file.`;
-  // We throw an error during build/start-up time if essentials are missing
-  // to prevent runtime errors later.
-  if (process.env.NODE_ENV !== 'development' || process.env.VERCEL) {
-     throw new Error(message);
-  }
-  console.warn(message);
-}
-
-// --- Prepare credentials, handling the escaped newline characters
-let privateKey: string | undefined = process.env.FIREBASE_PRIVATE_KEY;
-if (privateKey) {
-  try {
-    // Attempt to parse JSON directly
-    privateKey = JSON.parse(privateKey).privateKey ?? privateKey;
-  } catch {
-    // If it fails, assume it's the raw key with escaped newlines
-    privateKey = privateKey.replace(/\\n/g, '\n');
-  }
-}
-
-const serviceAccount: admin.ServiceAccount = {
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-  privateKey: privateKey,
-};
-
-// --- Singleton pattern for Firebase Admin SDK
-// This prevents re-initializing the app on every hot-reload in development.
 
 interface FirebaseAdmin {
   app: App;
@@ -51,47 +10,51 @@ interface FirebaseAdmin {
   db: Firestore;
 }
 
-// Use a global symbol to store the admin instance
-const ADMIN_KEY = Symbol.for('firebase-admin-instance');
+const missingEnv: string[] = [];
+if (!process.env.FIREBASE_PROJECT_ID) missingEnv.push('FIREBASE_PROJECT_ID');
+if (!process.env.FIREBASE_CLIENT_EMAIL) missingEnv.push('FIREBASE_CLIENT_EMAIL');
+if (!process.env.FIREBASE_PRIVATE_KEY) missingEnv.push('FIREBASE_PRIVATE_KEY');
 
-function getAdminInstance(): FirebaseAdmin | null {
-  // If the required env vars aren't present, we can't initialize.
-  if (missingEnv.length > 0) {
-    return null;
-  }
-  
-  if ((globalThis as any)[ADMIN_KEY]) {
-    return (globalThis as any)[ADMIN_KEY];
-  }
-
-  try {
-    const app = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-
-    const instance: FirebaseAdmin = {
+/**
+ * Gets the initialized Firebase Admin instance.
+ * This is a singleton that initializes the app only once.
+ * @returns The initialized Firebase Admin services.
+ * @throws An error if initialization fails due to missing environment variables or invalid credentials.
+ */
+export function getFirebaseAdmin(): FirebaseAdmin {
+  if (admin.apps.length > 0 && admin.app()) {
+    const app = admin.app();
+    return {
       app,
       auth: admin.auth(app),
       db: admin.firestore(app),
     };
-    
-    (globalThis as any)[ADMIN_KEY] = instance;
-    console.log("Firebase Admin SDK initialized successfully.");
-    return instance;
+  }
 
+  if (missingEnv.length > 0) {
+    throw new Error(`Firebase Admin initialization failed. Missing environment variables: ${missingEnv.join(', ')}. Please add them to your .env file.`);
+  }
+
+  try {
+    const privateKey = (process.env.FIREBASE_PRIVATE_KEY as string).replace(/\\n/g, '\n');
+
+    const serviceAccount: admin.ServiceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey,
+    };
+    
+    const app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+
+    return {
+      app,
+      auth: admin.auth(app),
+      db: admin.firestore(app),
+    };
   } catch (error: any) {
-    // Catch initialization errors (e.g., invalid credentials)
     console.error("Firebase Admin SDK initialization error:", error.message);
-    return null;
+    throw new Error(`Firebase Admin initialization failed. Please check your service account credentials. Details: ${error.message}`);
   }
 }
-
-export function getFirebaseAdmin() {
-  const instance = getAdminInstance();
-  return {
-    app: instance?.app,
-    auth: instance?.auth,
-    db: instance?.db
-  };
-}
-
