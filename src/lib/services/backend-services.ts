@@ -1,49 +1,44 @@
 
 /**
  * @file This file contains server-side functions for interacting with external services
- * like a FastAPI backend, YouTube Data API, and SendGrid for emails.
+ * like a FastAPI backend, YouTube Data API, and Resend for emails.
  */
 'use server';
 
 import { createViolation } from '@/lib/violations-store';
 import type { Violation } from '@/lib/types';
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 
-// Initialize SendGrid
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
+// Initialize Resend
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
  * Stores a violation reported by the backend and sends an email alert to the creator.
  * This function is intended to be called by a webhook from our FastAPI service.
  */
 export async function processViolationFromFastApi(violationData: Omit<Violation, 'id' | 'detectedAt'> & { creatorEmail: string }) {
-  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-    console.error('SendGrid environment variables are not fully configured. Email will not be sent.');
-    // Still save to in-memory store even if email fails
+  if (!resend || !process.env.RESEND_FROM_EMAIL) {
+    console.error('Resend environment variables are not fully configured. Email will not be sent.');
   }
 
   try {
-    // 1. Store the violation in the in-memory store
     const newViolation = await createViolation({
       creatorId: violationData.creatorId,
       matchedURL: violationData.matchedURL,
       platform: violationData.platform,
       matchScore: violationData.matchScore,
       status: violationData.status,
-      originalContentUrl: "http://example.com/original", // Placeholder
-      originalContentTitle: "Sample Original Work", // Placeholder
-      infringingContentSnippet: "A snippet of the infringing content...", // Placeholder
-      timeline: [], // Initial timeline
+      originalContentUrl: "http://example.com/original", 
+      originalContentTitle: "Sample Original Work", 
+      infringingContentSnippet: "A snippet of the infringing content...",
+      timeline: [], 
     });
     console.log(`Stored violation with ID: ${newViolation.id}`);
 
-    // 2. Send an email alert via SendGrid (if configured)
-    if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
-        const msg = {
+    if (resend && process.env.RESEND_FROM_EMAIL) {
+        await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL,
             to: violationData.creatorEmail,
-            from: process.env.SENDGRID_FROM_EMAIL,
             subject: 'New Copyright Violation Detected!',
             html: `
                 <h1>Potential Copyright Violation Found</h1>
@@ -55,8 +50,7 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
                 <p>Thanks,</p>
                 <p>The CreatorShield Team</p>
             `,
-        };
-        await sgMail.send(msg);
+        });
         console.log(`Sent violation alert email to ${violationData.creatorEmail}`);
     }
     return { success: true, violationId: newViolation.id };
@@ -66,43 +60,33 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
   }
 }
 
-/**
- * MOCK: Fetches the latest YouTube analytics for all users.
- * This is designed to be run by a scheduled cron job.
- * In this version, it's a no-op as there is no database.
- */
+
 export async function updateAllUserAnalytics() {
   console.log('Skipping analytics update: No database connected.');
   return { success: true, updated: 0, total: 0 };
 }
 
-
-/**
- * Sends an email to a creator informing them that their reactivation request was approved.
- */
 export async function sendReactivationApprovalEmail({ to, name }: { to: string; name:string }) {
-  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-    console.warn(`SendGrid not configured. Skipping reactivation approval email to ${to}.`);
+  if (!resend || !process.env.RESEND_FROM_EMAIL) {
+    console.warn(`Resend not configured. Skipping reactivation approval email to ${to}.`);
     return { success: true, simulated: true };
   }
-
-  const msg = {
-    to,
-    from: process.env.SENDGRID_FROM_EMAIL,
-    subject: 'Your CreatorShield Account has been Reactivated',
-    html: `
-      <h1>Account Reactivated</h1>
-      <p>Hi ${name},</p>
-      <p>Welcome back! Your request to reactivate your account has been approved.</p>
-      <p>You can now log in to your CreatorShield dashboard.</p>
-      <br/>
-      <p>Thanks,</p>
-      <p>The CreatorShield Team</p>
-    `,
-  };
-
+  
   try {
-    await sgMail.send(msg);
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL,
+      to,
+      subject: 'Your CreatorShield Account has been Reactivated',
+      html: `
+        <h1>Account Reactivated</h1>
+        <p>Hi ${name},</p>
+        <p>Welcome back! Your request to reactivate your account has been approved.</p>
+        <p>You can now log in to your CreatorShield dashboard.</p>
+        <br/>
+        <p>Thanks,</p>
+        <p>The CreatorShield Team</p>
+      `,
+    });
     console.log(`Sent reactivation approval email to ${to}`);
     return { success: true, simulated: false };
   } catch (error) {
@@ -111,32 +95,27 @@ export async function sendReactivationApprovalEmail({ to, name }: { to: string; 
   }
 }
 
-/**
- * Sends an email to a creator informing them that their reactivation request was denied.
- */
 export async function sendReactivationDenialEmail({ to, name }: { to: string; name: string }) {
-  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-    console.warn(`SendGrid not configured. Skipping reactivation denial email to ${to}.`);
+ if (!resend || !process.env.RESEND_FROM_EMAIL) {
+    console.warn(`Resend not configured. Skipping reactivation denial email to ${to}.`);
     return { success: true, simulated: true };
   }
 
-  const msg = {
-    to,
-    from: process.env.SENDGRID_FROM_EMAIL,
-    subject: 'Update on your CreatorShield Account',
-    html: `
-      <h1>CreatorShield Account Reactivation</h1>
-      <p>Hi ${name},</p>
-      <p>Thank you for your request to reactivate your account.</p>
-      <p>After a review, we have decided not to reactivate your account at this time. This decision is final.</p>
-      <br/>
-      <p>Regards,</p>
-      <p>The CreatorShield Team</p>
-    `,
-  };
-
   try {
-    await sgMail.send(msg);
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL,
+      to,
+      subject: 'Update on your CreatorShield Account',
+      html: `
+        <h1>CreatorShield Account Reactivation</h1>
+        <p>Hi ${name},</p>
+        <p>Thank you for your request to reactivate your account.</p>
+        <p>After a review, we have decided not to reactivate your account at this time. This decision is final.</p>
+        <br/>
+        <p>Regards,</p>
+        <p>The CreatorShield Team</p>
+      `,
+    });
     console.log(`Sent reactivation denial email to ${to}`);
     return { success: true, simulated: false };
   } catch (error) {
@@ -151,28 +130,26 @@ export async function sendTakedownConfirmationEmail(data: {
   infringingUrl: string;
   originalUrl: string;
 }) {
-  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
-    console.warn(`SendGrid not configured. Skipping takedown confirmation email to ${data.to}.`);
+  if (!resend || !process.env.RESEND_FROM_EMAIL) {
+    console.warn(`Resend not configured. Skipping takedown confirmation email to ${data.to}.`);
     return { success: true, simulated: true };
   }
 
-   const msg = {
-    to: data.to,
-    from: process.env.SENDGRID_FROM_EMAIL,
-    subject: `[Confirmation] Copyright Takedown Notice Submitted for ${data.creatorName}`,
-    html: `
-      <h1>Takedown Notice Submitted</h1>
-      <p>This is a confirmation that a DMCA takedown notice has been submitted to YouTube on behalf of <strong>${data.creatorName}</strong>.</p>
-      <p><strong>Infringing URL:</strong> ${data.infringingUrl}</p>
-      <p><strong>Original Content URL:</strong> ${data.originalUrl}</p>
-      <p>We will monitor the status of this request. No further action is needed from you at this time.</p>
-      <br/>
-      <p>The CreatorShield Team</p>
-    `,
-  };
-
   try {
-    await sgMail.send(msg);
+    await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL,
+        to: data.to,
+        subject: `[Confirmation] Copyright Takedown Notice Submitted for ${data.creatorName}`,
+        html: `
+            <h1>Takedown Notice Submitted</h1>
+            <p>This is a confirmation that a DMCA takedown notice has been submitted to YouTube on behalf of <strong>${data.creatorName}</strong>.</p>
+            <p><strong>Infringing URL:</strong> ${data.infringingUrl}</p>
+            <p><strong>Original Content URL:</strong> ${data.originalUrl}</p>
+            <p>We will monitor the status of this request. No further action is needed from you at this time.</p>
+            <br/>
+            <p>The CreatorShield Team</p>
+        `,
+    });
     console.log(`Sent takedown confirmation email to ${data.to}`);
     return { success: true, simulated: false };
   } catch (error) {

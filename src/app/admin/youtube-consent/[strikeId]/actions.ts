@@ -35,11 +35,9 @@ export async function submitTakedownToYouTubeAction(reportId: string, takedownDa
     // 1. Update the status of our internal report
     await updateReportStatus(reportId, 'action_taken');
 
-    // 2. Send a confirmation email to the admin (and optionally the creator)
-    // Using a hardcoded admin email for this example
-    const adminEmail = "admin@creatorshield.com";
+    // 2. Send a confirmation email to the creator
     await sendTakedownConfirmationEmail({
-        to: adminEmail,
+        to: takedownData.creatorEmail,
         creatorName: takedownData.creatorName,
         infringingUrl: takedownData.infringingUrl,
         originalUrl: takedownData.originalUrl
