@@ -562,29 +562,27 @@ const SidebarMenuButton = React.forwardRef<
   ) => {
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
-
-    const buttonContent = (
-      <>
-        {children}
-        {notification && (
-          <span className="relative flex h-2.5 w-2.5 ml-auto">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-          </span>
-        )}
-      </>
-    );
-
+    
     const button = (
-      <Comp
+       <Comp
         ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(
+          sidebarMenuButtonVariants({ variant, size }),
+          "relative",
+          className
+        )}
         {...props}
       >
-        {buttonContent}
+        {children}
+        {notification && (
+          <span className="absolute right-2 top-2 flex h-2 w-2 group-data-[collapsible=icon]:right-1.5 group-data-[collapsible=icon]:top-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+          </span>
+        )}
       </Comp>
     )
 

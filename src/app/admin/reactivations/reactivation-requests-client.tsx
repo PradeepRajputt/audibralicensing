@@ -14,11 +14,11 @@ const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
     const [formattedDate, setFormattedDate] = useState<string | null>(null);
 
     useEffect(() => {
-        // This will only run on the client, after the initial render
+        // This will only run on the client, after the initial render.
         setFormattedDate(new Date(dateString).toLocaleDateString());
     }, [dateString]);
 
-    // On the server and initial client render, you can return a placeholder or null
+    // Render nothing on the server and initial client render to prevent mismatch
     return <>{formattedDate}</>;
 };
 
