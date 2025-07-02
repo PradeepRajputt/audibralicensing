@@ -4,13 +4,14 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { getUserById, updateUser, disconnectYoutubeChannel as disconnect } from '@/lib/users-store';
+import axios from 'axios';
 
 const formSchema = z.object({
   channelId: z.string().min(10, { message: 'Please enter a valid Channel ID.' }),
 });
 
 /**
- * Verifies a YouTube Channel ID using a mocked API call and updates the user's document.
+ * Verifies a YouTube Channel ID using the YouTube Data API and updates the user's document.
  */
 export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
   // In a real app, you would get this from the session
@@ -32,36 +33,32 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
   }
 
   const { channelId } = validatedFields.data;
+  const apiKey = process.env.YOUTUBE_API_KEY;
 
-  // MOCK IMPLEMENTATION: Simulate API call to avoid needing a real key.
-  
-  // Basic validation for the Channel ID format
-  if (!channelId.startsWith('UC') || channelId.length < 24) {
-      return {
-        success: false,
-        message: 'Channel not found. Please check the Channel ID format (e.g., UC...).',
-        channel: null,
-      };
+  if (!apiKey) {
+      console.error("YOUTUBE_API_KEY is not set in the environment variables.");
+      return { success: false, message: "Server configuration error: YouTube API key is missing.", channel: null };
   }
-  
-  // Simulate a delay to feel more realistic
-  await new Promise(resolve => setTimeout(resolve, 1000));
 
   try {
-    // Mock channel data
-    const mockChannelData = {
+    const response = await axios.get('https://www.googleapis.com/youtube/v3/channels', {
+      params: {
+        part: 'snippet',
         id: channelId,
-        snippet: {
-            title: 'Verified Mock Channel',
-            thumbnails: {
-                default: {
-                    url: `https://i.pravatar.cc/150?u=${channelId}`,
-                },
-            },
-        },
-    };
+        key: apiKey,
+      }
+    });
 
-    // Update the user document in the in-memory store
+    if (!response.data.items || response.data.items.length === 0) {
+      return {
+        success: false,
+        message: 'YouTube channel not found. Please check the Channel ID.',
+        channel: null,
+      };
+    }
+
+    const channelData = response.data.items[0];
+
     const user = await getUserById(userId);
     const platforms = user?.platformsConnected || [];
     if (!platforms.includes('youtube')) {
@@ -69,29 +66,37 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
     }
 
     await updateUser(userId, {
-        displayName: user?.displayName || mockChannelData.snippet.title,
-        youtubeChannelId: mockChannelData.id,
-        avatar: mockChannelData.snippet.thumbnails?.default?.url ?? user?.avatar,
+        displayName: user?.displayName || channelData.snippet.title,
+        youtubeChannelId: channelData.id,
+        avatar: channelData.snippet.thumbnails?.default?.url ?? user?.avatar,
         platformsConnected: platforms,
     });
     
-    // Revalidate paths to reflect changes across the app
     revalidatePath('/dashboard', 'layout');
 
     return {
       success: true,
       message: 'Channel verified and connected successfully!',
       channel: {
-        id: mockChannelData.id,
-        name: mockChannelData.snippet.title,
-        avatar: mockChannelData.snippet.thumbnails.default.url,
+        id: channelData.id,
+        name: channelData.snippet.title,
+        avatar: channelData.snippet.thumbnails.default.url,
       },
     };
   } catch (error) {
-    console.error('Error in mock verifyYoutubeChannel:', error);
+    console.error('Error verifying YouTube Channel:', error);
+    if (axios.isAxiosError(error) && error.response) {
+      const apiError = error.response.data.error;
+      const errorMessage = apiError.message || "An error occurred with the YouTube API.";
+      return {
+        success: false,
+        message: `API Error: ${errorMessage}`,
+        channel: null
+      };
+    }
     return {
       success: false,
-      message: "An unexpected error occurred during channel connection.",
+      message: "An unexpected error occurred during channel verification.",
       channel: null,
     };
   }
