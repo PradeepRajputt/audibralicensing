@@ -61,6 +61,12 @@ export async function getAllContentForUser(userId: string): Promise<ProtectedCon
     return JSON.parse(JSON.stringify(userContent.sort((a,b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())));
 }
 
+export async function getContentById(contentId: string): Promise<ProtectedContent | undefined> {
+    noStore();
+    const content = protectedContent.find(c => c.id === contentId);
+    return content ? JSON.parse(JSON.stringify(content)) : undefined;
+}
+
 export async function createContent(data: Omit<ProtectedContent, 'id' | 'uploadDate' | 'status' | 'lastChecked'>): Promise<ProtectedContent> {
     noStore();
     const newContent: ProtectedContent = {
