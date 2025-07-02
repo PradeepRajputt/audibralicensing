@@ -64,7 +64,7 @@ export async function updateUserStatus(uid: string, status: 'active' | 'suspende
     
     if (result.matchedCount === 0) {
         // If user doesn't exist, create them with the new status
-        const onInsertPayload: Omit<User, 'uid' | 'status'> = {
+        const onInsertPayload: Omit<User, 'uid' | 'status' | '_id'> = {
             displayName: 'New User',
             email: `${uid}@example.com`,
             legalFullName: '',
@@ -95,19 +95,23 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<v
     noStore();
     const usersCollection = await getUsersCollection();
 
-    const onInsertPayload: Omit<User, 'uid'> = {
-        displayName: 'New Creator',
+    // Default values for a user that is created via an update (upsert)
+    // for the first time.
+    const onInsertPayload: Partial<Omit<User, 'uid' | '_id'>> = {
         legalFullName: '',
-        email: `${uid}@example.com`, 
         address: '',
         phone: '',
         passwordHash: '', 
         role: 'creator',
         joinDate: new Date().toISOString(),
-        platformsConnected: [],
         status: 'active',
-        avatar: '',
     };
+    
+    // The email should also only be set on insert. If the user exists, we shouldn't
+    // overwrite their email here unless explicitly passed in `updates`.
+    if (!updates.email) {
+      onInsertPayload.email = `${uid}@example.com`;
+    }
 
     const result = await usersCollection.updateOne(
         { uid },
