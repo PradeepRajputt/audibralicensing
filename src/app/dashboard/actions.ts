@@ -1,11 +1,11 @@
 
 'use server';
 
-import { subDays, format, formatDistanceToNow } from 'date-fns';
 import { getUserById } from '@/lib/users-store';
 import { getViolationsForUser } from '@/lib/violations-store';
 import type { UserAnalytics, Violation } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
+import { subDays } from 'date-fns';
 
 /**
  * Fetches dashboard data.
@@ -15,6 +15,7 @@ import { unstable_noStore as noStore } from 'next/cache';
  */
 export async function getDashboardData() {
   noStore();
+  // NOTE: This is a placeholder. In a real application, the user ID would come from the authenticated session.
   // In a real app, this would come from the session.
   const userId = "user_creator_123";
   const user = await getUserById(userId);
@@ -43,7 +44,7 @@ export async function getDashboardData() {
         const dailyViews = Math.max(0, Math.floor((1500000 / 90) * dayFactor * randomFactor * 1.5));
         const dailySubscribers = Math.max(0, Math.floor((12000 / 200) * dayFactor * randomFactor + Math.random() * 5));
         return {
-          date: format(date, 'yyyy-MM-dd'),
+          date: date.toISOString().split('T')[0], // Simple date format YYYY-MM-DD
           views: dailyViews,
           subscribers: dailySubscribers,
         };
@@ -77,7 +78,7 @@ export async function getDashboardData() {
         type: "Infringement Detected",
         details: `On ${violation.platform}: ${violation.matchedURL}`,
         status,
-        date: formatDistanceToNow(new Date(violation.detectedAt), { addSuffix: true }),
+        date: new Date(violation.detectedAt).toLocaleDateString(), // Simple date string
         variant
     };
   });

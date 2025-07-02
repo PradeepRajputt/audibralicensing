@@ -6,8 +6,7 @@ import { getUserByEmail } from '@/lib/users-store';
 import bcrypt from 'bcryptjs';
 import { authConfig } from './auth.config';
 
-// The result of NextAuth is an object with handlers, and auth functions.
-const authResult = NextAuth({
+export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({
@@ -24,17 +23,15 @@ const authResult = NextAuth({
         if (validatedCredentials.success) {
           const { email, password } = validatedCredentials.data;
           const user = await getUserByEmail(email);
-
+          
           if (!user || !user.passwordHash) return null;
 
           const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
           
           if (passwordsMatch) {
-            // Return a user object that NextAuth can use
             return { id: user.uid, name: user.displayName, email: user.email, role: user.role };
           }
         }
-
         return null;
       },
     }),
@@ -44,9 +41,3 @@ const authResult = NextAuth({
   },
   secret: process.env.AUTH_SECRET,
 });
-
-// Explicitly export each part
-export const handlers = authResult.handlers;
-export const signIn = authResult.signIn;
-export const signOut = authResult.signOut;
-export const auth = authResult.auth;
