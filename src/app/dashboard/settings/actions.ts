@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { getUserById, updateUser, disconnectYoutubeChannel as disconnect } from '@/lib/users-store';
+import { getUserById, updateUser } from '@/lib/users-store';
 import axios from 'axios';
 
 const formSchema = z.object({
@@ -43,7 +43,7 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
   try {
     const response = await axios.get('https://www.googleapis.com/youtube/v3/channels', {
       params: {
-        part: 'snippet',
+        part: 'snippet,statistics',
         id: channelId,
         key: apiKey,
       }
@@ -58,7 +58,8 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
     }
 
     const channelData = response.data.items[0];
-
+    
+    // Use an upsert operation to create the user if they don't exist
     const user = await getUserById(userId);
     const platforms = user?.platformsConnected || [];
     if (!platforms.includes('youtube')) {
@@ -94,9 +95,10 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
         channel: null
       };
     }
+    const message = error instanceof Error ? error.message : "An unexpected error occurred during channel verification.";
     return {
       success: false,
-      message: "An unexpected error occurred during channel verification.",
+      message,
       channel: null,
     };
   }
