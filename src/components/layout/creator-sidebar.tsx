@@ -65,12 +65,14 @@ export function CreatorSidebar({ user, hasUnreadFeedback }: { user: User | undef
       <SidebarContent>
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
+            <SidebarMenuItem 
+              key={item.href}
+              notification={item.href === '/dashboard/feedback' ? hasUnreadFeedback : false}
+            >
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
-                notification={item.href === '/dashboard/feedback' ? hasUnreadFeedback : false}
               >
                 <NextLink href={item.href} prefetch={false}>
                   <item.icon />

@@ -38,12 +38,14 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
       <SidebarContent>
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
+            <SidebarMenuItem 
+              key={item.href}
+              notification={item.href === '/admin/feedback' ? hasNewFeedback : false}
+            >
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
-                notification={item.href === '/admin/feedback' ? hasNewFeedback : false}
               >
                 <Link href={item.href}>
                   <item.icon />

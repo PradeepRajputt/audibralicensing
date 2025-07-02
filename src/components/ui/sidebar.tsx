@@ -467,6 +467,9 @@ const SidebarGroupAction = React.forwardRef<
         "absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
+        "peer-data-[size=sm]/menu-button:top-1",
+        "peer-data-[size=default]/menu-button:top-1.5",
+        "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         className
       )}
@@ -504,14 +507,22 @@ SidebarMenu.displayName = "SidebarMenu"
 
 const SidebarMenuItem = React.forwardRef<
   HTMLLIElement,
-  React.ComponentProps<"li">
->(({ className, ...props }, ref) => (
+  React.ComponentProps<"li"> & { notification?: boolean }
+>(({ className, notification, children, ...props }, ref) => (
   <li
     ref={ref}
     data-sidebar="menu-item"
     className={cn("group/menu-item relative", className)}
     {...props}
-  />
+  >
+    {children}
+    {notification && (
+      <span className="absolute right-2 top-1.5 flex h-2 w-2 group-data-[collapsible=icon]:right-1.5 group-data-[collapsible=icon]:top-1.5 pointer-events-none">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+      </span>
+    )}
+  </li>
 ))
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
@@ -543,7 +554,6 @@ const SidebarMenuButton = React.forwardRef<
     asChild?: boolean
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
-    notification?: boolean
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -553,9 +563,7 @@ const SidebarMenuButton = React.forwardRef<
       variant = "default",
       size = "default",
       tooltip,
-      notification,
       className,
-      children,
       ...props
     },
     ref
@@ -571,19 +579,10 @@ const SidebarMenuButton = React.forwardRef<
         data-active={isActive}
         className={cn(
           sidebarMenuButtonVariants({ variant, size }),
-          "relative",
           className
         )}
         {...props}
-      >
-        {children}
-        {notification && (
-          <span className="absolute right-2 top-2 flex h-2 w-2 group-data-[collapsible=icon]:right-1.5 group-data-[collapsible=icon]:top-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-          </span>
-        )}
-      </Comp>
+      />
     )
 
     if (!tooltip) {
