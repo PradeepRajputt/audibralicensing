@@ -42,7 +42,6 @@
     "dotenv": "^16.4.5",
     "embla-carousel-react": "^8.6.0",
     "genkit": "^1.13.0",
-    "googleapis": "^140.0.1",
     "jsdom": "^24.1.0",
     "jspdf": "^2.5.1",
     "lucide-react": "^0.475.0",

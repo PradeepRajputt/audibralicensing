@@ -1,6 +1,6 @@
+
 'use server';
 
-import { google } from 'googleapis';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { getUserById, updateUser, disconnectYoutubeChannel as disconnect } from '@/lib/users-store';
@@ -10,7 +10,7 @@ const formSchema = z.object({
 });
 
 /**
- * Verifies a YouTube Channel ID using the YouTube Data API and updates the user's document.
+ * Verifies a YouTube Channel ID using a mocked API call and updates the user's document.
  */
 export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
   // In a real app, you would get this from the session
@@ -33,36 +33,34 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
 
   const { channelId } = validatedFields.data;
 
-  if (!process.env.YOUTUBE_API_KEY) {
-    console.error('YouTube API Key is not configured in .env file.');
-    return {
-      success: false,
-      message: 'Server configuration error. Cannot verify channel.',
-      channel: null,
-    };
-  }
-
-  try {
-    const youtube = google.youtube({
-      version: 'v3',
-      auth: process.env.YOUTUBE_API_KEY,
-    });
-
-    const response = await youtube.channels.list({
-      id: [channelId],
-      part: ['snippet', 'id'],
-    });
-
-    const channel = response.data.items?.[0];
-
-    if (!channel || !channel.id || !channel.snippet) {
+  // MOCK IMPLEMENTATION: Simulate API call to avoid needing a real key.
+  
+  // Basic validation for the Channel ID format
+  if (!channelId.startsWith('UC') || channelId.length < 24) {
       return {
         success: false,
-        message: 'Channel not found. Please check the Channel ID.',
+        message: 'Channel not found. Please check the Channel ID format (e.g., UC...).',
         channel: null,
       };
-    }
-    
+  }
+  
+  // Simulate a delay to feel more realistic
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  try {
+    // Mock channel data
+    const mockChannelData = {
+        id: channelId,
+        snippet: {
+            title: 'Verified Mock Channel',
+            thumbnails: {
+                default: {
+                    url: `https://i.pravatar.cc/150?u=${channelId}`,
+                },
+            },
+        },
+    };
+
     // Update the user document in the in-memory store
     const user = await getUserById(userId);
     const platforms = user?.platformsConnected || [];
@@ -71,9 +69,9 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
     }
 
     await updateUser(userId, {
-        displayName: channel.snippet.title ?? user?.displayName,
-        youtubeChannelId: channel.id,
-        avatar: channel.snippet.thumbnails?.default?.url ?? user?.avatar,
+        displayName: user?.displayName || mockChannelData.snippet.title,
+        youtubeChannelId: mockChannelData.id,
+        avatar: mockChannelData.snippet.thumbnails?.default?.url ?? user?.avatar,
         platformsConnected: platforms,
     });
     
@@ -84,22 +82,16 @@ export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
       success: true,
       message: 'Channel verified and connected successfully!',
       channel: {
-        id: channel.id,
-        name: channel.snippet.title ?? 'Untitled Channel',
-        avatar: channel.snippet.thumbnails?.default?.url ?? '',
+        id: mockChannelData.id,
+        name: mockChannelData.snippet.title,
+        avatar: mockChannelData.snippet.thumbnails.default.url,
       },
     };
   } catch (error) {
-    console.error('Error verifying YouTube channel:', error);
-    let message = 'Failed to verify channel due to an API error.';
-    if (error instanceof Error && (error as any).code === 400) {
-        message = 'The provided Channel ID is invalid. Please double-check it.'
-    } else if (error instanceof Error && error.message.includes('API key not valid')) {
-        message = 'The YouTube API key is invalid or has expired. Please check server configuration.'
-    }
+    console.error('Error in mock verifyYoutubeChannel:', error);
     return {
       success: false,
-      message,
+      message: "An unexpected error occurred during channel connection.",
       channel: null,
     };
   }
