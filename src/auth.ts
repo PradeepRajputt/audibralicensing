@@ -4,8 +4,10 @@ import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
 import { getUserByEmail } from '@/lib/users-store';
 import bcrypt from 'bcryptjs';
+import { authConfig } from './auth.config';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: 'Credentials',
@@ -36,26 +38,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  pages: {
-    signIn: '/login',
-  },
-  callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        // @ts-ignore
-        token.role = user.role;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as 'creator' | 'admin';
-      }
-      return session;
-    },
-  },
   session: {
     strategy: 'jwt',
   },
