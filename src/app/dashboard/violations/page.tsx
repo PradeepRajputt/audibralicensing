@@ -102,6 +102,7 @@ export default function ViolationsPage() {
           <TableBody>
             {violations.length > 0 ? violations.map((item) => {
                 const statusInfo = statusMapping[item.status];
+                const reportUrl = `/dashboard/reports?url=${encodeURIComponent(item.matchedURL)}&platform=${item.platform}`;
                 return (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">
@@ -149,7 +150,7 @@ export default function ViolationsPage() {
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                     <DropdownMenuItem asChild>
-                                        <Link href="/dashboard/reports">Generate Report</Link>
+                                        <Link href={reportUrl}>Generate Report</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={() => handleAction('dismiss', item.id)} className="text-destructive focus:text-destructive">

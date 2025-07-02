@@ -30,6 +30,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import jsPDF from 'jspdf';
 import { getAllContentForUser } from "@/lib/content-store";
 import { getViolationsForUser } from "@/lib/violations-store";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const formSchema = z.object({
   platform: z.string({ required_error: "Please select a platform." }).min(1, "Please select a platform."),
@@ -45,6 +46,8 @@ export default function SubmitReportPage() {
   const [isFetching, setIsFetching] = useState(true);
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [violations, setViolations] = useState<Violation[]>([]);
   const [protectedContent, setProtectedContent] = useState<ProtectedContent[]>([]);
@@ -55,7 +58,8 @@ export default function SubmitReportPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-        suspectUrl: "",
+        platform: searchParams.get('platform') || "",
+        suspectUrl: searchParams.get('url') || "",
         reason: "",
     },
   });
@@ -87,6 +91,18 @@ export default function SubmitReportPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+
+  useEffect(() => {
+    const url = searchParams.get('url');
+    const platform = searchParams.get('platform');
+    if (url) {
+      form.setValue('suspectUrl', url);
+    }
+    if (platform) {
+      form.setValue('platform', platform);
+    }
+  }, [searchParams, form]);
 
 
   useEffect(() => {
@@ -159,7 +175,7 @@ Sincerely,
         title: "Report Submitted",
         description: result.message,
       });
-      form.reset();
+      form.reset({suspectUrl: "", reason: "", platform: form.getValues("platform")});
       loadData(); // Refresh the list
     } else {
         toast({
@@ -214,7 +230,7 @@ Sincerely,
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Platform</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select the platform of the infringing content" />
