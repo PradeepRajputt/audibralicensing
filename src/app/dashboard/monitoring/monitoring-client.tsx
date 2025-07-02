@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import * as React from "react";
 import { Loader2, FileUp, Image as ImageIcon, Video as VideoIcon, Send, ShieldOff, FileWarning } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { Progress } from "@/components/ui/progress";
