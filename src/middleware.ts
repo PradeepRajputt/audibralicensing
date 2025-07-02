@@ -1,7 +1,8 @@
 
-import { auth } from '@/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
  
-export default auth;
+export default NextAuth(authConfig).auth;
  
 // See "Matching Paths" below to learn more
 export const config = {
