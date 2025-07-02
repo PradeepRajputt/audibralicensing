@@ -11,6 +11,24 @@ import Link from 'next/link';
 import type { Report } from '@/lib/types';
 import { approveStrikeRequest, denyStrikeRequest } from '../actions';
 
+// Client-side component to prevent hydration mismatch for dates.
+const ClientSideDate = ({ dateString }: { dateString: string }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        // This effect runs only on the client, after the initial render.
+        setFormattedDate(new Date(dateString).toLocaleString());
+    }, [dateString]);
+    
+    // Return null during server-side rendering and initial client-side render
+    if (!formattedDate) {
+        return null;
+    }
+
+    return <>{formattedDate}</>;
+}
+
+
 export default function StrikeDetailsClientPage({ initialStrike }: { initialStrike: Report | undefined }) {
   const { toast } = useToast();
   const [strike, setStrike] = useState<Report | undefined>(initialStrike);
@@ -123,7 +141,9 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                 <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                 <div>
                     <p className="text-sm text-muted-foreground">Submission Date</p>
-                    <p className="font-medium">{new Date(strike.submitted).toLocaleString()}</p>
+                    <p className="font-medium">
+                      <ClientSideDate dateString={strike.submitted} />
+                    </p>
                 </div>
             </div>
              <div className="flex items-center gap-4">
