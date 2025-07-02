@@ -15,11 +15,12 @@ async function getUsersCollection() {
 /**
  * Creates a new user in the database.
  */
-export async function createUser(data: Omit<User, 'uid' | '_id'>): Promise<User> {
+export async function createUser(data: Omit<User, 'uid' | '_id' | 'passwordHash'>): Promise<User> {
     noStore();
     const collection = await getUsersCollection();
     const uid = `user_${Date.now()}`;
-    const newUser: User = { ...data, uid };
+    // This is a placeholder as password handling is removed
+    const newUser: User = { ...data, uid, passwordHash: 'placeholder' }; 
     
     await collection.insertOne({ ...newUser });
     return newUser;

@@ -47,7 +47,9 @@ export function DashboardLayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isProtectedPath = !['/dashboard/settings', '/dashboard/overview'].includes(pathname);
+  // Assume channel is connected if user exists, for now.
+  // The lock screen will show if no user is found in the mock db.
+  const isProtectedPath = !['/dashboard/settings', '/dashboard/overview', '/dashboard'].includes(pathname);
   const showLock = isProtectedPath && !channelConnected;
 
   return (
