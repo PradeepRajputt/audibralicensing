@@ -7,7 +7,7 @@ import clientPromise from './mongodb';
 async function getFeedbackCollection() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
-    return db.collection<Omit<Feedback, 'id'>>('feedback');
+    return db.collection<Feedback>('feedback');
 }
 
 export async function getAllFeedback(): Promise<Feedback[]> {

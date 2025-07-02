@@ -8,7 +8,7 @@ import clientPromise from './mongodb';
 async function getReportsCollection() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
-    return db.collection<Omit<Report, 'id'>>('reports');
+    return db.collection<Report>('reports');
 }
 
 

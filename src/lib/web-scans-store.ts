@@ -8,7 +8,7 @@ import clientPromise from './mongodb';
 async function getWebScansCollection() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
-    return db.collection<Omit<WebScan, 'id'>>('web_scans');
+    return db.collection<WebScan>('web_scans');
 }
 
 

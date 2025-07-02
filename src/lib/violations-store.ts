@@ -7,7 +7,7 @@ import clientPromise from './mongodb';
 async function getViolationsCollection() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
-    return db.collection<Omit<Violation, 'id'>>('violations');
+    return db.collection<Violation>('violations');
 }
 
 export async function createViolation(data: Omit<Violation, 'id' | 'detectedAt' | 'timeline'>): Promise<Violation> {

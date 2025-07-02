@@ -9,7 +9,7 @@ import clientPromise from './mongodb';
 async function getUsersCollection() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
-    return db.collection<Omit<User, 'uid'>>('users');
+    return db.collection<User>('users');
 }
 
 
@@ -46,12 +46,8 @@ export async function getUserById(uid: string): Promise<User | undefined> {
 export async function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): Promise<void> {
     noStore();
     const usersCollection = await getUsersCollection();
-    const result = await usersCollection.updateOne({ uid }, { $set: { status } });
     
-    if (result.matchedCount === 0) {
-        throw new Error('User not found.');
-    }
-    
+    // Logic to handle deactivation and create a reactivation request
     if (status === 'deactivated') {
         const user = await getUserById(uid);
         if (user) {
@@ -63,7 +59,32 @@ export async function updateUserStatus(uid: string, status: 'active' | 'suspende
             });
         }
     }
+
+    const result = await usersCollection.updateOne({ uid }, { $set: { status } });
+    
+    if (result.matchedCount === 0) {
+        // If user doesn't exist, create them with the new status
+        const onInsertPayload: Omit<User, 'uid' | 'status'> = {
+            displayName: 'New User',
+            email: `${uid}@example.com`,
+            legalFullName: '',
+            address: '',
+            phone: '',
+            passwordHash: '',
+            role: 'creator',
+            joinDate: new Date().toISOString(),
+            platformsConnected: [],
+            avatar: '',
+            youtubeChannelId: ''
+        };
+        await usersCollection.insertOne({
+            uid,
+            status,
+            ...onInsertPayload,
+        });
+    }
 }
+
 
 /**
  * Updates a user's profile details. If the user doesn't exist, it will be created.
@@ -74,27 +95,29 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<v
     noStore();
     const usersCollection = await getUsersCollection();
 
-    // The fields to set if the document is created (upserted).
-    // These are the fields that every user should have.
-    const onInsertPayload: Omit<User, 'uid' | 'displayName' | 'avatar'> = {
-        joinDate: new Date().toISOString(),
+    const onInsertPayload: Omit<User, 'uid'> = {
+        displayName: 'New Creator',
+        legalFullName: '',
+        email: `${uid}@example.com`, 
+        address: '',
+        phone: '',
+        passwordHash: '', 
         role: 'creator',
-        status: 'active',
-        email: `${uid}@example.com`, // Placeholder, as we don't have it from this flow
-        passwordHash: '', // Not used
+        joinDate: new Date().toISOString(),
         platformsConnected: [],
+        status: 'active',
+        avatar: '',
     };
 
     const result = await usersCollection.updateOne(
         { uid },
         {
-            $set: updates, // Apply specified updates regardless
-            $setOnInsert: onInsertPayload // Apply these only if a new document is created
+            $set: updates, 
+            $setOnInsert: onInsertPayload
         },
-        { upsert: true } // This will create the document if it doesn't exist
+        { upsert: true }
     );
-
-    if (result.modifiedCount === 0 && result.upsertedCount === 0) {
+     if (result.modifiedCount === 0 && result.upsertedCount === 0) {
         console.log(`No changes needed for user ${uid}.`);
     }
 }

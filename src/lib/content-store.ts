@@ -7,7 +7,7 @@ import clientPromise from './mongodb';
 async function getContentCollection() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB);
-    return db.collection<Omit<ProtectedContent, 'id'>>('content');
+    return db.collection<ProtectedContent>('content');
 }
 
 export async function getAllContentForUser(userId: string): Promise<ProtectedContent[]> {
