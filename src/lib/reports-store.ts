@@ -14,8 +14,8 @@ let reports: Report[] = [
     originalContentTitle: "My Most Epic Adventure Yet!",
     originalContentUrl: "https://youtube.com/watch?v=dQw4w9WgXcQ",
     reason: "This is a direct reupload of my video.",
-    status: "action_taken",
-    submitted: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString() // 2 days ago
+    status: "approved", // Changed from "action_taken" to "approved"
+    submitted: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString()
   },
   {
     id: "report_initial_2",
@@ -27,7 +27,7 @@ let reports: Report[] = [
     originalContentUrl: "https://instagram.com/p/original_reel",
     reason: "They used my background music without credit.",
     status: "rejected",
-    submitted: new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)).toISOString() // 7 days ago
+    submitted: new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)).toISOString()
   },
   {
     id: "report_initial_3",
@@ -39,7 +39,7 @@ let reports: Report[] = [
     originalContentUrl: "https://myblog.com/italy-summer",
     reason: "Copied my entire blog post word for word.",
     status: "in_review",
-    submitted: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString() // 1 day ago
+    submitted: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString()
   },
 ];
 
