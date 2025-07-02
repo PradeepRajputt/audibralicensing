@@ -1,5 +1,2 @@
-import { handlers } from "@/auth";
-
-export const { GET, POST } = handlers;
-
-export const runtime = "nodejs";
+// This file is intentionally left empty.
+// The authentication system has been removed.

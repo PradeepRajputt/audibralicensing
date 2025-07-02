@@ -24,7 +24,7 @@ export default function Home() {
           </p>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Link href="/dashboard/overview" className="group">
+              <Link href="/dashboard" className="group">
                   <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
                       <CardHeader>
                           <div className="flex justify-center mb-4">

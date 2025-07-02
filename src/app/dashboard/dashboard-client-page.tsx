@@ -11,18 +11,8 @@ import { useDashboardData } from './dashboard-context';
 export default function DashboardClientPage() {
   const dashboardData = useDashboardData();
 
-  // This case is handled by the parent layout and page now, but as a fallback:
-  if (!dashboardData || !dashboardData.analytics) {
-    return (
-        <div className="space-y-8">
-            <h1 className="text-2xl font-bold">Welcome!</h1>
-            <p className="text-muted-foreground">Could not load dashboard data. Please connect your channel in settings to see analytics.</p>
-        </div>
-    )
-  }
+  const { analytics, activity, creatorName, creatorImage } = dashboardData || {};
 
-  const { analytics, activity, creatorName, creatorImage } = dashboardData;
-  
   return (
     <div className="space-y-8">
        <div className="flex items-center gap-4">
@@ -45,7 +35,7 @@ export default function DashboardClientPage() {
             <Youtube className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.views.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{analytics?.views.toLocaleString() || 'N/A'}</div>
             <p className="text-xs text-muted-foreground">
               Across all your videos
             </p>
@@ -87,7 +77,7 @@ export default function DashboardClientPage() {
           <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
         </CardHeader>
         <CardContent>
-           {activity.length > 0 ? (
+           {activity && activity.length > 0 ? (
             <Table>
                 <TableHeader>
                 <TableRow>
