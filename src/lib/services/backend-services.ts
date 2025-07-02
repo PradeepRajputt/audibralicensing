@@ -11,14 +11,15 @@ import { Resend } from 'resend';
 
 // Initialize Resend
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const fromEmail = 'CreatorShield <onboarding@resend.dev>'; // Resend's default test address
 
 /**
  * Stores a violation reported by the backend and sends an email alert to the creator.
  * This function is intended to be called by a webhook from our FastAPI service.
  */
 export async function processViolationFromFastApi(violationData: Omit<Violation, 'id' | 'detectedAt'> & { creatorEmail: string }) {
-  if (!resend || !process.env.RESEND_FROM_EMAIL) {
-    console.error('Resend environment variables are not fully configured. Email will not be sent.');
+  if (!resend) {
+    console.error('Resend API key is not configured. Email will not be sent.');
   }
 
   try {
@@ -35,9 +36,9 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
     });
     console.log(`Stored violation with ID: ${newViolation.id}`);
 
-    if (resend && process.env.RESEND_FROM_EMAIL) {
+    if (resend) {
         await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL,
+            from: fromEmail,
             to: violationData.creatorEmail,
             subject: 'New Copyright Violation Detected!',
             html: `
@@ -67,14 +68,14 @@ export async function updateAllUserAnalytics() {
 }
 
 export async function sendReactivationApprovalEmail({ to, name }: { to: string; name:string }) {
-  if (!resend || !process.env.RESEND_FROM_EMAIL) {
+  if (!resend) {
     console.warn(`Resend not configured. Skipping reactivation approval email to ${to}.`);
     return { success: true, simulated: true };
   }
   
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL,
+      from: fromEmail,
       to,
       subject: 'Your CreatorShield Account has been Reactivated',
       html: `
@@ -96,14 +97,14 @@ export async function sendReactivationApprovalEmail({ to, name }: { to: string; 
 }
 
 export async function sendReactivationDenialEmail({ to, name }: { to: string; name: string }) {
- if (!resend || !process.env.RESEND_FROM_EMAIL) {
+ if (!resend) {
     console.warn(`Resend not configured. Skipping reactivation denial email to ${to}.`);
     return { success: true, simulated: true };
   }
 
   try {
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL,
+      from: fromEmail,
       to,
       subject: 'Update on your CreatorShield Account',
       html: `
@@ -130,14 +131,14 @@ export async function sendTakedownConfirmationEmail(data: {
   infringingUrl: string;
   originalUrl: string;
 }) {
-  if (!resend || !process.env.RESEND_FROM_EMAIL) {
+  if (!resend) {
     console.warn(`Resend not configured. Skipping takedown confirmation email to ${data.to}.`);
     return { success: true, simulated: true };
   }
 
   try {
     await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL,
+        from: fromEmail,
         to: data.to,
         subject: `[Confirmation] Copyright Takedown Notice Submitted for ${data.creatorName}`,
         html: `
