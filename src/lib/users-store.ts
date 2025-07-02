@@ -66,18 +66,39 @@ export async function updateUserStatus(uid: string, status: 'active' | 'suspende
 }
 
 /**
- * Updates a user's profile details.
+ * Updates a user's profile details. If the user doesn't exist, it will be created.
  * @param uid The ID of the user to update.
  * @param updates The partial user data to update.
  */
 export async function updateUser(uid: string, updates: Partial<User>): Promise<void> {
     noStore();
     const usersCollection = await getUsersCollection();
-    const result = await usersCollection.updateOne({ uid }, { $set: updates });
-     if (result.matchedCount === 0) {
-        throw new Error('User not found.');
+
+    // The fields to set if the document is created (upserted).
+    // These are the fields that every user should have.
+    const onInsertPayload: Omit<User, 'uid' | 'displayName' | 'avatar'> = {
+        joinDate: new Date().toISOString(),
+        role: 'creator',
+        status: 'active',
+        email: `${uid}@example.com`, // Placeholder, as we don't have it from this flow
+        passwordHash: '', // Not used
+        platformsConnected: [],
+    };
+
+    const result = await usersCollection.updateOne(
+        { uid },
+        {
+            $set: updates, // Apply specified updates regardless
+            $setOnInsert: onInsertPayload // Apply these only if a new document is created
+        },
+        { upsert: true } // This will create the document if it doesn't exist
+    );
+
+    if (result.modifiedCount === 0 && result.upsertedCount === 0) {
+        console.log(`No changes needed for user ${uid}.`);
     }
 }
+
 
 /**
  * Removes the YouTube channel connection from a user.
