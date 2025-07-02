@@ -17,14 +17,7 @@ export const authConfig = {
       if (isProtectedRoute) {
         if (!isLoggedIn) {
             // Redirect unauthenticated users to login page
-            let from = pathname;
-            if (nextUrl.search) {
-              from += nextUrl.search;
-            }
-            const loginUrl = new URL('/login', nextUrl);
-            loginUrl.searchParams.set('from', encodeURIComponent(from));
-            
-            return Response.redirect(loginUrl);
+            return Response.redirect(new URL('/login', nextUrl));
         }
         
         // Role-based access control
@@ -53,7 +46,6 @@ export const authConfig = {
     jwt({ token, user }) {
         if (user) {
           token.id = user.id;
-          // @ts-ignore
           token.role = user.role;
         }
         return token;
@@ -66,5 +58,5 @@ export const authConfig = {
       return session;
     },
   },
-  providers: [], // Providers are not to be included in auth.config
+  providers: [], // Providers are defined in auth.ts
 } satisfies NextAuthConfig;

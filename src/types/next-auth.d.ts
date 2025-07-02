@@ -1,5 +1,5 @@
 
-import type { DefaultSession } from 'next-auth';
+import type { DefaultSession, DefaultUser } from 'next-auth';
 
 declare module 'next-auth' {
   interface Session {
@@ -7,5 +7,9 @@ declare module 'next-auth' {
       id: string;
       role: 'creator' | 'admin';
     } & DefaultSession['user'];
+  }
+
+  interface User extends DefaultUser {
+     role: 'creator' | 'admin';
   }
 }
