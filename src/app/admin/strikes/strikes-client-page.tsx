@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,23 @@ import { Check, X, Loader2, Eye } from "lucide-react";
 import Link from 'next/link';
 import type { Report } from '@/lib/types';
 import { approveStrikeRequest, denyStrikeRequest } from './actions';
+
+// A small component to safely render dates on the client to avoid hydration mismatch
+const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        // This will only run on the client, after the initial render.
+        setFormattedDate(new Date(dateString).toLocaleDateString());
+    }, [dateString]);
+    
+    // Return null during server-side rendering and initial client-side render
+    if (!formattedDate) {
+        return null;
+    }
+    
+    return <>{formattedDate}</>;
+};
 
 
 export function StrikesClientPage({ initialStrikes }: { initialStrikes: Report[] }) {
@@ -70,7 +87,7 @@ export function StrikesClientPage({ initialStrikes }: { initialStrikes: Report[]
                     {strike.suspectUrl}
                 </a>
               </TableCell>
-              <TableCell>{new Date(strike.submitted).toLocaleDateString()}</TableCell>
+              <TableCell><ClientFormattedDate dateString={strike.submitted} /></TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   {showActions && (
