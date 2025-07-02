@@ -1,14 +1,16 @@
 
 'use server';
 
-import { subDays, format } from 'date-fns';
+import { subDays, format, formatDistanceToNow } from 'date-fns';
 import { getUserById } from '@/lib/users-store';
-import type { UserAnalytics } from '@/lib/types';
+import { getViolationsForUser } from '@/lib/violations-store';
+import type { UserAnalytics, Violation } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 
 /**
  * Fetches dashboard data.
- * NOTE: This function now returns mock data to avoid YouTube API quota issues during development.
+ * NOTE: This function now returns mock data for analytics to avoid YouTube API quota issues during development,
+ * but fetches real activity data from the violations store.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
 export async function getDashboardData() {
@@ -24,10 +26,7 @@ export async function getDashboardData() {
       return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
   }
 
-  // --- MOCK DATA SECTION ---
-  // Return realistic mock data to avoid hitting API quotas during development.
-  console.log(`Returning mock data for channel ID: ${finalChannelId}`);
-
+  // --- MOCK ANALYTICS SECTION (as a real implementation requires deeper API integration) ---
   const mockAnalytics: UserAnalytics = {
     subscribers: 124567,
     views: 9876543,
@@ -51,26 +50,42 @@ export async function getDashboardData() {
     }),
   };
 
-  const mockActivity = [
-    {
-      type: "New Infringement Detected",
-      details: "On website 'stolencontent.com/my-video'",
-      status: "Action Required",
-      date: `1 hour ago`,
-      variant: "destructive"
-    },
-    {
-      type: "YouTube Scan Complete",
-      details: `Channel '${user?.displayName || 'Your Channel'}' scanned.`,
-      status: "No Issues",
-      date: "1 day ago",
-      variant: "default"
-    },
-  ] as const;
+  // --- REAL ACTIVITY DATA SECTION ---
+  const violations = await getViolationsForUser(userId);
+  const activity = violations.slice(0, 5).map((violation: Violation) => {
+    let status: string;
+    let variant: 'destructive' | 'default' | 'secondary' | 'outline';
+
+    switch (violation.status) {
+        case 'pending_review':
+            status = 'Action Required';
+            variant = 'destructive';
+            break;
+        case 'action_taken':
+            status = 'Reported';
+            variant = 'default';
+            break;
+        case 'dismissed':
+            status = 'Ignored';
+            variant = 'secondary';
+            break;
+        default:
+            status = 'Unknown';
+            variant = 'outline';
+    }
+    return {
+        type: "Infringement Detected",
+        details: `On ${violation.platform}: ${violation.matchedURL}`,
+        status,
+        date: formatDistanceToNow(new Date(violation.detectedAt), { addSuffix: true }),
+        variant
+    };
+  });
+
 
   return { 
     analytics: mockAnalytics, 
-    activity: mockActivity, 
+    activity: activity, 
     creatorName: user?.displayName, 
     creatorImage: user?.avatar 
   };
