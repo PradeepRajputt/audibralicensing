@@ -13,7 +13,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { UserAnalytics } from '@/lib/types';
+import { useDashboardData } from '../dashboard-context';
 
 type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
@@ -48,16 +48,16 @@ function ColorPicker({ color, setColor }: { color: string, setColor: (color: str
     );
 }
 
-export default function AnalyticsClientPage({ initialAnalytics }: { initialAnalytics: UserAnalytics | null }) {
+export default function AnalyticsClientPage() {
+    const dashboardData = useDashboardData();
+    const analytics = dashboardData?.analytics ?? null;
+
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
     const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
     const [subscribersChartType, setSubscribersChartType] = React.useState<ChartType>('line');
     const [aggregation, setAggregation] = React.useState<AggregationType>("day");
     const [viewsColor, setViewsColor] = React.useState('hsl(var(--chart-1))');
     const [subscribersColor, setSubscribersColor] = React.useState('hsl(var(--chart-2))');
-    
-    // Use the prop directly. The parent Server Component will re-render and pass a fresh prop.
-    const analytics = initialAnalytics;
 
     const chartConfig = {
         views: { label: 'Views', color: viewsColor },
@@ -126,8 +126,7 @@ export default function AnalyticsClientPage({ initialAnalytics }: { initialAnaly
     }
 
     if (!analytics) {
-         // This case should be handled by the parent layout's lock screen
-        return <p>Could not load analytics data.</p>
+        return <p>Could not load analytics data. Please ensure your channel is connected in settings.</p>
     }
 
     return (

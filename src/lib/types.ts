@@ -134,3 +134,11 @@ export interface Feedback {
   isReadByCreator: boolean;
   timestamp: string;
 }
+
+
+export type DashboardData = {
+  analytics: UserAnalytics | null;
+  activity: any[];
+  creatorName: string | null | undefined;
+  creatorImage: string | null | undefined;
+} | null;

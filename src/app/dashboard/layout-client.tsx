@@ -12,7 +12,6 @@ import { Youtube } from 'lucide-react';
 import Link from 'next/link';
 import type { User } from '@/lib/types';
 
-
 function LockedContent() {
     return (
         <div className="flex items-center justify-center h-full p-4">
@@ -35,7 +34,6 @@ function LockedContent() {
         </div>
     )
 }
-
 
 export function DashboardLayoutClient({
   user,

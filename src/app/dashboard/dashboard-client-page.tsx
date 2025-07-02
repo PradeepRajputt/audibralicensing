@@ -6,17 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScanSearch, ShieldCheck, Activity, Youtube } from "lucide-react";
-import type { UserAnalytics } from '@/lib/types';
+import { useDashboardData } from './dashboard-context';
 
-
-type DashboardData = {
-  analytics: UserAnalytics | null;
-  activity: any[];
-  creatorName: string | null | undefined;
-  creatorImage: string | null | undefined;
-} | null;
-
-export default function DashboardClientPage({ dashboardData }: { dashboardData: DashboardData }) {
+export default function DashboardClientPage() {
+  const dashboardData = useDashboardData();
 
   // This case is handled by the parent layout and page now, but as a fallback:
   if (!dashboardData || !dashboardData.analytics) {
