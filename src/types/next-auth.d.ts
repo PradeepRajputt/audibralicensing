@@ -1,2 +1,11 @@
 
-// This file is intentionally left blank. All NextAuth logic has been removed.
+import type { DefaultSession } from 'next-auth';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      role: 'creator' | 'admin';
+    } & DefaultSession['user'];
+  }
+}

@@ -1,4 +1,14 @@
 
+import type { DefaultSession } from 'next-auth';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      role: 'creator' | 'admin';
+    } & DefaultSession['user'];
+  }
+}
 
 /**
  * Represents a user in the `users` collection.
@@ -11,7 +21,7 @@ export interface User {
   legalFullName?: string;
   email: string | null;
   address?: string;
-  phone?: string;
+  phone: string;
   passwordHash: string;
   role: 'creator' | 'admin';
   joinDate: string; // Using ISO string

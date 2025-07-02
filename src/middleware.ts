@@ -1,17 +1,34 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+
+import { auth } from '@/auth';
+import { NextResponse } from 'next/server';
+
+export default auth((req) => {
+  const { pathname } = req.nextUrl;
+  const isLoggedIn = !!req.auth;
+
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register');
+  const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+
+  if (isAuthRoute && isLoggedIn) {
+    const targetPath = req.auth?.user.role === 'admin' ? '/admin' : '/dashboard';
+    return NextResponse.redirect(new URL(targetPath, req.url));
+  }
+
+  if (isProtectedRoute && !isLoggedIn) {
+    let from = pathname;
+    if (req.nextUrl.search) {
+      from += req.nextUrl.search;
+    }
  
-// This function can be marked `async` if using `await` inside
-export function middleware(request: NextRequest) {
-  // Currently, this middleware does nothing and just proceeds.
-  // You can add logic here for redirects, rewriting URLs,
-  // adding headers, or handling authentication.
-  return NextResponse.next()
-}
- 
+    return NextResponse.redirect(
+      new URL(`/login?from=${encodeURIComponent(from)}`, req.url)
+    );
+  }
+
+  return NextResponse.next();
+});
+
 // See "Matching Paths" below to learn more
 export const config = {
-  // The matcher is empty, so this middleware will not run on any path.
-  // This is a placeholder for when you want to add specific routes.
-  matcher: [],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }

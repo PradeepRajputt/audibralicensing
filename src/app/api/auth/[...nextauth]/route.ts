@@ -1,3 +1,2 @@
 
-// This file is intentionally left blank. All NextAuth logic has been removed.
-export {};
+export { GET, POST } from "@/auth"
