@@ -7,7 +7,7 @@ let reactivationRequests: ReactivationRequest[] = [
     {
       creatorId: 'user_creator_deactivated',
       displayName: 'Online Wlallah',
-      email: 'guddumis003@gmail.com',
+      email: 'your-test-email@example.com',
       avatar: 'https://placehold.co/128x128.png',
       requestDate: new Date('2024-06-12T10:00:00Z').toISOString(),
     },

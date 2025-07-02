@@ -64,6 +64,21 @@ let users: User[] = [
     status: 'suspended',
     avatar: 'https://placehold.co/128x128.png',
   },
+  {
+    uid: "user_creator_deactivated",
+    displayName: "Online Wlallah",
+    legalFullName: "Online Wlallah",
+    address: "123 Internet Street, Webville, 10005",
+    phone: "555-010-1111",
+    email: "your-test-email@example.com",
+    passwordHash: "hashed_password_deactivated",
+    role: 'creator',
+    joinDate: new Date('2024-04-01T10:00:00Z').toISOString(),
+    platformsConnected: ['youtube'],
+    youtubeChannelId: 'UC-some-deactivated-channel-id',
+    status: 'deactivated',
+    avatar: 'https://placehold.co/128x128.png',
+  },
 ];
 
 
