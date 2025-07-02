@@ -26,10 +26,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           
           if (!user || !user.passwordHash) return null;
 
+          // Add a check for user status
+          if (user.status !== 'active') {
+            // Returning null will cause a CredentialsSignin error,
+            // which we can catch to provide a specific message.
+            // We can throw a custom error here to be more specific.
+            if (user.status === 'deactivated') {
+                throw new Error('Your account has been deactivated. Please contact support.');
+            }
+            if (user.status === 'suspended') {
+                 throw new Error('Your account is temporarily suspended.');
+            }
+          }
+
           const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
           
           if (passwordsMatch) {
-            return { id: user.uid, name: user.displayName, email: user.email, role: user.role };
+            return { id: user.uid, name: user.displayName, email: user.email, role: user.role, image: user.avatar };
           }
         }
         return null;
