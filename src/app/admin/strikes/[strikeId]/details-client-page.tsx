@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, X, Loader2, User, Calendar, Link as LinkIcon, FileText } from "lucide-react";
+import { ArrowLeft, Check, X, Loader2, User, Calendar, Link as LinkIcon, FileText, Send } from "lucide-react";
 import Link from 'next/link';
 import type { Report } from '@/lib/types';
 import { approveStrikeRequest, denyStrikeRequest } from '../actions';
@@ -25,7 +25,9 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
     if (!strike) return;
     setLoadingAction(action);
     
-    const result = action === 'approve' ? await approveStrikeRequest(strike.id) : await denyStrikeRequest(strike.id);
+    const result = action === 'approve' 
+      ? await approveStrikeRequest(strike.id) 
+      : await denyStrikeRequest(strike.id);
 
     if (result.success) {
       toast({
@@ -47,7 +49,9 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
 
   const getStatusVariant = (status?: Report['status']) => {
     switch (status) {
-      case 'approved': return 'default';
+      case 'approved':
+      case 'action_taken':
+        return 'default';
       case 'rejected': return 'destructive';
       case 'in_review':
       default: return 'secondary';
@@ -58,6 +62,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
     switch (status) {
       case 'approved': return 'Approved';
       case 'rejected': return 'Rejected';
+      case 'action_taken': return 'Action Taken';
       case 'in_review':
       default: return 'In Review';
     }
@@ -121,6 +126,15 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                     <p className="font-medium">{new Date(strike.submitted).toLocaleString()}</p>
                 </div>
             </div>
+             <div className="flex items-center gap-4">
+                <LinkIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <div>
+                    <p className="text-sm text-muted-foreground">Original Content</p>
+                    <a href={strike.originalContentUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline break-all">
+                        {strike.originalContentTitle}
+                    </a>
+                </div>
+            </div>
             <div className="flex items-center gap-4">
                 <LinkIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                 <div>
@@ -156,6 +170,16 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                      {loadingAction === `deny` ? <Loader2 className="animate-spin" /> : <X />}
                     Deny
                   </Button>
+            </CardFooter>
+        )}
+         {strike.status === 'approved' && strike.platform === 'youtube' && (
+             <CardFooter className="border-t pt-6 flex justify-end gap-2">
+                 <Button asChild>
+                    <Link href={`/admin/youtube-consent/${strike.id}`}>
+                        <Send className="mr-2 h-4 w-4" />
+                        Submit to YouTube
+                    </Link>
+                 </Button>
             </CardFooter>
         )}
       </Card>

@@ -33,6 +33,7 @@ import { getViolationsForUser } from "@/lib/violations-store";
 import { useSearchParams, useRouter } from "next/navigation";
 
 const formSchema = z.object({
+  originalContentId: z.string().min(1, "Please select your original content."),
   platform: z.string({ required_error: "Please select a platform." }).min(1, "Please select a platform."),
   suspectUrl: z.string().url({ message: 'Please enter a valid URL.' }),
   reason: z.string().min(10, {
@@ -58,6 +59,7 @@ export default function SubmitReportPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+        originalContentId: "",
         platform: searchParams.get('platform') || "",
         suspectUrl: searchParams.get('url') || "",
         reason: "",
@@ -175,7 +177,7 @@ Sincerely,
         title: "Report Submitted",
         description: result.message,
       });
-      form.reset({suspectUrl: "", reason: "", platform: form.getValues("platform")});
+      form.reset({originalContentId: "", suspectUrl: "", reason: "", platform: form.getValues("platform")});
       loadData(); // Refresh the list
     } else {
         toast({
@@ -194,6 +196,8 @@ Sincerely,
         return 'default';
       case 'rejected':
         return 'destructive';
+      case 'action_taken':
+        return 'default'
       case 'in_review':
       default:
         return 'secondary';
@@ -206,6 +210,8 @@ Sincerely,
         return 'Approved';
       case 'rejected':
         return 'Rejected';
+       case 'action_taken':
+        return 'Action Taken';
       case 'in_review':
       default:
         return 'In Review';
@@ -224,7 +230,31 @@ Sincerely,
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <FormField
+               <FormField
+                control={form.control}
+                name="originalContentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Original Content</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select which of your content is being infringed" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {protectedContent.map(content => (
+                            <SelectItem key={content.id} value={content.id}>{content.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>This helps us accurately file claims on your behalf.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
                 control={form.control}
                 name="platform"
                 render={({ field }) => (

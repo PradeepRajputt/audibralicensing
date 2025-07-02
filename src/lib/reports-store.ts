@@ -11,8 +11,10 @@ let reports: Report[] = [
     creatorName: "Sample Creator",
     platform: "youtube",
     suspectUrl: "https://youtube.com/watch?v=fake123",
+    originalContentTitle: "My Most Epic Adventure Yet!",
+    originalContentUrl: "https://youtube.com/watch?v=dQw4w9WgXcQ",
     reason: "This is a direct reupload of my video.",
-    status: "approved",
+    status: "action_taken",
     submitted: new Date(Date.now() - (2 * 24 * 60 * 60 * 1000)).toISOString() // 2 days ago
   },
   {
@@ -21,6 +23,8 @@ let reports: Report[] = [
     creatorName: "Alice Vlogs",
     platform: "instagram",
     suspectUrl: "https://instagram.com/p/reel456",
+    originalContentTitle: "Baking Sourdough",
+    originalContentUrl: "https://instagram.com/p/original_reel",
     reason: "They used my background music without credit.",
     status: "rejected",
     submitted: new Date(Date.now() - (7 * 24 * 60 * 60 * 1000)).toISOString() // 7 days ago
@@ -31,6 +35,8 @@ let reports: Report[] = [
     creatorName: "Sample Creator",
     platform: "web",
     suspectUrl: "https://thissiteisstealing.com/my-article",
+    originalContentTitle: "My Travel Blog - Summer in Italy",
+    originalContentUrl: "https://myblog.com/italy-summer",
     reason: "Copied my entire blog post word for word.",
     status: "in_review",
     submitted: new Date(Date.now() - (1 * 24 * 60 * 60 * 1000)).toISOString() // 1 day ago
@@ -66,7 +72,7 @@ export async function createReport(data: Omit<Report, 'id' | 'submitted' | 'stat
     reports.unshift(newReport);
 }
 
-export async function updateReportStatus(reportId: string, status: 'approved' | 'rejected'): Promise<void> {
+export async function updateReportStatus(reportId: string, status: 'approved' | 'rejected' | 'action_taken'): Promise<void> {
     noStore();
     const reportIndex = reports.findIndex(r => r.id === reportId);
     if (reportIndex !== -1) {

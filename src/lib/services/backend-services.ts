@@ -1,3 +1,4 @@
+
 /**
  * @file This file contains server-side functions for interacting with external services
  * like a FastAPI backend, YouTube Data API, and SendGrid for emails.
@@ -31,6 +32,10 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
       platform: violationData.platform,
       matchScore: violationData.matchScore,
       status: violationData.status,
+      originalContentUrl: "http://example.com/original", // Placeholder
+      originalContentTitle: "Sample Original Work", // Placeholder
+      infringingContentSnippet: "A snippet of the infringing content...", // Placeholder
+      timeline: [], // Initial timeline
     });
     console.log(`Stored violation with ID: ${newViolation.id}`);
 
@@ -136,6 +141,43 @@ export async function sendReactivationDenialEmail({ to, name }: { to: string; na
     return { success: true, simulated: false };
   } catch (error) {
     console.error(`Error sending reactivation denial email to ${to}:`, error);
+    return { success: false, simulated: false, error: (error as Error).message };
+  }
+}
+
+export async function sendTakedownConfirmationEmail(data: {
+  to: string;
+  creatorName: string;
+  infringingUrl: string;
+  originalUrl: string;
+}) {
+  if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+    console.warn(`SendGrid not configured. Skipping takedown confirmation email to ${data.to}.`);
+    return { success: true, simulated: true };
+  }
+
+   const msg = {
+    to: data.to,
+    from: process.env.SENDGRID_FROM_EMAIL,
+    subject: `[Confirmation] Copyright Takedown Notice Submitted for ${data.creatorName}`,
+    html: `
+      <h1>Takedown Notice Submitted</h1>
+      <p>This is a confirmation that a DMCA takedown notice has been submitted to YouTube on behalf of <strong>${data.creatorName}</strong>.</p>
+      <p><strong>Infringing URL:</strong> ${data.infringingUrl}</p>
+      <p><strong>Original Content URL:</strong> ${data.originalUrl}</p>
+      <p>We will monitor the status of this request. No further action is needed from you at this time.</p>
+      <br/>
+      <p>The CreatorShield Team</p>
+    `,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Sent takedown confirmation email to ${data.to}`);
+    return { success: true, simulated: false };
+  } catch (error) {
+    console.error(`Error sending takedown confirmation email to ${data.to}:`, error);
+    // Don't throw, just log the error
     return { success: false, simulated: false, error: (error as Error).message };
   }
 }

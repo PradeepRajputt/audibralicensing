@@ -8,7 +8,10 @@ export interface User {
   uid: string;
   _id?: any; // MongoDB ObjectId
   displayName: string | null;
+  legalFullName?: string;
   email: string | null;
+  address?: string;
+  phone?: string;
   passwordHash: string;
   role: 'creator' | 'admin';
   joinDate: string; // Using ISO string
@@ -82,8 +85,10 @@ export interface Report {
   creatorName: string; // denormalized for simplicity
   platform: string;
   suspectUrl: string;
+  originalContentUrl: string;
+  originalContentTitle: string;
   reason: string;
-  status: 'in_review' | 'approved' | 'rejected';
+  status: 'in_review' | 'approved' | 'rejected' | 'action_taken';
   submitted: string; // ISO date string
 }
 
