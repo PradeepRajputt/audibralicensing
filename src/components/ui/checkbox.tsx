@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -17,6 +18,7 @@ const Checkbox = React.forwardRef<
       className
     )}
     {...props}
+    suppressHydrationWarning
   >
     <CheckboxPrimitive.Indicator
       className={cn("flex items-center justify-center text-current")}
