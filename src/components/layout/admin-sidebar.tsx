@@ -24,7 +24,7 @@ const menuItems = [
   { href: '/admin/feedback', label: 'Creator Feedback', icon: MessageSquareQuote },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -43,6 +43,7 @@ export function AdminSidebar() {
                 asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
+                notification={item.href === '/admin/feedback' ? hasNewFeedback : false}
               >
                 <Link href={item.href}>
                   <item.icon />

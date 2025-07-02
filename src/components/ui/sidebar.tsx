@@ -543,6 +543,7 @@ const SidebarMenuButton = React.forwardRef<
     asChild?: boolean
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
+    notification?: boolean
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -552,13 +553,27 @@ const SidebarMenuButton = React.forwardRef<
       variant = "default",
       size = "default",
       tooltip,
+      notification,
       className,
+      children,
       ...props
     },
     ref
   ) => {
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
+
+    const buttonContent = (
+      <>
+        {children}
+        {notification && (
+          <span className="relative flex h-2.5 w-2.5 ml-auto">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+          </span>
+        )}
+      </>
+    );
 
     const button = (
       <Comp
@@ -568,7 +583,9 @@ const SidebarMenuButton = React.forwardRef<
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
         {...props}
-      />
+      >
+        {buttonContent}
+      </Comp>
     )
 
     if (!tooltip) {
@@ -608,9 +625,9 @@ const SidebarMenuAction = React.forwardRef<
   return (
     <Comp
       ref={ref}
-      data-sidebar="menu-action"
+      data-sidebar="group-action"
       className={cn(
-        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+        "absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",

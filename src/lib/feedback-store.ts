@@ -87,3 +87,13 @@ export async function markFeedbackAsRead(feedbackId: string): Promise<void> {
         feedbackStore[feedbackIndex].isReadByCreator = true;
     }
 }
+
+export async function hasUnreadCreatorFeedback(creatorId: string): Promise<boolean> {
+    noStore();
+    return feedbackStore.some(f => f.creatorId === creatorId && f.response.length > 0 && !f.isReadByCreator);
+}
+
+export async function hasUnrepliedAdminFeedback(): Promise<boolean> {
+    noStore();
+    return feedbackStore.some(f => f.response.length === 0);
+}

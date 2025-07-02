@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { getUserById } from '@/lib/users-store';
+import { getFeedbackForUser } from '@/lib/feedback-store';
 import { DashboardLayoutClient } from './layout-client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -45,12 +46,20 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   // In a real app, this would be from the session
-  const user = await getUserById("user_creator_123");
+  const userId = "user_creator_123";
+  const user = await getUserById(userId);
   const channelConnected = !!user?.youtubeChannelId;
+  const userFeedback = await getFeedbackForUser(userId);
+  const hasUnreadFeedback = userFeedback.some(f => f.response.length > 0 && !f.isReadByCreator);
+
 
   return (
     <SidebarProvider>
-        <DashboardLayoutClient user={user} channelConnected={channelConnected}>
+        <DashboardLayoutClient 
+            user={user} 
+            channelConnected={channelConnected}
+            hasUnreadFeedback={hasUnreadFeedback}
+        >
             <React.Suspense fallback={<DashboardPageSkeleton />}>
                 {children}
             </React.Suspense>

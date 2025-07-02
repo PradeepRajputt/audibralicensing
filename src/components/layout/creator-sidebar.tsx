@@ -30,7 +30,7 @@ const menuItems = [
   { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
 
-export function CreatorSidebar({ user }: { user: User | undefined }) {
+export function CreatorSidebar({ user, hasUnreadFeedback }: { user: User | undefined, hasUnreadFeedback: boolean }) {
   const pathname = usePathname();
   const isLoading = !user; 
   const creatorName = user?.displayName;
@@ -70,6 +70,7 @@ export function CreatorSidebar({ user }: { user: User | undefined }) {
                 asChild
                 isActive={pathname === item.href}
                 tooltip={item.label}
+                notification={item.href === '/dashboard/feedback' ? hasUnreadFeedback : false}
               >
                 <NextLink href={item.href} prefetch={false}>
                   <item.icon />

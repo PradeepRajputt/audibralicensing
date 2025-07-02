@@ -40,10 +40,12 @@ function LockedContent() {
 export function DashboardLayoutClient({
   user,
   channelConnected,
+  hasUnreadFeedback,
   children,
 }: {
   user: User | undefined;
   channelConnected: boolean;
+  hasUnreadFeedback: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -52,7 +54,7 @@ export function DashboardLayoutClient({
 
   return (
     <>
-      <CreatorSidebar user={user} />
+      <CreatorSidebar user={user} hasUnreadFeedback={hasUnreadFeedback} />
       <SidebarInset>
         <DashboardHeader />
         <main className="p-4 md:p-6 flex-1 flex flex-col">
