@@ -3,27 +3,33 @@
 
 import type { WebScan } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
+import clientPromise from './mongodb';
 
-// In-memory array to store web scans
-let webScans: WebScan[] = [];
+async function getWebScansCollection() {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    return db.collection<Omit<WebScan, 'id'>>('web_scans');
+}
+
 
 export async function getScansForUser(userId: string): Promise<WebScan[]> {
     noStore();
-    const userScans = webScans.filter(scan => scan.userId === userId);
-    return JSON.parse(JSON.stringify(userScans.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10)));
+    const collection = await getWebScansCollection();
+    const scans = await collection.find({ userId }, { projection: { _id: 0 } })
+                               .sort({ timestamp: -1 })
+                               .limit(10)
+                               .toArray();
+    return scans as WebScan[];
 }
 
 export async function addScan(data: Omit<WebScan, 'id' | 'timestamp'>): Promise<WebScan> {
     noStore();
+    const collection = await getWebScansCollection();
     const newScan: WebScan = {
         ...data,
         id: `scan_${Date.now()}`,
         timestamp: new Date().toISOString(),
     };
-    webScans.unshift(newScan);
-    // Keep only the last 50 scans in memory for performance
-    if (webScans.length > 50) {
-        webScans.length = 50;
-    }
-    return JSON.parse(JSON.stringify(newScan));
+    await collection.insertOne(newScan);
+    return newScan;
 }

@@ -4,143 +4,77 @@
 import type { User } from '@/lib/types';
 import { addReactivationRequest } from './reactivations-store';
 import { unstable_noStore as noStore } from 'next/cache';
+import clientPromise from './mongodb';
 
-// In-memory array to store users
-let users: User[] = [
-  {
-    uid: "user_admin_001",
-    displayName: "Admin User",
-    legalFullName: "CreatorShield Administrator",
-    address: "123 Admin Way, Tech City, 10001",
-    phone: "555-010-0001",
-    email: "admin@creatorshield.com",
-    passwordHash: "hashed_password_admin", // In a real app, this would be a secure hash
-    role: 'admin',
-    joinDate: new Date('2024-01-01T10:00:00Z').toISOString(),
-    platformsConnected: [],
-    status: 'active',
-    avatar: 'https://placehold.co/128x128.png',
-  },
-  {
-    uid: "user_creator_123",
-    displayName: "Sample Creator",
-    legalFullName: "John Doe",
-    address: "456 Creator Ave, Content Town, 10002",
-    phone: "555-010-1234",
-    email: "creator@example.com",
-    passwordHash: "hashed_password_creator",
-    role: 'creator',
-    joinDate: new Date('2024-01-15T10:00:00Z').toISOString(),
-    platformsConnected: ['youtube'],
-    youtubeChannelId: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw', 
-    status: 'active',
-    avatar: 'https://placehold.co/128x128.png',
-  },
-  {
-    uid: "user_creator_456",
-    displayName: "Alice Vlogs",
-    legalFullName: "Alice Vlogger",
-    address: "789 Vlogger Ln, Creative City, 10003",
-    phone: "555-010-5678",
-    email: "alice@example.com",
-    passwordHash: "hashed_password_alice",
-    role: 'creator',
-    joinDate: new Date('2024-02-20T10:00:00Z').toISOString(),
-    platformsConnected: [],
-    status: 'active',
-    avatar: 'https://placehold.co/128x128.png',
-  },
-  {
-    uid: "user_creator_789",
-    displayName: "Bob Builds",
-    legalFullName: "Robert Builder",
-    address: "101 Maker St, Innovation Hub, 10004",
-    phone: "555-010-9101",
-    email: "bob@example.com",
-    passwordHash: "hashed_password_bob",
-    role: 'creator',
-    joinDate: new Date('2024-03-10T10:00:00Z').toISOString(),
-    platformsConnected: ['instagram', 'tiktok'],
-    status: 'suspended',
-    avatar: 'https://placehold.co/128x128.png',
-  },
-  {
-    uid: "user_creator_deactivated",
-    displayName: "Online Wlallah",
-    legalFullName: "Online Wlallah",
-    address: "123 Internet Street, Webville, 10005",
-    phone: "555-010-1111",
-    email: "your-test-email@example.com",
-    passwordHash: "hashed_password_deactivated",
-    role: 'creator',
-    joinDate: new Date('2024-04-01T10:00:00Z').toISOString(),
-    platformsConnected: ['youtube'],
-    youtubeChannelId: 'UC-some-deactivated-channel-id',
-    status: 'deactivated',
-    avatar: 'https://placehold.co/128x128.png',
-  },
-];
+async function getUsersCollection() {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB);
+    return db.collection<Omit<User, 'uid'>>('users');
+}
 
 
 /**
- * Retrieves all user documents from the in-memory store.
+ * Retrieves all user documents from the database.
  * @returns A promise that resolves to an array of User objects.
  */
 export async function getAllUsers(): Promise<User[]> {
   noStore();
-  // Simulate DB async operation and return a deep copy
-  return JSON.parse(JSON.stringify(users.sort((a,b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime())));
+  const usersCollection = await getUsersCollection();
+  // Using find with empty filter to get all documents
+  // Excluding the _id field from the result set
+  const users = await usersCollection.find({}, { projection: { _id: 0 } }).sort({ joinDate: -1 }).toArray();
+  return users as User[];
 }
 
 /**
- * Retrieves a single user document by its UID from the in-memory store.
+ * Retrieves a single user document by its UID from the database.
  * @param uid The user's unique ID.
  * @returns A promise that resolves to the User object or undefined if not found.
  */
 export async function getUserById(uid: string): Promise<User | undefined> {
   noStore();
-  const user = users.find(u => u.uid === uid);
-  return user ? JSON.parse(JSON.stringify(user)) : undefined;
+  const usersCollection = await getUsersCollection();
+  const user = await usersCollection.findOne({ uid: uid }, { projection: { _id: 0 } });
+  return user as User | undefined;
 }
 
 /**
- * Updates a user's status in the in-memory store.
+ * Updates a user's status in the database.
  * @param uid The ID of the user to update.
  * @param status The new status for the user.
  */
 export async function updateUserStatus(uid: string, status: 'active' | 'suspended' | 'deactivated'): Promise<void> {
     noStore();
-    const userIndex = users.findIndex(u => u.uid === uid);
-    if (userIndex !== -1) {
-        users[userIndex].status = status;
-        if (status === 'deactivated') {
-          await addReactivationRequest({
-            creatorId: users[userIndex].uid,
-            displayName: users[userIndex].displayName || 'Unknown',
-            email: users[userIndex].email || 'no-email@provided.com',
-            avatar: users[userIndex].avatar,
-          });
-        }
-        console.log(`Updated status for user ${uid} to ${status}`);
-    } else {
-        console.error(`User with UID ${uid} not found.`);
+    const usersCollection = await getUsersCollection();
+    const result = await usersCollection.updateOne({ uid }, { $set: { status } });
+    
+    if (result.matchedCount === 0) {
         throw new Error('User not found.');
+    }
+    
+    if (status === 'deactivated') {
+        const user = await getUserById(uid);
+        if (user) {
+            await addReactivationRequest({
+                creatorId: user.uid,
+                displayName: user.displayName || 'Unknown',
+                email: user.email || 'no-email@provided.com',
+                avatar: user.avatar,
+            });
+        }
     }
 }
 
 /**
- * Updates a user's profile details (like YouTube channel info)
+ * Updates a user's profile details.
  * @param uid The ID of the user to update.
  * @param updates The partial user data to update.
  */
 export async function updateUser(uid: string, updates: Partial<User>): Promise<void> {
     noStore();
-    const userIndex = users.findIndex(u => u.uid === uid);
-    if (userIndex !== -1) {
-        users[userIndex] = { ...users[userIndex], ...updates }; 
-        console.log(`Updated user ${uid} with new data.`);
-    } else {
-         console.error(`User with UID ${uid} not found for update.`);
+    const usersCollection = await getUsersCollection();
+    const result = await usersCollection.updateOne({ uid }, { $set: updates });
+     if (result.matchedCount === 0) {
         throw new Error('User not found.');
     }
 }
@@ -150,11 +84,15 @@ export async function updateUser(uid: string, updates: Partial<User>): Promise<v
  */
 export async function disconnectYoutubeChannel(uid: string): Promise<void> {
     noStore();
-    const userIndex = users.findIndex(u => u.uid === uid);
-    if (userIndex > -1) {
-        users[userIndex].youtubeChannelId = undefined;
-        users[userIndex].platformsConnected = users[userIndex].platformsConnected.filter(p => p !== 'youtube');
-    } else {
+    const usersCollection = await getUsersCollection();
+    const result = await usersCollection.updateOne(
+        { uid },
+        { 
+            $unset: { youtubeChannelId: "" },
+            $pull: { platformsConnected: 'youtube' }
+        }
+    );
+     if (result.matchedCount === 0) {
         throw new Error("User not found for disconnect.");
     }
 }
