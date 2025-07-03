@@ -44,9 +44,7 @@
     "js-cookie": "^3.0.5",
     "jspdf": "^2.5.1",
     "jwt-decode": "^4.0.0",
-    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.475.0",
-    "mongoose": "^8.5.1",
     "next": "15.3.3",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
@@ -62,8 +60,6 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/js-cookie": "^3.0.6",
-    "@types/jsonwebtoken": "^9.0.6",
-    "@types/mongoose": "^5.11.97",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

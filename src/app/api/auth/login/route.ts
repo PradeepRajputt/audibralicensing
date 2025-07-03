@@ -1,13 +1,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 import { getUserByEmail } from '@/lib/users-store';
+import { cookies } from 'next/headers';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-prototype';
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-prototype-at-least-32-chars-long');
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,13 +19,14 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await getUserByEmail(email);
-
+    
+    // Important: Use a generic error message in production for security
     if (!user || !user.password) {
       return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
     }
-
+    
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
+    
     if (!isPasswordValid) {
       return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
     }
@@ -38,7 +40,11 @@ export async function POST(req: NextRequest) {
       avatar: user.avatar,
     };
 
-    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
+    const token = await new SignJWT(tokenPayload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(JWT_SECRET);
 
     const clientUserData = { ...tokenPayload };
 
@@ -49,7 +55,7 @@ export async function POST(req: NextRequest) {
     });
     
     // httpOnly cookie for secure session management
-    response.cookies.set('token', token, {
+    cookies().set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
       sameSite: 'strict',
@@ -58,7 +64,7 @@ export async function POST(req: NextRequest) {
     });
     
     // Client-side cookie for easy access to non-sensitive user data
-    response.cookies.set('user-data', JSON.stringify(clientUserData), {
+    cookies().set('user-data', JSON.stringify(clientUserData), {
       secure: process.env.NODE_ENV !== 'development',
       sameSite: 'strict',
       maxAge: 60 * 60 * 24 * 7, // 1 week

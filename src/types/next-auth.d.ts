@@ -1,1 +1,1 @@
-// This file is no longer needed as NextAuth has been removed.
+// This file is no longer used and can be deleted.

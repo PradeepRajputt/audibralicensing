@@ -1,57 +1,119 @@
 
 'use server';
-import type { User, IUser } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
-import UserModel from '@/models/User';
-import { connectToDatabase } from './db';
 import bcrypt from 'bcryptjs';
 
+// Mock in-memory database for users
+let mockUsers: User[] = [
+    {
+        id: 'user_admin_123',
+        displayName: 'Admin User',
+        email: 'admin@creatorshield.com',
+        password: '', // Will be set below
+        role: 'admin',
+        joinDate: new Date('2024-01-01T10:00:00Z').toISOString(),
+        platformsConnected: [],
+        status: 'active',
+        avatar: 'https://placehold.co/128x128.png?text=AD',
+        legalFullName: 'Admin Istrator',
+        address: '123 Admin Way, Suite 100, Sysville, 90210',
+        phone: '555-123-4567',
+    },
+    {
+        id: 'user_creator_123',
+        displayName: 'Sample Creator',
+        email: 'creator@example.com',
+        password: '', // Will be set below
+        role: 'creator',
+        joinDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+        platformsConnected: ['youtube'],
+        youtubeChannelId: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw', // Google's channel
+        status: 'active',
+        avatar: 'https://placehold.co/128x128.png?text=SC',
+        legalFullName: 'Sample Creator',
+        address: '456 Creator Ave, Content City, 12345',
+        phone: '555-987-6543',
+    },
+    {
+        id: 'user_creator_456',
+        displayName: 'Alice Vlogs',
+        email: 'alice@example.com',
+        password: '', // Will be set below
+        role: 'creator',
+        joinDate: new Date('2024-02-20T10:00:00Z').toISOString(),
+        platformsConnected: ['instagram'],
+        status: 'active',
+        avatar: 'https://placehold.co/128x128.png?text=AV',
+    },
+    {
+        id: 'user_creator_789',
+        displayName: 'Bob Builds',
+        email: 'bob@example.com',
+        password: '', // Will be set below
+        role: 'creator',
+        joinDate: new Date('2024-03-10T10:00:00Z').toISOString(),
+        platformsConnected: [],
+        status: 'suspended',
+        avatar: 'https://placehold.co/128x128.png?text=BB',
+    },
+     {
+        id: 'user_creator_xyz',
+        displayName: 'Deleted User',
+        email: 'deleted@example.com',
+        password: '', // Will be set below
+        role: 'creator',
+        joinDate: new Date('2024-03-15T10:00:00Z').toISOString(),
+        platformsConnected: [],
+        status: 'deactivated',
+        avatar: 'https://placehold.co/128x128.png?text=DU',
+    }
+];
 
-const sanitizeUser = (userDoc: Document | null): User | null => {
-  if (!userDoc) return null;
-  const userObject = userDoc.toObject({ virtuals: true });
-  delete userObject._id;
-  delete userObject.__v;
-  delete userObject.password; // Important: do not send password hash to client
-  return userObject as User;
+// Hash passwords for mock users on startup
+(async () => {
+    for (const user of mockUsers) {
+        if (!user.password) {
+            user.password = await bcrypt.hash('password123', 10);
+        }
+    }
+})();
+
+const sanitizeUser = (user: User): Omit<User, 'password'> => {
+  const { password, ...safeUser } = user;
+  return safeUser;
 };
 
-export async function getAllUsers(): Promise<User[]> {
+export async function getAllUsers(): Promise<Omit<User, 'password'>[]> {
   noStore();
-  await connectToDatabase();
-  const users = await UserModel.find({}).sort({ joinDate: -1 });
-  return users.map(user => sanitizeUser(user)!);
+  return Promise.resolve(mockUsers.map(sanitizeUser));
 }
 
 export async function getUserById(id: string): Promise<User | null> {
   noStore();
   if (!id) return null;
-  await connectToDatabase();
-  const user = await UserModel.findById(id);
-  return sanitizeUser(user);
+  const user = mockUsers.find(u => u.id === id);
+  return Promise.resolve(user ? { ...user } : null);
 }
 
-export async function getUserByEmail(email: string): Promise<IUser | null> {
+export async function getUserByEmail(email: string): Promise<User | null> {
     noStore();
     if (!email) return null;
-    await connectToDatabase();
-    return await UserModel.findOne({ email }).exec();
-}
-
-export async function getUserByDisplayName(displayName: string): Promise<IUser | null> {
-    noStore();
-    if (!displayName) return null;
-    await connectToDatabase();
-    return await UserModel.findOne({ displayName }).exec();
+    const user = mockUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    return Promise.resolve(user ? { ...user } : null);
 }
 
 export async function createUser(data: Pick<User, 'email' | 'displayName' | 'password'> & { role?: User['role'] }) {
     noStore();
-    await connectToDatabase();
+    const existingUser = await getUserByEmail(data.email!);
+    if (existingUser) {
+        throw new Error("User with this email already exists.");
+    }
+    
+    const hashedPassword = await bcrypt.hash(data.password!, 10);
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-
-    const newUser = new UserModel({
+    const newUser: User = {
+        id: `user_new_${Date.now()}`,
         email: data.email,
         displayName: data.displayName,
         password: hashedPassword,
@@ -60,28 +122,21 @@ export async function createUser(data: Pick<User, 'email' | 'displayName' | 'pas
         status: 'active',
         platformsConnected: [],
         avatar: `https://placehold.co/128x128.png?text=${data.displayName?.charAt(0)}`
-    });
+    };
 
-    await newUser.save();
+    mockUsers.unshift(newUser);
     return sanitizeUser(newUser);
 }
 
-export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | '_id'>>): Promise<void> {
+export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 'password'>>): Promise<void> {
     noStore();
-    await connectToDatabase();
-    // Ensure password is not updated directly through this function
-    if (updates.password) {
-        delete updates.password;
-    }
-    const result = await UserModel.findByIdAndUpdate(id, updates);
-     if (!result) {
-        console.warn(`Attempted to update non-existent user with ID: ${id}`);
-    }
+    mockUsers = mockUsers.map(user => 
+        user.id === id ? { ...user, ...updates } : user
+    );
     console.log(`Updated user ${id}.`);
 }
 
 export async function updateUserStatus(id: string, status: User['status']): Promise<void> {
     noStore();
-    await connectToDatabase();
-    await UserModel.findByIdAndUpdate(id, { $set: { status } });
+    await updateUser(id, { status });
 }

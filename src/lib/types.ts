@@ -15,11 +15,6 @@ export interface User {
   phone?: string;
 }
 
-export interface IUser extends Document, Omit<User, 'id'> {
-  // This interface is for Mongoose model and includes MongoDB's _id
-}
-
-
 /**
  * Represents a user's analytics data.
  */

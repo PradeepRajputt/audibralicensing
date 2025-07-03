@@ -46,18 +46,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
 
     // Listen for changes in other tabs
-    window.addEventListener('storage', (e) => {
+    const handleStorageChange = (e: StorageEvent) => {
         if (e.key === 'logout-event') {
             syncLogout();
         }
-    });
+    }
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
-         window.removeEventListener('storage', (e) => {
-            if (e.key === 'logout-event') {
-                syncLogout();
-            }
-        });
+        window.removeEventListener('storage', handleStorageChange);
     }
 
   }, [syncLogout]);

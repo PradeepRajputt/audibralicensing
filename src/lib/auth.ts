@@ -1,2 +1,2 @@
-// This file is no longer needed as NextAuth has been removed.
-// Custom JWT logic is now handled in the API routes and middleware.
+// This file is no longer used and can be deleted.
+// Authentication logic has been moved to /src/app/api/auth routes.
