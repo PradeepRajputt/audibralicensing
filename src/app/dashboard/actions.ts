@@ -1,29 +1,39 @@
 
 'use server';
 
-import { getViolationsForUser } from '@/lib/violations-store';
 import type { UserAnalytics, Violation, User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import { subDays } from 'date-fns';
-import { getUserById, updateUser, disconnectYoutubeChannel } from '@/lib/users-store';
+import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { getSession } from '@/lib/session';
+import axios from 'axios';
+import { getViolationsForUser } from '@/lib/violations-store';
 
 
 /**
  * Fetches dashboard data.
- * NOTE: This function now returns mock data for analytics to avoid YouTube API quota issues during development,
- * but fetches real activity data from the violations store.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
 export async function getDashboardData() {
   noStore();
   
-  // In a real app, you would get this from the session. For the prototype, we use a fixed ID.
-  const userId = "user_creator_123";
+  const session = await getSession();
+  if (!session?.uid) {
+      console.log("No session found, returning null.");
+      return null;
+  }
+  
+  const userId = session.uid;
 
   try {
     const user = await getUserById(userId);
+
+    if (!user) {
+        console.log(`User with id ${userId} not found.`);
+        return null;
+    }
     
     // --- MOCK ANALYTICS SECTION (as a real implementation requires deeper API integration) ---
     const mockAnalytics: UserAnalytics = {
@@ -78,22 +88,37 @@ export async function getDashboardData() {
   }
 }
 
-// Mock YouTube API call
-const mockFetchYoutubeChannelData = async (channelId: string) => {
-    console.log(`MOCK: Verifying YouTube Channel ID: ${channelId}`);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+const fetchYoutubeChannelData = async (channelId: string) => {
+    noStore();
+    console.log(`Verifying YouTube Channel ID: ${channelId}`);
     
-    if (channelId.startsWith("UC") && channelId.length > 10) {
-        return {
-            success: true,
-            channel: {
-                id: channelId,
-                name: `Sample Channel for ${channelId.slice(2, 8)}`,
-                avatar: `https://placehold.co/128x128.png?text=${channelId.slice(2, 4)}`,
-            }
-        };
+    if (!process.env.YOUTUBE_API_KEY) {
+        throw new Error("YouTube API Key is not configured.");
     }
-    return { success: false, message: 'Invalid or unknown YouTube Channel ID.' };
+    
+    const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${process.env.YOUTUBE_API_KEY}`;
+    
+    try {
+        const response = await axios.get(url);
+        if (response.data.items && response.data.items.length > 0) {
+            const channel = response.data.items[0];
+            return {
+                success: true,
+                channel: {
+                    id: channel.id,
+                    name: channel.snippet.title,
+                    avatar: channel.snippet.thumbnails.default.url,
+                }
+            };
+        }
+        return { success: false, message: 'Invalid or unknown YouTube Channel ID.' };
+    } catch (error: any) {
+        console.error("Error fetching from YouTube API: ", error.response?.data?.error);
+        if (error.response?.data?.error?.message) {
+             return { success: false, message: error.response.data.error.message };
+        }
+        return { success: false, message: 'Failed to communicate with YouTube API.' };
+    }
 };
 
 const verifyChannelFormSchema = z.object({
@@ -104,8 +129,11 @@ export async function verifyYoutubeChannel(
   prevState: any,
   formData: FormData
 ) {
-  // In a real app, this would come from the session.
-  const userId = "user_creator_123";
+  const session = await getSession();
+  if (!session?.uid) {
+      return { success: false, message: "Authentication required." };
+  }
+  const userId = session.uid;
 
   const validatedFields = verifyChannelFormSchema.safeParse({
     channelId: formData.get("channelId"),
@@ -121,7 +149,7 @@ export async function verifyYoutubeChannel(
   const { channelId } = validatedFields.data;
 
   try {
-    const youtubeResponse = await mockFetchYoutubeChannelData(channelId);
+    const youtubeResponse = await fetchYoutubeChannelData(channelId);
 
     if (!youtubeResponse.success) {
       return { success: false, message: youtubeResponse.message };
@@ -131,12 +159,12 @@ export async function verifyYoutubeChannel(
 
     await updateUser(userId, { 
       youtubeChannelId: channel.id,
-      displayName: channel.name, // Usually you get this from Google OAuth, but we'll use the channel name
+      displayName: channel.name,
       avatar: channel.avatar,
       platformsConnected: ['youtube'],
     });
 
-    revalidatePath('/dashboard', 'layout'); // Revalidate the whole dashboard layout
+    revalidatePath('/dashboard', 'layout');
     
     return { success: true, message: "YouTube channel connected successfully!", channel };
 
@@ -147,9 +175,16 @@ export async function verifyYoutubeChannel(
 }
 
 export async function disconnectYoutubeChannelAction() {
-    const userId = "user_creator_123";
+    const session = await getSession();
+    if (!session?.uid) {
+        return { success: false, message: "Authentication required." };
+    }
+
     try {
-        await disconnectYoutubeChannel(userId);
+        await updateUser(session.uid, {
+            youtubeChannelId: undefined,
+            platformsConnected: [] // Assuming only one platform for now
+        });
         revalidatePath('/dashboard', 'layout');
         return { success: true, message: 'YouTube channel disconnected.' };
     } catch (error) {

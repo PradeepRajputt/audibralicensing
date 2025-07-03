@@ -1,10 +1,13 @@
 
+import type { ObjectId } from 'mongodb';
+
 /**
- * Represents a user in the `users` collection in Firestore.
+ * Represents a user in the `users` collection in MongoDB.
  * Path: /users/{uid}
  */
 export interface User {
-  uid: string;
+  _id?: ObjectId;
+  uid: string; // Firebase Auth UID
   displayName: string | null;
   email: string | null;
   role: 'creator' | 'admin';
