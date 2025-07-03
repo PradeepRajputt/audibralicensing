@@ -3,8 +3,7 @@
 
 import * as React from 'react';
 import * as THREE from 'three';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Center, Text3D } from '@react-three/drei';
+import { Canvas, useFrame } from '@react-three/fiber';
 
 function Shield() {
   const meshRef = React.useRef<THREE.Mesh>(null!);
