@@ -16,6 +16,7 @@ async function init() {
     db = client.db();
     users = db.collection<User>('users');
   } catch (error) {
+    console.error("Database connection failed:", error);
     throw new Error('Failed to connect to the database.');
   }
 }
@@ -27,7 +28,7 @@ async function init() {
 export async function getAllUsers(): Promise<User[]> {
   noStore();
   if (!users) await init();
-  return await users.find({}).toArray();
+  return await users.find({ role: 'creator' }).toArray();
 }
 
 export async function getUserById(uid: string): Promise<User | null> {
