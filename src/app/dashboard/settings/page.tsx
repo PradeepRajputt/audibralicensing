@@ -1,11 +1,10 @@
 
 import SettingsClientPage from './settings-client-page';
-import { getUserById } from '@/lib/users-store';
 import { unstable_noStore as noStore } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
-export default async function SettingsPage() {
+export default function SettingsPage() {
   noStore();
   
   // This page now relies on the client-side UserProvider,

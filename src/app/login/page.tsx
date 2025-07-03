@@ -2,13 +2,22 @@
 'use client';
 
 import * as React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Shield, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { FaceAuth } from '@/components/face-auth';
 import { useUser } from '@/context/user-context';
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,14 +33,19 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
 
-  const handleLogin = async (faceDescriptor: Float32Array) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsLoading(true);
 
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
-      const res = await fetch('/api/auth/login-face', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ faceDescriptor: Array.from(faceDescriptor) }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
@@ -45,7 +59,7 @@ export default function LoginPage() {
         description: 'Welcome back! Redirecting you to your dashboard...',
       });
 
-      // Let the cookie take effect, then refresh to trigger middleware and context update
+      // Refresh the page to allow the UserProvider to pick up the new cookie
       window.location.href = data.user.role === 'admin' ? '/admin' : '/dashboard';
       
     } catch (err) {
@@ -59,7 +73,8 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
+  
+  // This screen will show a loader until we know if a user is already logged in
   if (isUserLoading || user) {
     return (
         <div className="flex h-screen w-full items-center justify-center">
@@ -73,21 +88,30 @@ export default function LoginPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader className="text-center">
             <Shield className="mx-auto h-12 w-12 text-primary" />
-          <CardTitle className="text-2xl mt-4">Login with Face ID</CardTitle>
+          <CardTitle className="text-2xl mt-4">Login</CardTitle>
           <CardDescription>
-             Use your registered face to securely log in to your account.
+             Enter your credentials to access your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <FaceAuth 
-                mode="login"
-                onSuccess={handleLogin}
-                isDisabled={isLoading}
-            />
+            <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input id="password" name="password" type="password" required />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Login
+                </Button>
+            </form>
            <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
             <Link href="/register" className="underline">
-              Register with Face ID
+              Sign up
             </Link>
           </div>
         </CardContent>
@@ -95,3 +119,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

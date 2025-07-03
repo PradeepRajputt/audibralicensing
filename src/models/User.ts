@@ -7,16 +7,16 @@ export interface IUser extends Document, Omit<User, 'id'> {}
 const UserSchema: Schema = new Schema({
   displayName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
   role: { type: String, enum: ['creator', 'admin'], default: 'creator' },
   joinDate: { type: String, default: () => new Date().toISOString() },
   platformsConnected: { type: [String], default: [] },
-  youtubeChannelId: { type: String, optional: true },
+  youtubeChannelId: { type: String },
   status: { type: String, enum: ['active', 'suspended', 'deactivated'], default: 'active' },
-  avatar: { type: String, optional: true },
-  legalFullName: { type: String, optional: true },
-  address: { type: String, optional: true },
-  phone: { type: String, optional: true },
-  faceDescriptor: { type: [Number], required: true },
+  avatar: { type: String },
+  legalFullName: { type: String },
+  address: { type: String },
+  phone: { type: String },
 });
 
 

@@ -25,15 +25,15 @@ function AuthButtons() {
         <>
             {user ? (
                 <Button asChild>
-                    <Link href={user.role === 'admin' ? '/admin/users' : '/dashboard/overview'}>Go to Dashboard</Link>
+                    <Link href={user.role === 'admin' ? '/admin' : '/dashboard'}>Go to Dashboard</Link>
                 </Button>
             ) : (
                 <>
                 <Button variant="outline" asChild>
-                    <Link href="/login">Login with Face ID</Link>
+                    <Link href="/login">Login</Link>
                 </Button>
                 <Button asChild>
-                    <Link href="/register">Register with Face ID</Link>
+                    <Link href="/register">Sign Up</Link>
                 </Button>
                 </>
             )}

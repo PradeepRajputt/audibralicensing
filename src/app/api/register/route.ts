@@ -1,2 +1,2 @@
-// This file is no longer used and will be deleted.
-// Authentication is now handled by /api/auth/register-face
+// This file is no longer used.
+// Custom JWT authentication is now handled in /api/auth/login and /api/auth/register.

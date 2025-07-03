@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-prototype');
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get('token')?.value;
@@ -24,21 +24,22 @@ export async function middleware(req: NextRequest) {
     const userRole = payload.role as 'creator' | 'admin';
 
     if (isAuthRoute) {
-        const redirectUrl = userRole === 'admin' ? '/admin/users' : '/dashboard/overview';
+        const redirectUrl = userRole === 'admin' ? '/admin' : '/dashboard';
         return NextResponse.redirect(new URL(redirectUrl, req.url));
     }
 
     if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard/overview', req.url));
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
 
     if (pathname.startsWith('/dashboard') && userRole === 'admin') {
-      return NextResponse.redirect(new URL('/admin/users', req.url));
+      return NextResponse.redirect(new URL('/admin', req.url));
     }
     
     return NextResponse.next();
 
   } catch (err) {
+    // If token is invalid, redirect to login
     const response = NextResponse.redirect(new URL('/login', req.url));
     if (isProtectedRoute) {
         // Clear invalid tokens

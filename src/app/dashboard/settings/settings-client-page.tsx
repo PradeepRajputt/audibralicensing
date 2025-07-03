@@ -2,9 +2,9 @@
 'use client';
 
 import * as React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Youtube, Loader2, Trash2 } from "lucide-react";
+import { Youtube, Loader2, Trash2, LogOut } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ import { useUser } from "@/context/user-context";
 
 export default function SettingsClientPage() {
     const router = useRouter();
-    const { user, isLoading: isUserLoading } = useUser();
+    const { user, isLoading: isUserLoading, logout } = useUser();
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     
@@ -30,9 +30,8 @@ export default function SettingsClientPage() {
         const result = await disconnectYoutubeChannelAction();
         if (result.success) {
             toast({ title: "Platform Disconnected", description: result.message });
-            // In a real app, the user context should update automatically.
-            // For now, we'll refresh the page to get the new state.
-            router.refresh();
+            // For this prototype, we'll just refresh to get updated user context
+            window.location.reload();
         } else {
             toast({ variant: 'destructive', title: "Action Failed", description: result.message });
         }
@@ -51,7 +50,7 @@ export default function SettingsClientPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Your profile information is linked to your connected accounts.</CardDescription>
+                <CardDescription>Your profile is managed through your connected social accounts.</CardDescription>
             </CardHeader>
              <CardContent>
                 <div className="flex items-center gap-6">
@@ -86,7 +85,7 @@ export default function SettingsClientPage() {
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {isUserLoading ? <Skeleton className="h-4 w-40 mt-1" /> : connectedChannel ? (
+                            {isUserLoading ? <Skeleton className="h-4 w-40 mt-1" /> : channelConnected ? (
                                 <p className="text-sm text-muted-foreground">
                                     Connected as: {user.displayName}
                                 </p>
@@ -97,7 +96,7 @@ export default function SettingsClientPage() {
                             )}
                         </div>
                     </div>
-                    {isUserLoading ? <Skeleton className="h-10 w-28" /> : connectedChannel ? (
+                    {isUserLoading ? <Skeleton className="h-10 w-28" /> : channelConnected ? (
                          <div className="flex items-center gap-4">
                              <Avatar>
                                  <AvatarImage src={user.avatar} data-ai-hint="channel icon" />
@@ -118,6 +117,27 @@ export default function SettingsClientPage() {
         </Card>
 
         <ThemeSettings />
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Security</CardTitle>
+                <CardDescription>Manage your account security settings.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="font-medium">Sign Out</h3>
+                        <p className="text-sm text-muted-foreground">Sign out of your account on this device.</p>
+                    </div>
+                    <Button variant="outline" onClick={logout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+
     </div>
   )
 }
+

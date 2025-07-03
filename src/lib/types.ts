@@ -1,9 +1,9 @@
 
-
 export interface User {
   id: string; 
   displayName: string | null;
   email: string | null;
+  password?: string; // Should not be sent to client, but needed for creation
   role: 'creator' | 'admin';
   joinDate: string; 
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
@@ -13,7 +13,6 @@ export interface User {
   legalFullName?: string;
   address?: string;
   phone?: string;
-  faceDescriptor: number[];
 }
 
 export interface IUser extends Document, Omit<User, 'id'> {

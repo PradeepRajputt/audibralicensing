@@ -2,28 +2,30 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeSettings } from '@/components/settings/theme-settings';
+import { useUser } from '@/context/user-context';
 
 
-const profileFormSchema = z.object({
-  displayName: z.string().min(2, { message: "Display name must be at least 2 characters." }),
-  email: z.string().email(),
-});
+// This form is no longer needed as admin profile is not editable
+// const profileFormSchema = z.object({
+//   displayName: z.string().min(2, { message: "Display name must be at least 2 characters." }),
+//   email: z.string().email(),
+// });
 
 const platformSettingsFormSchema = z.object({
   allowRegistrations: z.boolean().default(true),
@@ -37,21 +39,8 @@ const platformSettingsFormSchema = z.object({
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
+    const { user, logout } = useUser();
     const [isLoading, setIsLoading] = useState(false);
-
-    // State for profile settings
-    const [avatarUrl, setAvatarUrl] = useState("https://placehold.co/128x128.png");
-    const [isUploading, setIsUploading] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // Form for profile information
-    const profileForm = useForm<z.infer<typeof profileFormSchema>>({
-        resolver: zodResolver(profileFormSchema),
-        defaultValues: {
-            displayName: "Admin User",
-            email: "admin@creatorshield.com",
-        },
-    });
 
     // Form for platform settings
     const platformForm = useForm<z.infer<typeof platformSettingsFormSchema>>({
@@ -66,43 +55,6 @@ export default function AdminSettingsPage() {
         },
     });
     
-    // --- Profile Handlers ---
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setAvatarUrl(URL.createObjectURL(file));
-        }
-    };
-
-    const handleUpload = () => {
-        setIsUploading(true);
-        setTimeout(() => {
-            toast({
-                title: "Picture Updated",
-                description: "Your new profile picture has been saved (simulated).",
-            });
-            setIsUploading(false);
-        }, 1500);
-    }
-
-    function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
-        console.log("Updating admin profile:", values);
-        toast({
-            title: "Profile Updated",
-            description: "Your profile information has been saved.",
-        });
-    }
-
-    function onPasswordChangeClick() {
-        toast({
-            title: "Forgot Password",
-            description: "In a real app, a password reset email would be sent.",
-        });
-    }
-
-    // --- Platform Settings Handler ---
-
     function onPlatformSubmit(data: z.infer<typeof platformSettingsFormSchema>) {
         setIsLoading(true);
         console.log("Simulating saving platform settings:", data);
@@ -131,86 +83,33 @@ export default function AdminSettingsPage() {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Profile Picture</CardTitle>
-                    <CardDescription>Update your profile picture.</CardDescription>
+                    <CardTitle>Admin Information</CardTitle>
+                    <CardDescription>Your admin profile information.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center gap-6">
                         <Avatar className="w-24 h-24">
-                            <AvatarImage src={avatarUrl} alt="Admin Avatar" data-ai-hint="profile picture" />
-                            <AvatarFallback>AD</AvatarFallback>
+                            <AvatarImage src={user?.avatar ?? undefined} alt="Admin Avatar" data-ai-hint="profile picture" />
+                            <AvatarFallback>{user?.displayName?.substring(0,2) || 'AD'}</AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col gap-2">
-                             <Input 
-                                id="picture" 
-                                type="file" 
-                                ref={fileInputRef} 
-                                className="hidden" 
-                                onChange={handleFileChange}
-                                accept="image/png, image/jpeg"
-                            />
-                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Picture</Button>
-                            <Button onClick={handleUpload} disabled={avatarUrl.startsWith('https://placehold.co') || isUploading}>
-                                {isUploading ? 'Uploading...' : 'Update Picture'}
-                            </Button>
+                        <div className="space-y-2">
+                            <div className="space-y-1">
+                                <Label>Display Name</Label>
+                                <Input value={user?.displayName || 'Admin'} disabled className="max-w-xs" />
+                            </div>
+                            <div className="space-y-1">
+                                <Label>Email</Label>
+                                <Input value={user?.email || ''} disabled className="max-w-xs" />
+                            </div>
                         </div>
                     </div>
                 </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Profile Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Form {...profileForm}>
-                        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                            <FormField
-                                control={profileForm.control}
-                                name="displayName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Display Name</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Your Name" {...field} className="max-w-xs" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={profileForm.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input type="email" {...field} disabled className="max-w-xs" />
-                                        </FormControl>
-                                        <FormDescription>Your email address cannot be changed.</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="submit">Update Profile</Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-            
-             <Card>
-                <CardHeader>
-                    <CardTitle>Security</CardTitle>
-                </CardHeader>
-                <CardContent>
-                     <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="font-medium">Password</h3>
-                            <p className="text-sm text-muted-foreground">Change your account password.</p>
-                        </div>
-                        <Button variant="outline" onClick={onPasswordChangeClick}>Change Password</Button>
-                    </div>
-                </CardContent>
+                 <CardFooter>
+                      <Button variant="outline" onClick={logout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                    </Button>
+                 </CardFooter>
             </Card>
             
             <ThemeSettings />
