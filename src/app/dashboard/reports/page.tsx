@@ -31,6 +31,7 @@ import jsPDF from 'jspdf';
 import { getAllContentForUser } from "@/lib/content-store";
 import { getViolationsForUser } from "@/lib/violations-store";
 import { useSearchParams, useRouter } from "next/navigation";
+import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -443,7 +444,7 @@ Sincerely,
                     <TableCell>
                         <Badge variant={getStatusVariant(report.status)}>{getStatusText(report.status)}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">{new Date(report.submitted).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right"><ClientFormattedDate dateString={report.submitted} /></TableCell>
                     </TableRow>
                 ))}
                 </TableBody>

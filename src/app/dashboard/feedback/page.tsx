@@ -31,6 +31,7 @@ import { submitFeedbackAction, markAsReadAction } from './actions';
 import { getFeedbackForUser } from '@/lib/feedback-store';
 import type { Feedback } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 const feedbackFormSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -208,7 +209,7 @@ export default function FeedbackPage() {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h3 className="font-semibold">{item.title}</h3>
-                                    <p className="text-sm text-muted-foreground">{new Date(item.timestamp).toLocaleDateString()}</p>
+                                    <p className="text-sm text-muted-foreground"><ClientFormattedDate dateString={item.timestamp} /></p>
                                 </div>
                                 <StarRating rating={item.rating} readOnly />
                             </div>

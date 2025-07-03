@@ -10,23 +10,7 @@ import { ArrowLeft, Check, X, Loader2, User, Calendar, Link as LinkIcon, FileTex
 import Link from 'next/link';
 import type { Report } from '@/lib/types';
 import { approveStrikeRequest, denyStrikeRequest } from '../actions';
-
-// Client-side component to prevent hydration mismatch for dates.
-const ClientSideDate = ({ dateString }: { dateString: string }) => {
-    const [formattedDate, setFormattedDate] = useState<string | null>(null);
-
-    useEffect(() => {
-        // This effect runs only on the client, after the initial render.
-        setFormattedDate(new Date(dateString).toLocaleString());
-    }, [dateString]);
-    
-    // Return null during server-side rendering and initial client-side render
-    if (!formattedDate) {
-        return null;
-    }
-
-    return <>{formattedDate}</>;
-}
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 
 export default function StrikeDetailsClientPage({ initialStrike }: { initialStrike: Report | undefined }) {
@@ -142,7 +126,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                 <div>
                     <p className="text-sm text-muted-foreground">Submission Date</p>
                     <p className="font-medium">
-                      <ClientSideDate dateString={strike.submitted} />
+                      <ClientFormattedDate dateString={strike.submitted} options={{ year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' }} />
                     </p>
                 </div>
             </div>

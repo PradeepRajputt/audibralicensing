@@ -37,6 +37,7 @@ import { getAllFeedback } from '@/lib/feedback-store';
 import { replyToFeedbackAction } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 export default function AdminFeedbackPage() {
   const [feedbackList, setFeedbackList] = React.useState<Feedback[]>([]);
@@ -153,7 +154,7 @@ export default function AdminFeedbackPage() {
                       {getStatus(item)}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {new Date(item.timestamp).toLocaleDateString()}
+                      <ClientFormattedDate dateString={item.timestamp} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -206,7 +207,7 @@ export default function AdminFeedbackPage() {
                 <div className="space-y-3">
                   {selectedFeedback.response.map((reply: FeedbackReply) => (
                     <div key={reply.replyId} className="text-xs text-muted-foreground border-l-2 pl-3">
-                        <p className="font-semibold text-foreground">{reply.adminName} replied on {new Date(reply.timestamp).toLocaleDateString()}</p>
+                        <p className="font-semibold text-foreground">{reply.adminName} replied on <ClientFormattedDate dateString={reply.timestamp} /></p>
                         <p className="whitespace-pre-wrap">{reply.message}</p>
                     </div>
                   ))}

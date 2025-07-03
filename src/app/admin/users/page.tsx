@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Badge } from '@/components/ui/badge';
 import { getAllUsers } from '@/lib/users-store';
 import type { User } from '@/lib/types';
+import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 
 // This is now a Server Component
 export default async function UserManagementPage() {
@@ -61,7 +62,7 @@ export default async function UserManagementPage() {
                   </div>
                 </TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>{new Date(user.joinDate).toLocaleDateString()}</TableCell>
+                <TableCell><ClientFormattedDate dateString={user.joinDate} /></TableCell>
                 <TableCell>
                   <Badge variant={statusInfo.variant}>
                      {statusInfo.text}

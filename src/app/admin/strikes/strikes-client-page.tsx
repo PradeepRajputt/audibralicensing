@@ -11,24 +11,7 @@ import { Check, X, Loader2, Eye } from "lucide-react";
 import Link from 'next/link';
 import type { Report } from '@/lib/types';
 import { approveStrikeRequest, denyStrikeRequest } from './actions';
-
-// A small component to safely render dates on the client to avoid hydration mismatch
-const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
-    const [formattedDate, setFormattedDate] = useState<string | null>(null);
-
-    useEffect(() => {
-        // This will only run on the client, after the initial render.
-        setFormattedDate(new Date(dateString).toLocaleDateString());
-    }, [dateString]);
-    
-    // Return null during server-side rendering and initial client-side render
-    if (!formattedDate) {
-        return null;
-    }
-    
-    return <>{formattedDate}</>;
-};
-
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 export function StrikesClientPage({ initialStrikes }: { initialStrikes: Report[] }) {
   const { toast } = useToast();

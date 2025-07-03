@@ -2,10 +2,13 @@
 'use server';
 
 import { getViolationsForUser } from '@/lib/violations-store';
-import type { UserAnalytics, Violation } from '@/lib/types';
+import type { UserAnalytics, Violation, User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import { subDays } from 'date-fns';
-import { getUserById } from '@/lib/users-store';
+import { getUserById, updateUser, disconnectYoutubeChannel } from '@/lib/users-store';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+
 
 /**
  * Fetches dashboard data.
@@ -17,7 +20,7 @@ export async function getDashboardData() {
   noStore();
   
   // In a real app, you would get this from the session. For the prototype, we use a fixed ID.
-  const userId = 'user_creator_123';
+  const userId = "user_creator_123";
 
   try {
     const user = await getUserById(userId);
@@ -73,4 +76,83 @@ export async function getDashboardData() {
     console.error("Error fetching dashboard data:", error);
     return null;
   }
+}
+
+// Mock YouTube API call
+const mockFetchYoutubeChannelData = async (channelId: string) => {
+    console.log(`MOCK: Verifying YouTube Channel ID: ${channelId}`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    if (channelId.startsWith("UC") && channelId.length > 10) {
+        return {
+            success: true,
+            channel: {
+                id: channelId,
+                name: `Sample Channel for ${channelId.slice(2, 8)}`,
+                avatar: `https://placehold.co/128x128.png?text=${channelId.slice(2, 4)}`,
+            }
+        };
+    }
+    return { success: false, message: 'Invalid or unknown YouTube Channel ID.' };
+};
+
+const verifyChannelFormSchema = z.object({
+  channelId: z.string().min(5, { message: "Please enter a valid Channel ID." }),
+});
+
+export async function verifyYoutubeChannel(
+  prevState: any,
+  formData: FormData
+) {
+  // In a real app, this would come from the session.
+  const userId = "user_creator_123";
+
+  const validatedFields = verifyChannelFormSchema.safeParse({
+    channelId: formData.get("channelId"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      message: validatedFields.error.flatten().fieldErrors.channelId?.join(', '),
+    };
+  }
+  
+  const { channelId } = validatedFields.data;
+
+  try {
+    const youtubeResponse = await mockFetchYoutubeChannelData(channelId);
+
+    if (!youtubeResponse.success) {
+      return { success: false, message: youtubeResponse.message };
+    }
+
+    const { channel } = youtubeResponse;
+
+    await updateUser(userId, { 
+      youtubeChannelId: channel.id,
+      displayName: channel.name, // Usually you get this from Google OAuth, but we'll use the channel name
+      avatar: channel.avatar,
+      platformsConnected: ['youtube'],
+    });
+
+    revalidatePath('/dashboard', 'layout'); // Revalidate the whole dashboard layout
+    
+    return { success: true, message: "YouTube channel connected successfully!", channel };
+
+  } catch (error) {
+    console.error("Error verifying youtube channel:", error);
+    return { success: false, message: "An unexpected error occurred." };
+  }
+}
+
+export async function disconnectYoutubeChannelAction() {
+    const userId = "user_creator_123";
+    try {
+        await disconnectYoutubeChannel(userId);
+        revalidatePath('/dashboard', 'layout');
+        return { success: true, message: 'YouTube channel disconnected.' };
+    } catch (error) {
+        return { success: false, message: 'Failed to disconnect channel.'}
+    }
 }

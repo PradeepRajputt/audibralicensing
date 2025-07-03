@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { suspendCreator, liftSuspension, deactivateCreator } from './actions';
 import type { User } from '@/lib/types';
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 
 const platformIcons = {
@@ -123,7 +124,7 @@ export default function DetailsClientPage({ initialUser, userId }: { initialUser
             <Separator />
             <div className="flex justify-between">
               <span className="text-muted-foreground">Join Date</span>
-              <span>{new Date(user.joinDate).toLocaleDateString()}</span>
+              <span><ClientFormattedDate dateString={user.joinDate} /></span>
             </div>
           </CardContent>
         </Card>
