@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getUserByEmail } from '@/lib/users-store';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-prototype';
 
 export async function POST(req: NextRequest) {

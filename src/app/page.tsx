@@ -1,113 +1,76 @@
 
-'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, User, UserCog } from 'lucide-react';
+import { ShieldCheck, BarChart, Gavel } from 'lucide-react';
 import Link from 'next/link';
-import * as React from 'react';
-import { useUser } from '@/context/user-context';
-
-
-function AuthButtons() {
-    const { user, isLoading } = useUser();
-
-    if (isLoading) {
-        return (
-            <div className="flex items-center gap-2">
-                <Skeleton className="h-10 w-20" />
-                <Skeleton className="h-10 w-24" />
-            </div>
-        )
-    }
-
-    return(
-        <>
-            {user ? (
-                <Button asChild>
-                    <Link href={user.role === 'admin' ? '/admin' : '/dashboard'}>Go to Dashboard</Link>
-                </Button>
-            ) : (
-                <>
-                <Button variant="outline" asChild>
-                    <Link href="/login">Login</Link>
-                </Button>
-                <Button asChild>
-                    <Link href="/register">Sign Up</Link>
-                </Button>
-                </>
-            )}
-        </>
-    );
-}
-
+import { Header } from '@/components/layout/header';
 
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <header className="p-4 md:p-6 border-b">
-        <div className="container mx-auto flex items-center gap-4">
-          <Shield className="w-8 h-8 text-primary" />
-          <h1 className="text-2xl font-bold text-primary">CreatorShield</h1>
-           <nav className="ml-auto flex items-center gap-2">
-             <AuthButtons />
-          </nav>
-        </div>
-      </header>
-      <main className="flex-1 flex items-center justify-center">
-        <div className="container mx-auto text-center px-4">
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-            Protect Your Digital Content
-          </h2>
-          <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-12">
-            CreatorShield is your all-in-one platform for content protection, analytics, and copyright management.
-          </p>
-          
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Link href="/dashboard" className="group">
-                  <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
-                      <CardHeader>
-                          <div className="flex justify-center mb-4">
-                              <div className="p-4 bg-accent/10 rounded-full">
-                                  <User className="w-12 h-12 text-accent" />
-                              </div>
-                          </div>
-                          <CardTitle className="text-center">Creator Dashboard</CardTitle>
-                          <CardDescription className="text-center pt-2">
-                              For content creators. Access your analytics, monitor your content, and manage copyright claims.
-                          </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <Button className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors" variant="outline">
-                              Go to Creator Dashboard
-                          </Button>
-                      </CardContent>
-                  </Card>
-              </Link>
-              <Link href="/admin" className="group">
-                  <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
-                      <CardHeader>
-                          <div className="flex justify-center mb-4">
-                              <div className="p-4 bg-accent/10 rounded-full">
-                                  <UserCog className="w-12 h-12 text-accent" />
-                              </div>
-                          </div>
-                          <CardTitle className="text-center">Admin Dashboard</CardTitle>
-                          <CardDescription className="text-center pt-2">
-                              For platform administrators. Manage users, review copyright strikes, and oversee the platform.
-                          </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <Button className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors" variant="outline">
-                              Go to Admin Dashboard
-                          </Button>
-                      </CardContent>
-                  </Card>
-              </Link>
+      <Header />
+      <main className="flex-1">
+        <section className="w-full py-20 md:py-32 lg:py-40 bg-gradient-to-b from-background to-muted/50">
+          <div className="container mx-auto text-center px-4">
+            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+              Protect Your Digital Content, Effortlessly.
+            </h1>
+            <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-12">
+              CreatorShield is your all-in-one AI-powered platform for content protection, analytics, and copyright management. Focus on creating, we'll handle the rest.
+            </p>
+            <Button asChild size="lg">
+              <Link href="/dashboard">Get Started Now</Link>
+            </Button>
           </div>
-        </div>
+        </section>
+
+        <section id="features" className="w-full py-20 md:py-24 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold">Why Choose CreatorShield?</h2>
+              <p className="max-w-2xl mx-auto mt-4 text-muted-foreground">
+                We're not just another tool. We're your partner in protecting the content you work so hard to create. We understand the frustration of seeing your work stolen, and we're here to give you peace of mind.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <Card className="transform hover:-translate-y-2 transition-transform duration-300 shadow-lg hover:shadow-primary/20">
+                <CardHeader className="items-center text-center">
+                  <div className="p-4 bg-primary/10 rounded-full w-fit">
+                    <ShieldCheck className="w-10 h-10 text-primary" />
+                  </div>
+                  <CardTitle className="mt-4">Automated Protection</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center text-muted-foreground">
+                  Our AI scans the web 24/7, finding and flagging potential infringements of your video, audio, and text content across multiple platforms.
+                </CardContent>
+              </Card>
+              <Card className="transform hover:-translate-y-2 transition-transform duration-300 shadow-lg hover:shadow-primary/20">
+                <CardHeader className="items-center text-center">
+                  <div className="p-4 bg-primary/10 rounded-full w-fit">
+                    <BarChart className="w-10 h-10 text-primary" />
+                  </div>
+                  <CardTitle className="mt-4">Insightful Analytics</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center text-muted-foreground">
+                  Connect your YouTube channel to get real-time analytics on your content's performance, helping you understand your audience and grow your brand.
+                </CardContent>
+              </Card>
+              <Card className="transform hover:-translate-y-2 transition-transform duration-300 shadow-lg hover:shadow-primary/20">
+                <CardHeader className="items-center text-center">
+                  <div className="p-4 bg-primary/10 rounded-full w-fit">
+                    <Gavel className="w-10 h-10 text-primary" />
+                  </div>
+                  <CardTitle className="mt-4">Simplified Takedowns</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center text-muted-foreground">
+                  We streamline the DMCA takedown process. Generate and submit pre-filled copyright strike notices with just a few clicks.
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="p-4 md:p-6 border-t mt-16">
+      <footer className="p-4 md:p-6 border-t">
         <div className="container mx-auto text-center text-sm text-muted-foreground">
           &copy; {new Date().getFullYear()} CreatorShield. All Rights Reserved.
         </div>

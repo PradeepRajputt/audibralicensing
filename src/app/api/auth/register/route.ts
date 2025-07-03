@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createUser, getUserByEmail } from '@/lib/users-store';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const registerSchema = z.object({
   displayName: z.string().min(3, 'Display name must be at least 3 characters.'),
   email: z.string().email('Invalid email address.'),
