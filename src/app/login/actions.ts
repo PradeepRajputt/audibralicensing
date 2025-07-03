@@ -44,7 +44,7 @@ export async function loginAction(prevState: any, formData: FormData) {
   }
   
   if (user.role === 'admin') {
-     redirect('/admin');
+     redirect('/admin/users');
   }
   redirect('/dashboard/overview');
 }

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -16,9 +15,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const menuItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart },
   { href: '/admin/users', label: 'Creator Management', icon: Users },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart },
   { href: '/admin/strikes', label: 'Strike Requests', icon: Gavel },
   { href: '/admin/reactivations', label: 'Reactivation Requests', icon: UserCheck },
   { href: '/admin/feedback', label: 'Creator Feedback', icon: MessageSquareQuote },
@@ -44,7 +42,7 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
             >
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname.startsWith(item.href)}
                 tooltip={item.label}
               >
                 <Link href={item.href}>
