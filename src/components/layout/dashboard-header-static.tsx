@@ -18,7 +18,7 @@ export function DashboardHeaderStatic({ user }: { user: User | undefined }) {
             {isLoading ? <Skeleton className="h-9 w-9 rounded-full" /> : (
                 <Avatar className="h-9 w-9">
                     <AvatarImage src={user.avatar} alt={user.displayName ?? ''} data-ai-hint="profile picture" />
-                    <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{user.displayName?.charAt(0) ?? 'C'}</AvatarFallback>
                 </Avatar>
             )}
         </div>
