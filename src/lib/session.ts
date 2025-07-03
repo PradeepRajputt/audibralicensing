@@ -38,6 +38,7 @@ export async function decrypt(session: string | undefined = '') {
 
 export async function createSession(user: User) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Only include serializable, necessary data in the session
   const sessionPayload = {
     uid: user.uid,
     email: user.email,

@@ -36,6 +36,7 @@ export async function loginAction(prevState: any, formData: FormData) {
       return { success: false, message: 'Invalid email or password.' };
     }
     
+    // The user object is already sanitized by the store function
     await createSession(user);
 
   } catch (error) {

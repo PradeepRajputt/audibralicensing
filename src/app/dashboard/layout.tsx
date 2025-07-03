@@ -25,14 +25,10 @@ export default async function DashboardLayout({
   
   const userId = session.uid;
   
-  const [hasUnread, dbUser] = await Promise.all([
+  const [hasUnread, user] = await Promise.all([
     hasUnreadCreatorFeedback(userId),
-    getUserById(userId),
+    getUserById(userId), // This now returns a sanitized user object
   ]);
-
-  // Sanitize the user object to be a plain object before passing to client components.
-  // This prevents errors with non-serializable data types like MongoDB's ObjectId.
-  const user = dbUser ? JSON.parse(JSON.stringify(dbUser)) as User : undefined;
 
   const channelConnected = !!user?.youtubeChannelId;
 

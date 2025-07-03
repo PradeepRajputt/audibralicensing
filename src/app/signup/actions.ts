@@ -2,7 +2,6 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { createSession } from '@/lib/session'
 import { getUserByEmail, createUser } from '@/lib/users-store'
 import { z } from 'zod'
 

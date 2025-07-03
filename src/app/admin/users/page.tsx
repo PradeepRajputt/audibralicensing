@@ -12,10 +12,8 @@ import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 
 // This is now a Server Component
 export default async function UserManagementPage() {
-  // Fetch data directly on the server
-  const dbUsers = await getAllUsers();
-  // Sanitize data for client component consumption
-  const users = JSON.parse(JSON.stringify(dbUsers)) as User[];
+  // Fetch sanitized data directly on the server
+  const users = await getAllUsers();
   
   const getStatusInfo = (status: User['status']) => {
     switch (status) {

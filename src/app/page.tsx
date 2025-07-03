@@ -52,7 +52,7 @@ export default function Home() {
                       </CardContent>
                   </Card>
               </Link>
-              <Link href="/admin" className="group">
+              <Link href="/admin/users" className="group">
                   <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
                       <CardHeader>
                           <div className="flex justify-center mb-4">
