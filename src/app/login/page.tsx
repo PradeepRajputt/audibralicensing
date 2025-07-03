@@ -3,23 +3,29 @@
 
 import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Camera } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { FaceAuth } from '@/components/face-auth';
-import { Button } from '@/components/ui/button';
+import { useUser } from '@/context/user-context';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, isLoading: isUserLoading } = useUser();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [isAuthStarted, setIsAuthStarted] = React.useState(false);
+
+  React.useEffect(() => {
+    if(!isUserLoading && user) {
+        const destination = user.role === 'admin' ? '/admin' : '/dashboard';
+        router.push(destination);
+    }
+  }, [user, isUserLoading, router]);
+
 
   const handleLogin = async (faceDescriptor: Float32Array) => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const res = await fetch('/api/auth/login-face', {
@@ -34,25 +40,33 @@ export default function LoginPage() {
         throw new Error(data.message || 'Authentication failed.');
       }
       
-      const { user } = data;
-      const destination = user.role === 'admin' ? '/admin' : '/dashboard';
-      
-      router.push(destination);
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back! Redirecting you to your dashboard...',
+      });
+
+      // Let the cookie take effect, then refresh to trigger middleware and context update
+      window.location.href = data.user.role === 'admin' ? '/admin' : '/dashboard';
       
     } catch (err) {
-        const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
-        setError(message);
+        const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
         toast({
           variant: 'destructive',
           title: 'Login Failed',
           description: message,
-        })
-        // Allow user to try again
-        setIsAuthStarted(false);
+        });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isUserLoading || user) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -61,32 +75,15 @@ export default function LoginPage() {
             <Shield className="mx-auto h-12 w-12 text-primary" />
           <CardTitle className="text-2xl mt-4">Login with Face ID</CardTitle>
           <CardDescription>
-            {isAuthStarted ? "Position your face in the camera to log in." : "Click below to start facial recognition."}
+             Use your registered face to securely log in to your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-             {isAuthStarted ? (
-                <FaceAuth 
-                    mode="login"
-                    onSuccess={handleLogin}
-                    isDisabled={isLoading}
-                />
-             ) : (
-                <div className="flex flex-col items-center gap-4">
-                    <Button onClick={() => setIsAuthStarted(true)} className="w-full">
-                        <Camera className="mr-2 h-4 w-4" />
-                        Start Face Scan
-                    </Button>
-                </div>
-             )}
-
-            {error && (
-                <div className="text-sm font-medium text-destructive text-center pt-2">
-                    {error}
-                </div>
-            )}
-          </div>
+            <FaceAuth 
+                mode="login"
+                onSuccess={handleLogin}
+                isDisabled={isLoading}
+            />
            <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
             <Link href="/register" className="underline">

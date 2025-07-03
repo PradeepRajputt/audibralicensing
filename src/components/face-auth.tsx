@@ -8,7 +8,8 @@ import { Loader2, Camera, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
-const MODEL_URL = 'https://unpkg.com/face-api.js@0.22.2/weights';
+// Load models from the local public directory for reliability
+const MODEL_URL = '/models'; 
 const BLINK_THRESHOLD = 0.25;
 
 interface FaceAuthProps {
@@ -18,9 +19,9 @@ interface FaceAuthProps {
 }
 
 export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
-  const [loading, setLoading] = React.useState<'models' | 'scanning' | 'processing' | null>('models');
-  const [statusText, setStatusText] = React.useState('Loading models...');
-  const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean>(true);
+  const [loading, setLoading] = React.useState<'models' | 'scanning' | 'processing' | null>(null);
+  const [statusText, setStatusText] = React.useState('Click the button to start the camera.');
+  const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
   
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -28,7 +29,8 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
   const detectionIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  const loadModels = React.useCallback(async () => {
+  const loadModelsAndStart = React.useCallback(async () => {
+    setLoading('models');
     setStatusText('Loading models...');
     try {
       await Promise.all([
@@ -37,47 +39,38 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
         faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
       ]);
       setStatusText('Please grant camera access.');
-      return true;
-    } catch (error) {
-      console.error("Error loading models: ", error);
-      setStatusText("Failed to load AI models.");
-      toast({ variant: "destructive", title: "Model Load Error", description: "Could not load face recognition models. Please refresh the page." });
-      return false;
-    }
-  }, [toast]);
-
-  const startVideo = React.useCallback(async () => {
-    try {
+      
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         setHasCameraPermission(true);
-        setStatusText("Position your face in the center.");
+        setStatusText("Position your face in the center and click Scan.");
         setLoading(null);
       }
     } catch (err) {
-      console.error("Camera access denied:", err);
+      console.error("Error loading models or starting camera: ", err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setStatusText("Error initializing camera or models.");
+      toast({ 
+        variant: "destructive", 
+        title: "Initialization Error", 
+        description: `Could not load models or access camera. Please ensure you have a webcam and the model files are present. Error: ${errorMessage}`
+      });
       setHasCameraPermission(false);
-      setStatusText("Camera access is required.");
       setLoading(null);
-      toast({ variant: 'destructive', title: "Camera Access Denied", description: "Please enable camera permissions in your browser settings." });
     }
   }, [toast]);
+  
 
   React.useEffect(() => {
-    loadModels().then(success => {
-        if (success) {
-            startVideo();
-        }
-    });
-
+    // Cleanup function to stop camera when component unmounts
     return () => {
         if(detectionIntervalRef.current) clearInterval(detectionIntervalRef.current);
         if(blinkTimeoutRef.current) clearTimeout(blinkTimeoutRef.current);
         const stream = videoRef.current?.srcObject as MediaStream;
         stream?.getTracks().forEach(track => track.stop());
     }
-  }, [loadModels, startVideo]);
+  }, []);
 
   const getEyeAspectRatio = (landmarks: faceapi.Point[]) => {
     const d = (p1: faceapi.Point, p2: faceapi.Point) => Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
@@ -133,19 +126,34 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
                             setStatusText("Capture failed. Please blink again.");
                             setLoading(null);
                         }
-                     }, 500); // Give time for a clear image after blink
+                     }, 500);
                 }
             }
         } else if (detections.length > 1) {
             setStatusText("Multiple faces detected. Please ensure only one person is visible.");
         } else {
-             setStatusText("Position your face in the center.");
+             setStatusText("Position your face in the center and blink.");
         }
     }, 200);
   }
 
   const actionText = mode === 'register' ? 'Start Registration' : 'Login with Face';
   const loadingText = loading === 'models' ? 'Loading Models...' : loading ? 'Verifying...' : actionText;
+
+  if (hasCameraPermission === null) {
+     return (
+        <div className="flex flex-col items-center gap-4">
+             <div className="relative w-full max-w-xs aspect-square border-2 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                 <Camera className="w-16 h-16 text-muted-foreground" />
+             </div>
+             <p className="text-sm text-muted-foreground h-5">{statusText}</p>
+             <Button onClick={loadModelsAndStart} disabled={!!loading || isDisabled}>
+                 {loading === 'models' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+                 Start Camera
+            </Button>
+        </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -160,7 +168,7 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
 
         <Button onClick={handleScan} disabled={!hasCameraPermission || !!loading || isDisabled}>
             {loading === 'scanning' || loading === 'processing' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (mode === 'register' ? <UserCheck className="mr-2 h-4 w-4" /> : <Camera className="mr-2 h-4 w-4" />)}
-            {loadingText}
+            {loading === 'scanning' || loading === 'processing' ? 'Scanning...' : 'Scan Face & ' + (mode === 'register' ? 'Register' : 'Login')}
         </Button>
     </div>
   );
