@@ -15,10 +15,13 @@ export default async function DashboardLayout({
   noStore();
   // In a real app, this would be from the session. For the prototype, we use a fixed ID.
   const userId = "user_creator_123";
-  const [hasUnread, user] = await Promise.all([
+  const [hasUnread, dbUser] = await Promise.all([
     hasUnreadCreatorFeedback(userId),
     getUserById(userId),
   ]);
+
+  // Convert MongoDB document to a plain JSON-serializable object
+  const user = dbUser ? JSON.parse(JSON.stringify(dbUser)) : undefined;
 
   const channelConnected = !!user?.youtubeChannelId;
 

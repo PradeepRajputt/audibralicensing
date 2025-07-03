@@ -2,11 +2,15 @@
 import { getReportById } from '@/lib/reports-store';
 import { getUserById } from '@/lib/users-store';
 import ConsentFormClient from './consent-form-client';
+import type { Report, User } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function YouTubeConsentPage({ params }: { params: { strikeId: string } }) {
-  const report = await getReportById(params.strikeId);
+  // Although reports are from a mock store now, it's good practice to serialize
+  const reportData = await getReportById(params.strikeId);
+  const report = reportData ? JSON.parse(JSON.stringify(reportData)) as Report : undefined;
+
 
   if (!report || report.platform !== 'youtube') {
     return (
@@ -17,7 +21,8 @@ export default async function YouTubeConsentPage({ params }: { params: { strikeI
     )
   }
 
-  const creator = await getUserById(report.creatorId);
+  const creatorData = await getUserById(report.creatorId);
+  const creator = creatorData ? JSON.parse(JSON.stringify(creatorData)) as User : undefined;
 
   if (!creator) {
      return (
@@ -30,4 +35,3 @@ export default async function YouTubeConsentPage({ params }: { params: { strikeI
   
   return <ConsentFormClient report={report} creator={creator} />;
 }
-

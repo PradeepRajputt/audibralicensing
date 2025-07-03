@@ -13,7 +13,9 @@ import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 // This is now a Server Component
 export default async function UserManagementPage() {
   // Fetch data directly on the server
-  const users = await getAllUsers();
+  const dbUsers = await getAllUsers();
+  // Sanitize data for client component consumption
+  const users = JSON.parse(JSON.stringify(dbUsers));
   
   const getStatusInfo = (status: User['status']) => {
     switch (status) {
@@ -48,7 +50,7 @@ export default async function UserManagementPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => {
+            {users.map((user: User) => {
               const statusInfo = getStatusInfo(user.status);
               return (
               <TableRow key={user.uid}>
