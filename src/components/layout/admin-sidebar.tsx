@@ -13,6 +13,7 @@ import {
 import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useUser } from '@/context/user-context';
 
 const menuItems = [
   { href: '/admin/users', label: 'Creator Management', icon: Users },
@@ -24,6 +25,7 @@ const menuItems = [
 
 export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
   const pathname = usePathname();
+  const { logout } = useUser();
 
   return (
     <Sidebar>
@@ -72,11 +74,12 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
             <SidebarMenuButton
               asChild
               tooltip="Logout"
+              onClick={logout}
             >
-              <Link href="/">
+              <button>
                 <LogOut />
                 <span>Logout</span>
-              </Link>
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

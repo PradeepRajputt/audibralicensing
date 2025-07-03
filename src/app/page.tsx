@@ -1,14 +1,48 @@
 
-
+'use client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Shield, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
-import { auth } from '@/lib/auth';
+import * as React from 'react';
+import { useUser, UserProvider } from '@/context/user-context';
 
-export default async function Home() {
-  const session = await auth();
 
+function AuthButtons() {
+    const { user, isLoading } = useUser();
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-10 w-20" />
+                <Skeleton className="h-10 w-24" />
+            </div>
+        )
+    }
+
+    return(
+        <>
+            {user ? (
+                <Button asChild>
+                    <Link href={user.role === 'admin' ? '/admin/users' : '/dashboard/overview'}>Go to Dashboard</Link>
+                </Button>
+            ) : (
+                <>
+                <Button variant="outline" asChild>
+                    <Link href="/login">Login</Link>
+                </Button>
+                <Button asChild>
+                    <Link href="/signup">Sign Up</Link>
+                </Button>
+                </>
+            )}
+        </>
+    );
+}
+
+
+function HomePageContent() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="p-4 md:p-6 border-b">
@@ -16,20 +50,7 @@ export default async function Home() {
           <Shield className="w-8 h-8 text-primary" />
           <h1 className="text-2xl font-bold text-primary">CreatorShield</h1>
            <nav className="ml-auto flex items-center gap-2">
-             {session?.user ? (
-               <Button asChild>
-                  <Link href="/dashboard">Go to Dashboard</Link>
-                </Button>
-             ) : (
-                <>
-                  <Button variant="outline" asChild>
-                      <Link href="/login">Login</Link>
-                  </Button>
-                  <Button asChild>
-                      <Link href="/signup">Sign Up</Link>
-                  </Button>
-                </>
-             )}
+             <AuthButtons />
           </nav>
         </div>
       </header>
@@ -93,4 +114,12 @@ export default async function Home() {
       </footer>
     </div>
   );
+}
+
+export default function Home() {
+    return (
+        <UserProvider>
+            <HomePageContent />
+        </UserProvider>
+    );
 }

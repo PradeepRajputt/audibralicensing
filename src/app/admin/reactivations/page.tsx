@@ -1,12 +1,23 @@
 
+'use client';
+
+import * as React from 'react';
 import { getAllReactivationRequests } from '@/lib/reactivations-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReactivationRequestsClient } from './reactivation-requests-client';
 import type { ReactivationRequest } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
-export default async function ReactivationRequestsPage() {
-  const rawRequests = await getAllReactivationRequests();
-  const requests = JSON.parse(JSON.stringify(rawRequests)) as ReactivationRequest[];
+export default function ReactivationRequestsPage() {
+  const [requests, setRequests] = React.useState<ReactivationRequest[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    getAllReactivationRequests().then(rawRequests => {
+      setRequests(JSON.parse(JSON.stringify(rawRequests)));
+      setIsLoading(false);
+    });
+  }, []);
 
   return (
     <Card>
@@ -17,7 +28,13 @@ export default async function ReactivationRequestsPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ReactivationRequestsClient initialRequests={requests} />
+        {isLoading ? (
+          <div className="flex justify-center items-center h-48">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <ReactivationRequestsClient initialRequests={requests} />
+        )}
       </CardContent>
     </Card>
   );

@@ -1,17 +1,29 @@
 
+'use client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { getAllContentForUser } from '@/lib/content-store';
 import { ContentClientPage } from './content-client';
 import type { ProtectedContent } from '@/lib/types';
+import { useEffect, useState } from "react";
+import { useUser } from "@/context/user-context";
 
-export default async function ProtectedContentPage() {
-  // In a real app, you would get the authenticated user's ID
-  const userId = "user_creator_123";
-  const rawContent = await getAllContentForUser(userId);
-  const content = JSON.parse(JSON.stringify(rawContent)) as ProtectedContent[];
+export default function ProtectedContentPage() {
+  const { user } = useUser();
+  const [content, setContent] = useState<ProtectedContent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (user?.id) {
+        getAllContentForUser(user.id).then(data => {
+            setContent(JSON.parse(JSON.stringify(data)));
+            setIsLoading(false);
+        });
+    }
+  }, [user]);
+
 
   return (
     <div className="space-y-6">
@@ -29,8 +41,14 @@ export default async function ProtectedContentPage() {
             </Link>
         </Button>
       </div>
-
-      <ContentClientPage initialContent={content} />
+        
+        {isLoading ? (
+            <div className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        ) : (
+            <ContentClientPage initialContent={content} />
+        )}
     </div>
   );
 }

@@ -1,19 +1,29 @@
 
+'use client';
+
+import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from '@/components/ui/badge';
 import { getAllUsers } from '@/lib/users-store';
 import type { User } from '@/lib/types';
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 
-// This is now a Server Component
-export default async function UserManagementPage() {
-  // Fetch sanitized data directly on the server
-  const users = await getAllUsers();
+// This is now a Client Component
+export default function UserManagementPage() {
+  const [users, setUsers] = React.useState<User[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    getAllUsers().then(data => {
+      setUsers(data);
+      setIsLoading(false);
+    });
+  }, []);
   
   const getStatusInfo = (status: User['status']) => {
     switch (status) {
@@ -26,6 +36,14 @@ export default async function UserManagementPage() {
       default:
         return { variant: 'outline', text: 'Unknown' };
     }
+  }
+  
+  if (isLoading) {
+    return (
+        <div className="flex items-center justify-center h-full py-10">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+    )
   }
 
   return (

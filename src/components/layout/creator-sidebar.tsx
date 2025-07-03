@@ -11,11 +11,13 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '../ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Activity, MessageSquareHeart } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import NextLink from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
+import { useUser } from '@/context/user-context';
+import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
+import React from 'react';
 
 const menuItems = [
   { href: '/dashboard/overview', label: 'Overview', icon: Home },
@@ -28,13 +30,42 @@ const menuItems = [
   { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
 
-export function CreatorSidebar({ hasUnreadFeedback, channelConnected }: { hasUnreadFeedback: boolean, channelConnected: boolean }) {
+export function CreatorSidebar() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const user = session?.user;
-  const isLoading = status === 'loading';
-  const creatorName = user?.name ?? 'Creator';
-  const creatorImage = user?.image;
+  const { user, isLoading, logout } = useUser();
+  const [hasUnread, setHasUnread] = React.useState(false);
+  const router = useRouter();
+
+  const channelConnected = !!user?.youtubeChannelId;
+  const creatorName = user?.displayName ?? 'Creator';
+  const creatorImage = user?.avatar;
+  
+  React.useEffect(() => {
+    if (user?.id) {
+        hasUnreadCreatorFeedback(user.id).then(setHasUnread);
+    }
+  }, [user?.id]);
+  
+   React.useEffect(() => {
+    if (!isLoading && !user) {
+        router.push('/login');
+    }
+  }, [isLoading, user, router]);
+  
+  // This redirect is now handled by middleware, but kept as a client-side safeguard
+   React.useEffect(() => {
+    const allowedPathsWithoutConnection = [
+      '/dashboard/connect-platform',
+      '/dashboard/settings',
+      '/dashboard/feedback',
+      '/dashboard/overview', // Let's allow overview
+      '/dashboard/activity',
+    ];
+
+    if (!isLoading && user && !channelConnected && !allowedPathsWithoutConnection.some(p => pathname.startsWith(p))) {
+        router.push('/dashboard/connect-platform');
+    }
+  }, [isLoading, user, channelConnected, pathname, router]);
 
   return (
     <Sidebar>
@@ -70,7 +101,7 @@ export function CreatorSidebar({ hasUnreadFeedback, channelConnected }: { hasUnr
             return (
               <SidebarMenuItem 
                 key={item.href}
-                notification={item.href === '/dashboard/feedback' ? hasUnreadFeedback : false}
+                notification={item.href === '/dashboard/feedback' ? hasUnread : false}
               >
                 <SidebarMenuButton
                   asChild
@@ -106,9 +137,9 @@ export function CreatorSidebar({ hasUnreadFeedback, channelConnected }: { hasUnr
             <SidebarMenuButton
               asChild
               tooltip="Logout"
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={logout}
             >
-              <button>
+              <button type="button">
                 <LogOut />
                 <span>Logout</span>
               </button>

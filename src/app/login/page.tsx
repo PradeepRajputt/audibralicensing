@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Loader2, LogIn } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,24 +36,29 @@ export default function LoginPage() {
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+    const email = formData.get('email');
+    const password = formData.get('password');
 
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (result?.error) {
-        setError('Invalid email or password.');
-      } else if (result?.ok) {
-        // Redirection is handled by middleware after successful sign-in
-        router.push('/dashboard'); 
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'An error occurred.');
       }
+      
+      const { user } = data;
+      const destination = user.role === 'admin' ? '/admin/users' : '/dashboard/overview';
+      router.push(destination);
+      
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+        const message = err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.';
+        setError(message);
     } finally {
       setIsLoading(false);
     }

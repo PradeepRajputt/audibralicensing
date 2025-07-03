@@ -5,12 +5,10 @@ import * as React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '../ui/skeleton';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@/context/user-context';
 
 export function DashboardHeader() {
-  const { data: session, status } = useSession();
-  const user = session?.user;
-  const isLoading = status === 'loading';
+  const { user, isLoading } = useUser();
   const title = user?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard';
 
   return (
@@ -21,8 +19,8 @@ export function DashboardHeader() {
             {isLoading ? <Skeleton className="h-9 w-9 rounded-full" /> : (
               user && (
                 <Avatar className="h-9 w-9">
-                    <AvatarImage src={user.image ?? undefined} alt={user.name ?? ''} data-ai-hint="profile picture" />
-                    <AvatarFallback>{user.name?.charAt(0) ?? 'U'}</AvatarFallback>
+                    <AvatarImage src={user.avatar ?? undefined} alt={user.displayName ?? ''} data-ai-hint="profile picture" />
+                    <AvatarFallback>{user.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
                 </Avatar>
               )
             )}

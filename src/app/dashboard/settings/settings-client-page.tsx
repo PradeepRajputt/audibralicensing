@@ -2,59 +2,36 @@
 'use client';
 
 import * as React from "react";
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Youtube, Loader2, Trash2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { disconnectYoutubeChannelAction } from '@/app/dashboard/actions';
 import { useRouter } from "next/navigation";
-import type { User } from '@/lib/types';
 import { ThemeSettings } from "@/components/settings/theme-settings";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { useUser } from "@/context/user-context";
 
-
-type ConnectedChannel = {
-  id: string;
-  name: string;
-  avatar: string;
-}
-
-export default function SettingsClientPage({ initialUser }: { initialUser: User | undefined }) {
+export default function SettingsClientPage() {
     const router = useRouter();
-    const [user, setUser] = React.useState(initialUser);
-    const [connectedChannel, setConnectedChannel] = React.useState<ConnectedChannel | null>(null);
+    const { user, isLoading: isUserLoading } = useUser();
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     
-    const isLoading = !user;
+    const channelConnected = !!user?.youtubeChannelId;
 
-    // Effect to initialize the connected channel from user prop
-    React.useEffect(() => {
-        if (user?.youtubeChannelId && user?.displayName) {
-             setConnectedChannel({
-                id: user.youtubeChannelId,
-                name: user.displayName,
-                avatar: user.avatar || '',
-             });
-        } else {
-          setConnectedChannel(null);
-        }
-    }, [user]);
-    
     const handleDisconnect = async () => {
         setIsActionLoading(true);
         const result = await disconnectYoutubeChannelAction();
         if (result.success) {
             toast({ title: "Platform Disconnected", description: result.message });
-            setConnectedChannel(null);
+            // In a real app, the user context should update automatically.
+            // For now, we'll refresh the page to get the new state.
             router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Action Failed", description: result.message });
@@ -78,20 +55,20 @@ export default function SettingsClientPage({ initialUser }: { initialUser: User 
             </CardHeader>
              <CardContent>
                 <div className="flex items-center gap-6">
-                    {isLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
+                    {isUserLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                       <Avatar className="w-24 h-24">
-                        <AvatarImage src={user?.avatar} alt={user?.displayName ?? ''} data-ai-hint="profile picture" />
+                        <AvatarImage src={user?.avatar ?? undefined} alt={user?.displayName ?? ''} data-ai-hint="profile picture" />
                         <AvatarFallback>{user?.displayName?.substring(0, 2) ?? 'C'}</AvatarFallback>
                       </Avatar>
                     )}
                     <div className="space-y-2">
                          <div className="space-y-1">
                             <Label>Display Name</Label>
-                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.displayName || ''} disabled className="max-w-xs" />}
+                            {isUserLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.displayName || ''} disabled className="max-w-xs" />}
                         </div>
                          <div className="space-y-1">
                             <Label>Email</Label>
-                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
+                            {isUserLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
                         </div>
                     </div>
                 </div>
@@ -109,9 +86,9 @@ export default function SettingsClientPage({ initialUser }: { initialUser: User 
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {connectedChannel ? (
+                            {isUserLoading ? <Skeleton className="h-4 w-40 mt-1" /> : connectedChannel ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Connected as: {connectedChannel.name}
+                                    Connected as: {user.displayName}
                                 </p>
                             ) : (
                                 <p className="text-sm text-muted-foreground">
@@ -120,11 +97,11 @@ export default function SettingsClientPage({ initialUser }: { initialUser: User 
                             )}
                         </div>
                     </div>
-                    {connectedChannel ? (
+                    {isUserLoading ? <Skeleton className="h-10 w-28" /> : connectedChannel ? (
                          <div className="flex items-center gap-4">
                              <Avatar>
-                                 <AvatarImage src={connectedChannel.avatar} data-ai-hint="channel icon" />
-                                 <AvatarFallback>{connectedChannel.name.charAt(0)}</AvatarFallback>
+                                 <AvatarImage src={user.avatar} data-ai-hint="channel icon" />
+                                 <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
                              </Avatar>
                              <Button variant="destructive" onClick={handleDisconnect} disabled={isActionLoading}>
                                  {isActionLoading && <Loader2 className="mr-2 animate-spin" />}

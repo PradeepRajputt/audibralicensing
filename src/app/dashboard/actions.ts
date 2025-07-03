@@ -7,11 +7,11 @@ import { subDays } from 'date-fns';
 import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { getSession } from '@/lib/session';
-import axios from 'axios';
-import { getViolationsForUser } from '@/lib/violations-store';
+import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 import { redirect } from 'next/navigation';
-
+import { getViolationsForUser } from '@/lib/violations-store';
+import { DecodedJWT } from '@/lib/types';
 
 /**
  * Fetches dashboard data.
@@ -20,13 +20,21 @@ import { redirect } from 'next/navigation';
 export async function getDashboardData() {
   noStore();
   
-  const session = await getSession();
-  if (!session?.uid) {
-      console.log("No session found, returning null.");
-      return null;
+  const token = cookies().get('token')?.value;
+  if (!token) {
+    console.log("No session found, returning null.");
+    return null;
   }
   
-  const userId = session.uid;
+  let decoded: DecodedJWT;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedJWT;
+  } catch (error) {
+    console.error("Invalid token:", error);
+    return null;
+  }
+
+  const userId = decoded.id;
 
   try {
     const dbUser = await getUserById(userId);
@@ -35,8 +43,6 @@ export async function getDashboardData() {
         console.log(`User with id ${userId} not found.`);
         return null;
     }
-
-    const user = JSON.parse(JSON.stringify(dbUser)) as User;
     
     // --- MOCK ANALYTICS SECTION (as a real implementation requires deeper API integration) ---
     const mockAnalytics: UserAnalytics = {
@@ -81,48 +87,15 @@ export async function getDashboardData() {
     });
 
     return { 
-      analytics: user?.youtubeChannelId ? mockAnalytics : null, 
+      analytics: dbUser.youtubeChannelId ? mockAnalytics : null, 
       activity: activity, 
-      user: user,
+      user: dbUser,
     };
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     return null;
   }
 }
-
-const fetchYoutubeChannelData = async (channelId: string) => {
-    noStore();
-    console.log(`Verifying YouTube Channel ID: ${channelId}`);
-    
-    if (!process.env.YOUTUBE_API_KEY) {
-        throw new Error("YouTube API Key is not configured.");
-    }
-    
-    const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${process.env.YOUTUBE_API_KEY}`;
-    
-    try {
-        const response = await axios.get(url);
-        if (response.data.items && response.data.items.length > 0) {
-            const channel = response.data.items[0];
-            return {
-                success: true,
-                channel: {
-                    id: channel.id,
-                    name: channel.snippet.title,
-                    avatar: channel.snippet.thumbnails.default.url,
-                }
-            };
-        }
-        return { success: false, message: 'Invalid or unknown YouTube Channel ID.' };
-    } catch (error: any) {
-        console.error("Error fetching from YouTube API: ", error.response?.data?.error);
-        if (error.response?.data?.error?.message) {
-             return { success: false, message: error.response.data.error.message };
-        }
-        return { success: false, message: 'Failed to communicate with YouTube API.' };
-    }
-};
 
 const verifyChannelFormSchema = z.object({
   channelId: z.string().min(5, { message: "Please enter a valid Channel ID." }),
@@ -132,11 +105,17 @@ export async function verifyYoutubeChannel(
   prevState: any,
   formData: FormData
 ) {
-  const session = await getSession();
-  if (!session?.uid) {
-      return { success: false, message: "Authentication required." };
+  const token = cookies().get('token')?.value;
+  if (!token) return { success: false, message: 'Authentication required.' };
+  
+  let decoded: DecodedJWT;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedJWT;
+  } catch (e) {
+    return { success: false, message: 'Authentication required.' };
   }
-  const userId = session.uid;
+
+  const userId = decoded.id;
 
   const validatedFields = verifyChannelFormSchema.safeParse({
     channelId: formData.get("channelId"),
@@ -152,18 +131,27 @@ export async function verifyYoutubeChannel(
   const { channelId } = validatedFields.data;
 
   try {
-    const youtubeResponse = await fetchYoutubeChannelData(channelId);
+    // In a real app, this would be a call to the YouTube API.
+    // For this prototype, we'll just mock a successful response.
+    const youtubeResponse = {
+        success: true,
+        channel: {
+            id: channelId,
+            name: "Sample YouTube Channel",
+            avatar: "https://placehold.co/128x128/E62117/white?text=YT",
+        }
+    };
 
     if (!youtubeResponse.success) {
-      return { success: false, message: youtubeResponse.message };
+      return { success: false, message: "Could not verify channel." };
     }
 
     const { channel } = youtubeResponse;
 
     await updateUser(userId, { 
       youtubeChannelId: channel.id,
-      displayName: channel.name,
-      avatar: channel.avatar,
+      displayName: channel.name, // Usually you might not want to override this
+      avatar: channel.avatar, // Or this
       platformsConnected: ['youtube'],
     });
 
@@ -174,17 +162,22 @@ export async function verifyYoutubeChannel(
     return { success: false, message: "An unexpected error occurred." };
   }
 
-  redirect('/dashboard');
+  redirect('/dashboard/analytics');
 }
 
 export async function disconnectYoutubeChannelAction() {
-    const session = await getSession();
-    if (!session?.uid) {
-        return { success: false, message: "Authentication required." };
-    }
+    const token = cookies().get('token')?.value;
+    if (!token) return { success: false, message: 'Authentication required.' };
 
+    let decoded: DecodedJWT;
     try {
-        await updateUser(session.uid, {
+        decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedJWT;
+    } catch (e) {
+        return { success: false, message: 'Authentication required.' };
+    }
+    
+    try {
+        await updateUser(decoded.id, {
             youtubeChannelId: undefined,
             platformsConnected: [] // Assuming only one platform for now
         });

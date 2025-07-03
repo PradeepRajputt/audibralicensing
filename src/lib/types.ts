@@ -1,18 +1,13 @@
 
-import type { ObjectId } from 'mongodb';
-
-/**
- * Represents a user in the `users` collection in MongoDB.
- * Path: /users/{uid}
- */
 export interface User {
-  _id?: ObjectId;
-  uid: string; // Unique identifier for the user
+  _id?: string;
+  id?: string;
+  uid: string;
   displayName: string | null;
   email: string | null;
-  passwordHash?: string; // This should be a hash, not plaintext
+  password?: string; 
   role: 'creator' | 'admin';
-  joinDate: string; // Using ISO string
+  joinDate: string; 
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
   youtubeChannelId?: string;
   status: 'active' | 'suspended' | 'deactivated';
@@ -144,3 +139,13 @@ export type DashboardData = {
   activity: any[];
   user: User | undefined;
 } | null;
+
+export interface DecodedJWT {
+    id: string;
+    email: string;
+    displayName: string;
+    role: 'creator' | 'admin';
+    avatar?: string;
+    iat: number;
+    exp: number;
+}

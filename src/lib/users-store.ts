@@ -1,95 +1,73 @@
 
 'use server';
-
-import type { User } from '@/lib/types';
+import type { User, IUser } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
-import clientPromise from './mongodb';
-import { Collection, ObjectId } from 'mongodb';
-import { randomUUID } from 'crypto';
+import UserModel from '@/models/User';
+import { connectToDatabase } from './db';
+import { hashPassword } from './password';
 
-
-const DB_NAME = "creator_shield_db";
-const USERS_COLLECTION = "users";
-
-async function getUsersCollection(): Promise<Collection<User>> {
-    const client = await clientPromise;
-    const db = client.db(DB_NAME);
-    return db.collection<User>(USERS_COLLECTION);
-}
-
-// Helper to sanitize MongoDB documents to plain objects to prevent serialization errors
-// when passing data from Server Components to Client Components.
-const sanitizeUser = (user: any): User | null => {
-  if (!user) return null;
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  const { _id, passwordHash, ...rest } = user as any; // Explicitly remove passwordHash
+const sanitizeUser = (userDoc: IUser | null): User | null => {
+  if (!userDoc) return null;
+  const userObject = userDoc.toObject({ virtuals: true });
+  delete userObject.password;
+  delete userObject._id;
+  delete userObject.__v;
   return {
-    ...rest,
-    uid: rest.uid.toString(), // Ensure uid is a string
+      ...userObject,
+      uid: userObject.id.toString(),
   };
 };
 
-
 export async function getAllUsers(): Promise<User[]> {
   noStore();
-  const usersCollection = await getUsersCollection();
-  const usersArray = await usersCollection.find({ role: 'creator' }).sort({ joinDate: -1 }).toArray();
-  return usersArray.map(user => sanitizeUser(user)!);
+  await connectToDatabase();
+  const users = await UserModel.find({ role: 'creator' }).sort({ joinDate: -1 });
+  return users.map(user => sanitizeUser(user)!);
 }
 
-export async function getUserById(uid: string): Promise<User | null> {
+export async function getUserById(id: string): Promise<User | null> {
   noStore();
-  if (!uid) return null;
-  const users = await getUsersCollection();
-  const user = await users.findOne({ uid });
-  // This function is used by client pages, so we sanitize
+  if (!id) return null;
+  await connectToDatabase();
+  const user = await UserModel.findById(id);
   return sanitizeUser(user);
 }
 
-export async function getUserByEmail(email: string): Promise<(User & { _id?: ObjectId}) | null> {
+export async function getUserByEmail(email: string): Promise<IUser | null> {
     noStore();
     if (!email) return null;
-    const users = await getUsersCollection();
-    const user = await users.findOne({ email });
-    // This function is used by the auth system server-side, so we return the raw object with passwordHash
+    await connectToDatabase();
+    const user = await UserModel.findOne({ email });
+    // IMPORTANT: This returns the Mongoose document with the password hash
     return user;
 }
 
-export async function createUser(data: {
-    email: string;
-    displayName: string;
-    role: 'creator' | 'admin';
-    passwordHash: string; // This is a security risk for prototype only.
-}) {
+export async function createUser(data: { displayName: string; email: string; passwordHash: string; role: 'creator' | 'admin' }) {
     noStore();
-    const users = await getUsersCollection();
-    
-    const newUser: Omit<User, '_id'> = {
-        uid: randomUUID(),
-        email: data.email,
+    await connectToDatabase();
+
+    const hashedPassword = await hashPassword(data.passwordHash);
+
+    const newUser = new UserModel({
         displayName: data.displayName,
+        email: data.email,
+        password: hashedPassword,
         role: data.role,
-        passwordHash: data.passwordHash,
         joinDate: new Date().toISOString(),
         status: 'active',
         platformsConnected: [],
         avatar: `https://placehold.co/128x128.png?text=${data.displayName.charAt(0)}`
-    }
-    
-    const result = await users.insertOne(newUser as User);
-    if (!result.insertedId) {
-        throw new Error("Failed to create user.");
-    }
+    });
 
-    const createdUser = await users.findOne({ uid: newUser.uid });
-    return sanitizeUser(createdUser);
+    await newUser.save();
+    return sanitizeUser(newUser);
 }
 
 export async function updateUser(uid: string, updates: Partial<Omit<User, 'uid' | '_id'>>): Promise<void> {
     noStore();
-    const users = await getUsersCollection();
-    const result = await users.updateOne({ uid }, { $set: updates });
-    if (result.matchedCount === 0) {
+    await connectToDatabase();
+    const result = await UserModel.findByIdAndUpdate(uid, updates);
+     if (!result) {
         console.warn(`Attempted to update non-existent user with UID: ${uid}`);
     }
     console.log(`Updated user ${uid}.`);
@@ -97,6 +75,6 @@ export async function updateUser(uid: string, updates: Partial<Omit<User, 'uid' 
 
 export async function updateUserStatus(uid: string, status: User['status']): Promise<void> {
     noStore();
-    const users = await getUsersCollection();
-    await users.updateOne({ uid }, { $set: { status } });
+    await connectToDatabase();
+    await UserModel.findByIdAndUpdate(uid, { $set: { status } });
 }

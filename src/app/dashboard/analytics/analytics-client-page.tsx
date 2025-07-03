@@ -1,19 +1,24 @@
 
+
 'use client';
 
 import * as React from 'react';
 import { format, subDays, startOfWeek, startOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Users, Eye, Video, Palette } from 'lucide-react';
-
+import { Users, Eye, Video, Palette, LogIn, Youtube } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useDashboardData } from '../dashboard-context';
+import { useUser } from '@/context/user-context';
+import { getDashboardData } from '../actions';
+import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+import type { DashboardData } from '@/lib/types';
+
 
 type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
@@ -48,8 +53,62 @@ function ColorPicker({ color, setColor }: { color: string, setColor: (color: str
     );
 }
 
+function AnalyticsLoadingSkeleton() {
+    return (
+        <div className="space-y-6 animate-pulse">
+            <div className="flex justify-end">
+                <Skeleton className="h-10 w-[300px]" />
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+            </div>
+            <div className="grid gap-6 lg:grid-cols-2">
+                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+            </div>
+        </div>
+    )
+}
+
+function ConnectYoutubePlaceholder() {
+    return (
+        <Card className="text-center w-full max-w-lg mx-auto">
+          <CardHeader>
+              <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                <Youtube className="w-12 h-12 text-primary" />
+              </div>
+              <CardTitle className="mt-4">Connect Your YouTube Account</CardTitle>
+              <CardDescription>To view your analytics, please connect your YouTube channel in settings.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Button asChild>
+                  <Link href="/dashboard/settings">
+                      Go to Settings
+                  </Link>
+              </Button>
+          </CardContent>
+      </Card>
+    )
+}
+
+
 export default function AnalyticsClientPage() {
-    const dashboardData = useDashboardData();
+    const { user, isLoading: isUserLoading } = useUser();
+    const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
+    const [isLoadingData, setIsLoadingData] = React.useState(true);
+
+    React.useEffect(() => {
+        if(user) {
+            setIsLoadingData(true);
+            getDashboardData().then(data => {
+                setDashboardData(data);
+                setIsLoadingData(false);
+            })
+        }
+    }, [user]);
+
     const analytics = dashboardData?.analytics ?? null;
 
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
@@ -125,8 +184,12 @@ export default function AnalyticsClientPage() {
         }
     }
 
+    if (isUserLoading || isLoadingData) {
+        return <AnalyticsLoadingSkeleton />;
+    }
+
     if (!analytics) {
-        return <p>Could not load analytics data. Please ensure your channel is connected in settings.</p>
+        return <ConnectYoutubePlaceholder />;
     }
 
     return (
@@ -243,3 +306,4 @@ export default function AnalyticsClientPage() {
         </div>
     );
 }
+

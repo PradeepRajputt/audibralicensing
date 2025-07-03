@@ -2,28 +2,55 @@
 'use client';
 
 import * as React from 'react';
-import { useFormStatus } from 'react-dom';
-import { useActionState } from 'react';
-import { signupAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Shield, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full" disabled={pending}>
-      {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      Create Account
-    </Button>
-  );
-}
+import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
-  const [state, formAction] = useActionState(signupAction, null);
+    const router = useRouter();
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [success, setSuccess] = React.useState(false);
+    
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setIsLoading(true);
+        setError(null);
+        setSuccess(false);
+
+        const formData = new FormData(event.currentTarget);
+        const displayName = formData.get('displayName');
+        const email = formData.get('email');
+        const password = formData.get('password');
+
+        try {
+            const res = await fetch('/api/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ displayName, email, password }),
+            });
+            
+            const data = await res.json();
+            
+            if (!res.ok) {
+                throw new Error(data.message || 'An error occurred.');
+            }
+            
+            setSuccess(true);
+            router.push('/login?success=true');
+
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+            setError(message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -36,7 +63,7 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={formAction} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
               <Input
@@ -59,14 +86,17 @@ export default function SignupPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required />
+              <Input id="password" name="password" type="password" required minLength={8} />
             </div>
-            {state && !state.success && (
+             {error && (
                 <div className="text-sm font-medium text-destructive">
-                    {state.message}
+                    {error}
                 </div>
             )}
-            <SubmitButton />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Account
+            </Button>
           </form>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}

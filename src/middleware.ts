@@ -1,10 +1,53 @@
 
-import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export const runtime = "nodejs";
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || '');
+
+export async function middleware(req: NextRequest) {
+  const token = req.cookies.get('token')?.value;
+  const { pathname } = req.nextUrl;
+
+  const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+
+  if (!token) {
+    if (isProtectedRoute) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+    return NextResponse.next();
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const userRole = payload.role as 'creator' | 'admin';
+
+    if (pathname === '/login' || pathname === '/signup') {
+        const redirectUrl = userRole === 'admin' ? '/admin/users' : '/dashboard/overview';
+        return NextResponse.redirect(new URL(redirectUrl, req.url));
+    }
+
+    if (pathname.startsWith('/admin') && userRole !== 'admin') {
+      return NextResponse.redirect(new URL('/dashboard/overview', req.url));
+    }
+
+    if (pathname.startsWith('/dashboard') && userRole === 'admin') {
+      return NextResponse.redirect(new URL('/admin/users', req.url));
+    }
+    
+    return NextResponse.next();
+
+  } catch (err) {
+    if (isProtectedRoute) {
+      const response = NextResponse.redirect(new URL('/login', req.url));
+      response.cookies.delete('token');
+      response.cookies.delete('user-data');
+      return response;
+    }
+    return NextResponse.next();
+  }
+}
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
-
-export default auth;

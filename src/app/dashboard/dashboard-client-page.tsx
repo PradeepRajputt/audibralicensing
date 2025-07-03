@@ -1,22 +1,38 @@
 
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScanSearch, ShieldCheck, Youtube, Activity, Link as LinkIcon, LogIn } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
 import type { DashboardData } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
+import { useUser } from "@/context/user-context";
+import { useState, useEffect } from "react";
+import { getDashboardData } from './actions';
 
 
-export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
-  const { activity, user } = initialData || {};
-  const isLoading = !initialData;
+export default function DashboardClientPage() {
+    const { user, isLoading: isUserLoading } = useUser();
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [isLoadingData, setIsLoadingData] = useState(true);
+
+    useEffect(() => {
+        if(user) {
+            getDashboardData().then(fetchedData => {
+                setData(fetchedData);
+                setIsLoadingData(false);
+            });
+        }
+    }, [user]);
+
+  const { activity } = data || {};
+  const isLoading = isUserLoading || isLoadingData;
 
   if (isLoading) {
     return (
@@ -90,3 +106,4 @@ export default function DashboardClientPage({ initialData }: { initialData: Dash
     </div>
   );
 }
+
