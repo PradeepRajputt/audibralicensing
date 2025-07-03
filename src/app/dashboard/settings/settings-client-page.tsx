@@ -6,7 +6,7 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Youtube, Loader2, ShieldCheck, Trash2 } from "lucide-react";
+import { Youtube, Loader2, Trash2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
@@ -17,6 +17,8 @@ import { verifyYoutubeChannel, disconnectYoutubeChannelAction } from './actions'
 import { useRouter } from "next/navigation";
 import type { User } from '@/lib/types';
 import { ThemeSettings } from "@/components/settings/theme-settings";
+import { useAuth } from "@/components/providers/auth-provider";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ConnectedChannel = {
   id: string;
@@ -29,8 +31,9 @@ function SubmitButton() {
     return <Button type="submit" disabled={pending}>{pending ? 'Verifying...' : 'Verify & Connect'}</Button>;
 }
 
-export default function SettingsClientPage({ user }: { user: User | undefined }) {
+export default function SettingsClientPage({ initialUser }: { initialUser: User | undefined }) {
     const router = useRouter();
+    const { user, logout } = useAuth();
     const [connectedChannel, setConnectedChannel] = React.useState<ConnectedChannel | null>(null);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [isActionLoading, setIsActionLoading] = React.useState(false);
@@ -57,6 +60,7 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
         if (!state) return;
         if (state.success && state.channel) {
             toast({ title: "Success!", description: state.message });
+            setConnectedChannel(state.channel);
             setIsDialogOpen(false);
             router.refresh(); 
         } else if (!state.success) {
@@ -69,6 +73,7 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
         const result = await disconnectYoutubeChannelAction();
         if (result.success) {
             toast({ title: "Platform Disconnected", description: result.message });
+            setConnectedChannel(null);
             router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Action Failed", description: result.message });
@@ -95,7 +100,7 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
         <Card>
             <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription>This information is used to identify you on the platform.</CardDescription>
+                <CardDescription>This information is managed through your connected social account.</CardDescription>
             </CardHeader>
              <CardContent>
                 <div className="flex items-center gap-6">
@@ -110,7 +115,7 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
                         </div>
                          <div className="space-y-1">
                             <Label>Email</Label>
-                            <Input value={user?.email || 'No email available'} disabled className="max-w-xs" />
+                            <Input value={user?.email || ''} disabled className="max-w-xs" />
                         </div>
                     </div>
                 </div>
@@ -121,8 +126,8 @@ export default function SettingsClientPage({ user }: { user: User | undefined })
                     <p className="text-sm text-muted-foreground">Manage your password and sign out.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={onPasswordChangeClick}>Change Password</Button>
-                    <Button variant="outline" onClick={() => router.push('/')}>Sign Out</Button>
+                    <Button variant="outline" onClick={onPasswordChangeClick} disabled>Change Password</Button>
+                    <Button variant="outline" onClick={() => logout().then(() => router.push('/'))}>Sign Out</Button>
                 </div>
             </CardFooter>
         </Card>

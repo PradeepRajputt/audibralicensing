@@ -5,7 +5,6 @@ import * as React from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 
-
 export function AdminLayoutClient({
   children,
   hasNewFeedback
@@ -13,7 +12,6 @@ export function AdminLayoutClient({
   children: React.ReactNode;
   hasNewFeedback: boolean;
 }) {
-
     return (
       <SidebarProvider>
         <AdminSidebar hasNewFeedback={hasNewFeedback} />

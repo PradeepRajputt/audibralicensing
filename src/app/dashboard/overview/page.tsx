@@ -1,7 +1,9 @@
 
 
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Youtube, Instagram, ShieldCheck, Globe, Link as LinkIcon } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Youtube, Instagram, ShieldCheck, Globe, Link as LinkIcon, UserCog } from "lucide-react";
+import Link from 'next/link';
+import { Button } from "@/components/ui/button";
 
 const quickLinks = [
   {

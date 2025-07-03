@@ -1,12 +1,19 @@
 
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import type { DashboardData } from '@/lib/types';
+import { getDashboardData } from './actions';
 
-const DashboardContext = createContext<DashboardData>(null);
+const DashboardContext = createContext<DashboardData | undefined>(undefined);
 
-export function DashboardDataProvider({ children, data }: { children: ReactNode; data: DashboardData }) {
+export function DashboardDataProvider({ children }: { children: ReactNode; }) {
+  const [data, setData] = useState<DashboardData | null>(null);
+
+  useEffect(() => {
+    getDashboardData().then(setData);
+  }, []);
+
   return (
     <DashboardContext.Provider value={data}>
       {children}
@@ -17,8 +24,7 @@ export function DashboardDataProvider({ children, data }: { children: ReactNode;
 export function useDashboardData() {
   const context = useContext(DashboardContext);
   if (context === undefined) {
-      // This can be undefined on initial load, components should handle it.
-      return null;
+      throw new Error("useDashboardData must be used within a DashboardDataProvider");
   }
   return context;
 }

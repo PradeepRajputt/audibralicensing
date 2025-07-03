@@ -2,7 +2,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
-import { Providers } from '@/components/providers';
+import { AuthProvider } from '@/components/providers/auth-provider';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/theme-provider';
 
@@ -28,17 +28,17 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased")} suppressHydrationWarning>
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme="zinc"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <Providers>
-            {children}
-          </Providers>
-          <Toaster />
-        </ThemeProvider>
+         <AuthProvider>
+            <ThemeProvider
+              attribute="data-theme"
+              defaultTheme="zinc"
+              enableSystem={false}
+              disableTransitionOnChange
+            >
+                {children}
+              <Toaster />
+            </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

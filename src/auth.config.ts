@@ -1,2 +1,1 @@
-// This file is intentionally left empty.
-// The authentication system has been removed.
+// This file is no longer used and can be deleted. It is intentionally left blank to remove the previous logic.

@@ -1,34 +1,21 @@
 
-import type { DefaultSession } from 'next-auth';
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      role: 'creator' | 'admin';
-    } & DefaultSession['user'];
-  }
-}
-
 /**
- * Represents a user in the `users` collection.
+ * Represents a user in the `users` collection in Firestore.
  * Path: /users/{uid}
  */
 export interface User {
   uid: string;
-  _id?: any; // MongoDB ObjectId
   displayName: string | null;
-  legalFullName?: string;
   email: string | null;
-  address?: string;
-  phone: string;
-  passwordHash: string;
   role: 'creator' | 'admin';
   joinDate: string; // Using ISO string
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
   youtubeChannelId?: string;
   status: 'active' | 'suspended' | 'deactivated';
-  avatar: string;
+  avatar?: string;
+  legalFullName?: string;
+  address?: string;
+  phone?: string;
 }
 
 /**
@@ -53,7 +40,6 @@ export interface UserAnalytics {
  */
 export interface ProtectedContent {
   id: string;
-  _id?: any; // MongoDB ObjectId
   creatorId: User['uid'];
   contentType: 'video' | 'audio' | 'text' | 'image';
   videoURL?: string; // Should be renamed to contentURL
@@ -71,7 +57,6 @@ export interface ProtectedContent {
  */
 export interface Violation {
   id: string;
-  _id?: any; // MongoDB ObjectId
   creatorId: User['uid'];
   originalContentTitle: string;
   originalContentUrl: string;
@@ -90,7 +75,6 @@ export interface Violation {
  */
 export interface Report {
   id: string;
-  _id?: any; // MongoDB ObjectId
   creatorId: string;
   creatorName: string; // denormalized for simplicity
   platform: string;

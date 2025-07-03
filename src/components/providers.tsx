@@ -1,7 +1,4 @@
 
-'use client';
-
-// This component is kept for potential future providers (e.g., theme, query client).
-export function Providers({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
+// This file is now deprecated and can be removed.
+// The AuthProvider is now in its own file.
+export {};

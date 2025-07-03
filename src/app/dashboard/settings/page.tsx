@@ -1,14 +1,17 @@
 
-import { getUserById } from '@/lib/users-store';
 import SettingsClientPage from './settings-client-page';
-import type { User } from '@/lib/types';
+import { getUserById } from '@/lib/users-store';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  // In a real app, you'd get this from the session, for now we hardcode it
-  const userId = 'user_creator_123';
-  const user = await getUserById(userId);
+  noStore();
+  // In a real app, you'd get this from the session. 
+  // However, with client-side auth state, we can't do that here on the server easily.
+  // The client component will use the useAuth hook to get the logged-in user.
+  // This server fetch is now just a placeholder for potential future server-side props.
+  const user = undefined;
 
-  return <SettingsClientPage user={user} />;
+  return <SettingsClientPage initialUser={user} />;
 }
