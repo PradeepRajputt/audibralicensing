@@ -9,7 +9,7 @@ import { z } from 'zod'
 const signupSchema = z.object({
   displayName: z.string().min(2, { message: "Display name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
 });
 
 export async function signupAction(prevState: any, formData: FormData) {
@@ -34,23 +34,20 @@ export async function signupAction(prevState: any, formData: FormData) {
     if (existingUser) {
       return { success: false, message: 'An account with this email already exists.' };
     }
-
-    // In a real app, you would hash the password here before saving
-    // For this prototype, we're not storing the password.
     
+    // NOTE: In a real app, you must hash the password here before saving it.
+    // We are storing it plaintext for this prototype ONLY.
     await createUser({
-      uid: `user_${Date.now()}`, // Simple unique ID for prototype
       email,
       displayName,
       role: 'creator',
+      passwordHash: password, // This is insecure. Never do this in production.
     });
     
-    // No session creation here, user must log in after signing up.
-
   } catch (error) {
     console.error(error);
     return { success: false, message: 'An internal error occurred. Please try again.' };
   }
   
-  redirect('/login');
+  redirect('/login?success=true');
 }

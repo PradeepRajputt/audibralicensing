@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="p-4 md:p-6 border-b">
@@ -13,12 +16,20 @@ export default function Home() {
           <Shield className="w-8 h-8 text-primary" />
           <h1 className="text-2xl font-bold text-primary">CreatorShield</h1>
            <nav className="ml-auto flex items-center gap-2">
-            <Button variant="outline" asChild>
-                <Link href="/login">Login</Link>
-            </Button>
-            <Button asChild>
-                <Link href="/signup">Sign Up</Link>
-            </Button>
+             {session?.user ? (
+               <Button asChild>
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>
+             ) : (
+                <>
+                  <Button variant="outline" asChild>
+                      <Link href="/login">Login</Link>
+                  </Button>
+                  <Button asChild>
+                      <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+             )}
           </nav>
         </div>
       </header>
@@ -32,7 +43,7 @@ export default function Home() {
           </p>
           
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Link href="/dashboard/overview" className="group">
+              <Link href="/dashboard" className="group">
                   <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
                       <CardHeader>
                           <div className="flex justify-center mb-4">
@@ -52,7 +63,7 @@ export default function Home() {
                       </CardContent>
                   </Card>
               </Link>
-              <Link href="/admin/users" className="group">
+              <Link href="/admin" className="group">
                   <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
                       <CardHeader>
                           <div className="flex justify-center mb-4">

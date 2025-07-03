@@ -2,12 +2,9 @@
 import * as React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
-import { DashboardHeaderStatic } from '@/components/layout/dashboard-header-static';
+import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
-import { getUserById } from '@/lib/users-store';
-import { unstable_noStore as noStore } from 'next/cache';
-import { getSession } from '@/lib/session';
-import type { User } from '@/lib/types';
+import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 
@@ -16,25 +13,22 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  noStore();
-  const session = await getSession();
+  const session = await auth();
   
-  if (!session?.uid) {
+  if (!session?.user?.id) {
+    // This should be caught by middleware, but as a fallback.
     redirect('/login');
   }
   
-  const userId = session.uid;
+  const userId = session.user.id;
   
-  const [hasUnread, user] = await Promise.all([
-    hasUnreadCreatorFeedback(userId),
-    getUserById(userId), // This now returns a sanitized user object
-  ]);
-
-  const channelConnected = !!user?.youtubeChannelId;
+  const hasUnread = await hasUnreadCreatorFeedback(userId);
+  const channelConnected = !!session.user.youtubeChannelId;
 
   // --- Redirect Logic ---
   const headersList = headers();
   const nextUrl = headersList.get('next-url') || '';
+  // Use a dummy base URL as we only need the pathname
   const pathname = new URL(nextUrl, 'http://localhost').pathname;
 
   const allowedPathsWithoutConnection = [
@@ -43,7 +37,7 @@ export default async function DashboardLayout({
       '/dashboard/feedback',
   ];
 
-  if (!channelConnected && !allowedPathsWithoutConnection.includes(pathname)) {
+  if (!channelConnected && !allowedPathsWithoutConnection.some(p => pathname.startsWith(p))) {
       redirect('/dashboard/connect-platform');
   }
   // --- End Redirect Logic ---
@@ -53,10 +47,9 @@ export default async function DashboardLayout({
         <CreatorSidebar 
             hasUnreadFeedback={hasUnread} 
             channelConnected={channelConnected}
-            user={user}
         />
         <SidebarInset>
-            <DashboardHeaderStatic user={user} />
+            <DashboardHeader />
             <main className="p-4 md:p-6 flex-1 flex flex-col">
               {children}
             </main>

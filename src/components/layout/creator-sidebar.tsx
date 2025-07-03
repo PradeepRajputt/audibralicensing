@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Activity, MessageSquareHeart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
-import type { User } from '@/lib/types';
+import { useSession, signOut } from 'next-auth/react';
 
 const menuItems = [
   { href: '/dashboard/overview', label: 'Overview', icon: Home },
@@ -28,11 +28,13 @@ const menuItems = [
   { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
 
-export function CreatorSidebar({ hasUnreadFeedback, channelConnected, user }: { hasUnreadFeedback: boolean, channelConnected: boolean, user: User | undefined }) {
+export function CreatorSidebar({ hasUnreadFeedback, channelConnected }: { hasUnreadFeedback: boolean, channelConnected: boolean }) {
   const pathname = usePathname();
-  const creatorName = user?.displayName ?? 'Creator';
-  const creatorImage = user?.avatar;
-  const isLoading = !user;
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isLoading = status === 'loading';
+  const creatorName = user?.name ?? 'Creator';
+  const creatorImage = user?.image;
 
   return (
     <Sidebar>
@@ -64,8 +66,7 @@ export function CreatorSidebar({ hasUnreadFeedback, channelConnected, user }: { 
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const disabled = item.requiresConnection && !channelConnected;
-            // Handle root /dashboard path to highlight activity feed
-            const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/activity');
+            const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/overview');
             return (
               <SidebarMenuItem 
                 key={item.href}
@@ -105,11 +106,12 @@ export function CreatorSidebar({ hasUnreadFeedback, channelConnected, user }: { 
             <SidebarMenuButton
               asChild
               tooltip="Logout"
+              onClick={() => signOut({ callbackUrl: '/' })}
             >
-              <NextLink href="/">
+              <button>
                 <LogOut />
                 <span>Logout</span>
-              </NextLink>
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

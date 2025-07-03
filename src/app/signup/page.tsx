@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Shield, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -25,17 +24,6 @@ function SubmitButton() {
 
 export default function SignupPage() {
   const [state, formAction] = useActionState(signupAction, null);
-  const { toast } = useToast();
-
-  React.useEffect(() => {
-    if (state?.success === false) {
-      toast({
-        variant: 'destructive',
-        title: 'Signup Failed',
-        description: state.message,
-      });
-    }
-  }, [state, toast]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { cn } from '@/lib/utils';
-import { ThemeProvider } from '@/components/theme-provider';
+import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
   title: 'CreatorShield',
@@ -27,15 +27,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased")} suppressHydrationWarning>
-        <ThemeProvider
-          attribute="data-theme"
-          defaultTheme="zinc"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+        <Providers>
             {children}
           <Toaster />
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );
