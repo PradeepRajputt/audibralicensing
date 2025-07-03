@@ -5,7 +5,8 @@ import * as React from 'react';
 import { format, subDays, startOfWeek, startOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Users, Eye, Video, Palette, LogIn } from 'lucide-react';
+import { Users, Eye, Video, Palette } from 'lucide-react';
+import Link from 'next/link';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -170,9 +171,10 @@ export default function AnalyticsClientPage() {
                     <CardDescription>Connect your YouTube account in settings to see your analytics.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button onClick={() => {}}>
-                        <LogIn className="mr-2 h-5 w-5" />
-                        Go to Settings
+                    <Button asChild>
+                        <Link href="/dashboard/settings">
+                            Go to Settings
+                        </Link>
                     </Button>
                 </CardContent>
             </Card>

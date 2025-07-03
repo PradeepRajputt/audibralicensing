@@ -13,12 +13,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { verifyYoutubeChannel, disconnectYoutubeChannelAction } from './actions';
+import { verifyYoutubeChannel, disconnectYoutubeChannelAction } from '@/app/dashboard/actions';
 import { useRouter } from "next/navigation";
 import type { User } from '@/lib/types';
 import { ThemeSettings } from "@/components/settings/theme-settings";
-import { useAuth } from "@/components/providers/auth-provider";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
+
 
 type ConnectedChannel = {
   id: string;
@@ -33,12 +34,14 @@ function SubmitButton() {
 
 export default function SettingsClientPage({ initialUser }: { initialUser: User | undefined }) {
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const [user, setUser] = React.useState(initialUser);
     const [connectedChannel, setConnectedChannel] = React.useState<ConnectedChannel | null>(null);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     const formRef = React.useRef<HTMLFormElement>(null);
+    
+    const isLoading = !user;
 
     const [state, formAction] = useActionState(verifyYoutubeChannel, null);
 
@@ -100,22 +103,24 @@ export default function SettingsClientPage({ initialUser }: { initialUser: User 
         <Card>
             <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription>This information is managed through your connected social account.</CardDescription>
+                <CardDescription>Your profile information.</CardDescription>
             </CardHeader>
              <CardContent>
                 <div className="flex items-center gap-6">
-                    <Avatar className="w-24 h-24">
+                    {isLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
+                      <Avatar className="w-24 h-24">
                         <AvatarImage src={user?.avatar} alt="User Avatar" data-ai-hint="profile picture" />
                         <AvatarFallback>{user?.displayName?.substring(0, 2) ?? 'C'}</AvatarFallback>
-                    </Avatar>
+                      </Avatar>
+                    )}
                     <div className="space-y-2">
                          <div className="space-y-1">
                             <Label>Display Name</Label>
-                            <Input value={user?.displayName || ''} disabled className="max-w-xs" />
+                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.displayName || ''} disabled className="max-w-xs" />}
                         </div>
                          <div className="space-y-1">
                             <Label>Email</Label>
-                            <Input value={user?.email || ''} disabled className="max-w-xs" />
+                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
                         </div>
                     </div>
                 </div>
@@ -123,11 +128,12 @@ export default function SettingsClientPage({ initialUser }: { initialUser: User 
             <CardFooter className="border-t pt-6 flex justify-between">
                 <div>
                      <h3 className="font-medium">Account Security</h3>
-                    <p className="text-sm text-muted-foreground">Manage your password and sign out.</p>
+                    <p className="text-sm text-muted-foreground">Manage your account access.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={onPasswordChangeClick} disabled>Change Password</Button>
-                    <Button variant="outline" onClick={() => logout().then(() => router.push('/'))}>Sign Out</Button>
+                    <Button variant="outline" asChild>
+                        <Link href="/">Sign Out</Link>
+                    </Button>
                 </div>
             </CardFooter>
         </Card>

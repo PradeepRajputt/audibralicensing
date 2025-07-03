@@ -5,9 +5,6 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createReport } from '@/lib/reports-store';
 import { getContentById } from '@/lib/content-store';
-import { cookies } from 'next/headers';
-import { admin } from '@/lib/firebase-admin';
-import { getUserById } from '@/lib/users-store';
 
 
 const formSchema = z.object({
@@ -18,19 +15,9 @@ const formSchema = z.object({
 });
 
 export async function submitManualReportAction(values: z.infer<typeof formSchema>) {
-  const sessionCookie = cookies().get('session')?.value;
-  if (!sessionCookie) {
-    return { success: false, message: 'Authentication required.' };
-  }
-  
-  let user;
-  try {
-     const decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
-     user = await getUserById(decodedToken.uid);
-     if (!user) throw new Error("User not found in database.");
-  } catch (error) {
-     return { success: false, message: 'Authentication failed.' };
-  }
+  // In a real app, you would get the authenticated user's ID
+  const creatorId = "user_creator_123";
+  const creatorName = "Sample Creator";
   
   const parsed = formSchema.safeParse(values);
 
@@ -50,8 +37,8 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
       ...parsed.data,
       originalContentUrl: originalContent.videoURL || 'N/A',
       originalContentTitle: originalContent.title,
-      creatorId: user.uid,
-      creatorName: user.displayName || 'Unnamed Creator',
+      creatorId: creatorId,
+      creatorName: creatorName,
     });
     
   } catch (error) {

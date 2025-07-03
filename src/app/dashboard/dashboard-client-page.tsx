@@ -5,14 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScanSearch, ShieldCheck, Youtube } from "lucide-react";
+import { ScanSearch, ShieldCheck, Youtube, Activity, Link as LinkIcon, LogIn } from "lucide-react";
 import type { DashboardData } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Activity } from "lucide-react";
+import Link from 'next/link';
+import { Button } from "../ui/button";
 
 
 export default function DashboardClientPage({ initialData }: { initialData: DashboardData }) {
-
   const { analytics, activity, user } = initialData || {};
   const creatorName = user?.displayName ?? 'Creator';
   const creatorImage = user?.avatar;
@@ -39,6 +39,25 @@ export default function DashboardClientPage({ initialData }: { initialData: Dash
         </Card>
       </div>
     );
+  }
+
+  if (!user) {
+    return (
+       <Card className="text-center w-full max-w-lg mx-auto">
+          <CardHeader>
+              <CardTitle>Welcome to CreatorShield</CardTitle>
+              <CardDescription>To get started, please sign in.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Button asChild>
+                  <Link href="/api/auth/signin">
+                      <LogIn className="mr-2 h-5 w-5" />
+                      Sign In
+                  </Link>
+              </Button>
+          </CardContent>
+      </Card>
+    )
   }
 
   return (
