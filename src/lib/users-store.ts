@@ -54,3 +54,17 @@ export async function updateUserStatus(uid: string, status: User['status']): Pro
     const user = mockUsers.find(u => u.uid === uid);
     if(user) user.status = status;
 }
+
+export async function disconnectYoutubeChannel(userId: string): Promise<void> {
+    noStore();
+    const userIndex = mockUsers.findIndex(u => u.uid === userId);
+    if (userIndex !== -1) {
+        mockUsers[userIndex].youtubeChannelId = undefined;
+        mockUsers[userIndex].platformsConnected = mockUsers[userIndex].platformsConnected.filter(
+            (p) => p !== 'youtube'
+        );
+        console.log(`MOCK: Disconnected YouTube channel for user ${userId}`);
+    } else {
+        console.warn(`MOCK: Could not find user ${userId} to disconnect.`);
+    }
+}

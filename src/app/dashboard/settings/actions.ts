@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { getUserById, updateUser } from '@/lib/users-store';
+import { getUserById, updateUser, disconnectYoutubeChannel } from '@/lib/users-store';
 import axios from 'axios';
 
 const formSchema = z.object({
@@ -109,7 +109,7 @@ export async function disconnectYoutubeChannelAction() {
     // In a real app, you would get this from the session
     const userId = 'user_creator_123';
     try {
-        await disconnect(userId);
+        await disconnectYoutubeChannel(userId);
         revalidatePath('/dashboard', 'layout'); 
         return { success: true, message: "YouTube channel has been disconnected." }
     } catch(error) {
