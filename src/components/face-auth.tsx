@@ -29,6 +29,7 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
   const { toast } = useToast();
 
   const loadModels = React.useCallback(async () => {
+    setStatusText('Loading models...');
     try {
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -36,10 +37,12 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
         faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
       ]);
       setStatusText('Please grant camera access.');
+      return true;
     } catch (error) {
       console.error("Error loading models: ", error);
       setStatusText("Failed to load AI models.");
       toast({ variant: "destructive", title: "Model Load Error", description: "Could not load face recognition models. Please refresh the page." });
+      return false;
     }
   }, [toast]);
 
@@ -62,7 +65,12 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
   }, [toast]);
 
   React.useEffect(() => {
-    loadModels().then(startVideo);
+    loadModels().then(success => {
+        if (success) {
+            startVideo();
+        }
+    });
+
     return () => {
         if(detectionIntervalRef.current) clearInterval(detectionIntervalRef.current);
         if(blinkTimeoutRef.current) clearTimeout(blinkTimeoutRef.current);
@@ -81,11 +89,14 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
   
   const handleScan = () => {
     setLoading('scanning');
-    setStatusText("Scanning... Hold still.");
+    setStatusText("Scanning... Please blink.");
     let blinked = false;
 
     detectionIntervalRef.current = setInterval(async () => {
-        if (!videoRef.current || !canvasRef.current) return;
+        if (!videoRef.current || !canvasRef.current || videoRef.current.paused || videoRef.current.ended) {
+          if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current);
+          return;
+        };
 
         const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
         
@@ -110,28 +121,31 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
                      blinked = true;
                      if (detectionIntervalRef.current) clearInterval(detectionIntervalRef.current);
                      setLoading('processing');
-                     await new Promise(res => setTimeout(res, 500)); // Give time for a clear image
                      
-                     const finalDetection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                     setTimeout(async () => {
+                        if (!videoRef.current) return;
+                        const finalDetection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
-                     if (finalDetection) {
-                         setStatusText(mode === 'register' ? 'Registration complete!' : 'Login successful!');
-                         onSuccess(finalDetection.descriptor);
-                     } else {
-                         setStatusText("Capture failed. Please try again.");
-                         setLoading(null);
-                     }
+                        if (finalDetection) {
+                            setStatusText(mode === 'register' ? 'Registration complete!' : 'Login successful!');
+                            onSuccess(finalDetection.descriptor);
+                        } else {
+                            setStatusText("Capture failed. Please blink again.");
+                            setLoading(null);
+                        }
+                     }, 500); // Give time for a clear image after blink
                 }
-            } else {
-                 setStatusText("Please blink to verify you're live.");
             }
         } else if (detections.length > 1) {
             setStatusText("Multiple faces detected. Please ensure only one person is visible.");
         } else {
-             setStatusText("No face detected. Please position your face in the center.");
+             setStatusText("Position your face in the center.");
         }
     }, 200);
   }
+
+  const actionText = mode === 'register' ? 'Start Registration' : 'Login with Face';
+  const loadingText = loading === 'models' ? 'Loading Models...' : loading ? 'Verifying...' : actionText;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -144,17 +158,10 @@ export function FaceAuth({ mode, onSuccess, isDisabled }: FaceAuthProps) {
           <p className="text-sm text-muted-foreground">{statusText}</p>
         </div>
 
-        {mode === 'register' ? (
-             <Button onClick={handleScan} disabled={!hasCameraPermission || !!loading || isDisabled}>
-                {loading === 'scanning' || loading === 'processing' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserCheck className="mr-2 h-4 w-4" />}
-                {loading === 'models' ? 'Loading Models...' : loading ? 'Scanning...' : 'Start Registration'}
-            </Button>
-        ) : (
-            <Button onClick={handleScan} disabled={!hasCameraPermission || !!loading || isDisabled}>
-                {loading === 'scanning' || loading === 'processing' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
-                {loading === 'models' ? 'Loading Models...' : loading ? 'Verifying...' : 'Login with Face'}
-            </Button>
-        )}
+        <Button onClick={handleScan} disabled={!hasCameraPermission || !!loading || isDisabled}>
+            {loading === 'scanning' || loading === 'processing' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (mode === 'register' ? <UserCheck className="mr-2 h-4 w-4" /> : <Camera className="mr-2 h-4 w-4" />)}
+            {loadingText}
+        </Button>
     </div>
   );
 }
