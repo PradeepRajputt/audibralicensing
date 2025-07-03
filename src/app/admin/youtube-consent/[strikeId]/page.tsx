@@ -22,7 +22,20 @@ export default async function YouTubeConsentPage({ params }: { params: { strikeI
   }
 
   const creatorData = await getUserById(report.creatorId);
-  const creator = creatorData ? JSON.parse(JSON.stringify(creatorData)) as User : undefined;
+  const creator = creatorData ? {
+    uid: creatorData.uid,
+    displayName: creatorData.displayName,
+    email: creatorData.email,
+    role: creatorData.role,
+    joinDate: creatorData.joinDate,
+    platformsConnected: creatorData.platformsConnected,
+    youtubeChannelId: creatorData.youtubeChannelId,
+    status: creatorData.status,
+    avatar: creatorData.avatar,
+    legalFullName: creatorData.legalFullName,
+    address: creatorData.address,
+    phone: creatorData.phone,
+  } as User : undefined;
 
   if (!creator) {
      return (

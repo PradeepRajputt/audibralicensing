@@ -30,7 +30,24 @@ export default async function DashboardLayout({
     getUserById(userId),
   ]);
 
-  const user = dbUser ? JSON.parse(JSON.stringify(dbUser)) as User : undefined;
+  // Sanitize the user object to be a plain object before passing to client components.
+  // This prevents errors with non-serializable data types like MongoDB's ObjectId.
+  const user = dbUser
+    ? {
+        uid: dbUser.uid,
+        displayName: dbUser.displayName,
+        email: dbUser.email,
+        role: dbUser.role,
+        joinDate: dbUser.joinDate,
+        platformsConnected: dbUser.platformsConnected,
+        youtubeChannelId: dbUser.youtubeChannelId,
+        status: dbUser.status,
+        avatar: dbUser.avatar,
+        legalFullName: dbUser.legalFullName,
+        address: dbUser.address,
+        phone: dbUser.phone,
+      } as User
+    : undefined;
 
   const channelConnected = !!user?.youtubeChannelId;
 

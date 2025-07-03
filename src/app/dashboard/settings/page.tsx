@@ -13,7 +13,22 @@ export default async function SettingsPage() {
   // In a real app, you would get this from the session. 
   const userId = session?.uid || "user_creator_123";
   const dbUser = await getUserById(userId);
-  const user = dbUser ? JSON.parse(JSON.stringify(dbUser)) as User : undefined;
+  
+  const user = dbUser ? {
+    uid: dbUser.uid,
+    displayName: dbUser.displayName,
+    email: dbUser.email,
+    role: dbUser.role,
+    joinDate: dbUser.joinDate,
+    platformsConnected: dbUser.platformsConnected,
+    youtubeChannelId: dbUser.youtubeChannelId,
+    status: dbUser.status,
+    avatar: dbUser.avatar,
+    legalFullName: dbUser.legalFullName,
+    address: dbUser.address,
+    phone: dbUser.phone,
+  } as User : undefined;
+
 
   return <SettingsClientPage initialUser={user} />;
 }
