@@ -15,8 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Link as LinkIcon, MessageSquareHeart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
-import type { User } from '@/lib/types';
-
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -29,11 +27,11 @@ const menuItems = [
   { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
 
-export function CreatorSidebar({ user, hasUnreadFeedback, channelConnected }: { user: User | undefined, hasUnreadFeedback: boolean, channelConnected: boolean }) {
+export function CreatorSidebar({ hasUnreadFeedback, channelConnected }: { hasUnreadFeedback: boolean, channelConnected: boolean }) {
   const pathname = usePathname();
-  const isLoading = !user; 
-  const creatorName = user?.displayName;
-  const creatorImage = user?.avatar;
+  const creatorName = "Sample Creator";
+  const creatorImage = "https://placehold.co/128x128.png";
+  const isLoading = false;
 
   return (
     <Sidebar>

@@ -5,8 +5,6 @@ import { getViolationsForUser } from '@/lib/violations-store';
 import type { UserAnalytics, Violation } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import { subDays } from 'date-fns';
-import { cookies } from 'next/headers';
-import { admin } from '@/lib/firebase-admin';
 import { getUserById } from '@/lib/users-store';
 
 /**
@@ -18,12 +16,10 @@ import { getUserById } from '@/lib/users-store';
 export async function getDashboardData() {
   noStore();
   
-  const sessionCookie = cookies().get('session')?.value;
-  if (!sessionCookie) return null;
+  // In a real app, you would get this from the session. For the prototype, we use a fixed ID.
+  const userId = 'user_creator_123';
 
   try {
-    const decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
-    const userId = decodedToken.uid;
     const user = await getUserById(userId);
     
     // --- MOCK ANALYTICS SECTION (as a real implementation requires deeper API integration) ---

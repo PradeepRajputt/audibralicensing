@@ -1,9 +1,8 @@
 
 import * as React from 'react';
-import { AdminLayoutClient } from './layout-client';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
-
-export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardLayout({
   children,
@@ -13,8 +12,17 @@ export default async function AdminDashboardLayout({
     const hasNewFeedback = await hasUnrepliedAdminFeedback();
 
     return (
-      <AdminLayoutClient hasNewFeedback={hasNewFeedback}>
-        {children}
-      </AdminLayoutClient>
+      <SidebarProvider>
+        <AdminSidebar hasNewFeedback={hasNewFeedback} />
+        <SidebarInset>
+          <header className="p-4 md:p-6 border-b flex items-center gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+              <SidebarTrigger />
+              <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+          </header>
+          <main className="p-4 md:p-6">
+              {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
     );
 }
