@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { admin } from '@/lib/firebase-admin';
 import { getUserById } from '@/lib/users-store';
 
+// This forces the middleware to run on the Node.js runtime.
+// It's required because we are using the Firebase Admin SDK, which is not compatible with the Edge runtime.
+export const runtime = 'nodejs';
+
 const SESSION_COOKIE_NAME = 'session';
 
 async function verifySession(request: NextRequest) {

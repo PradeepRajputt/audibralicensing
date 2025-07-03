@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { User } from '@/lib/types';
-import { getUserById } from '@/lib/users-store';
+import { getAppUser } from '@/app/actions/user';
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
@@ -28,8 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        // User is signed in with Firebase, now fetch our custom user data from Firestore
-        const appUser = await getUserById(fbUser.uid);
+        // User is signed in with Firebase, now fetch our custom user data from a dedicated Server Action
+        const appUser = await getAppUser(fbUser.uid);
         setUser(appUser || null);
       } else {
         // User is signed out
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ idToken }),
       });
       
-      const appUser = await getUserById(userCredential.user.uid);
+      const appUser = await getAppUser(userCredential.user.uid);
       setUser(appUser || null);
       return { user: appUser || null, error: null };
     } catch (error: any) {
