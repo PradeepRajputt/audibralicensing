@@ -13,7 +13,8 @@ async function init() {
   if (db) return;
   try {
     const client = await clientPromise;
-    db = client.db();
+    // Explicitly select the database
+    db = client.db("creator_shield_db");
     users = db.collection<User>('users');
   } catch (error) {
     console.error("Database connection failed:", error);
