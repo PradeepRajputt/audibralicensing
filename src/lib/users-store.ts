@@ -15,22 +15,31 @@ async function getUsersCollection(): Promise<Collection<User>> {
     return db.collection<User>(USERS_COLLECTION);
 }
 
+// Helper to sanitize MongoDB documents to plain objects
+const sanitizeUser = (user: any): User | null => {
+  if (!user) return null;
+  return JSON.parse(JSON.stringify(user));
+};
+
 export async function getAllUsers(): Promise<User[]> {
   noStore();
   const users = await getUsersCollection();
-  return await users.find({ role: 'creator' }).sort({ joinDate: -1 }).toArray();
+  const userArray = await users.find({ role: 'creator' }).sort({ joinDate: -1 }).toArray();
+  return JSON.parse(JSON.stringify(userArray));
 }
 
 export async function getUserById(uid: string): Promise<User | null> {
   noStore();
   const users = await getUsersCollection();
-  return await users.findOne({ uid });
+  const user = await users.findOne({ uid });
+  return sanitizeUser(user);
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
     noStore();
     const users = await getUsersCollection();
-    return await users.findOne({ email });
+    const user = await users.findOne({ email });
+    return sanitizeUser(user);
 }
 
 export async function createUser(data: {
@@ -42,7 +51,8 @@ export async function createUser(data: {
     noStore();
     const users = await getUsersCollection();
     
-    const newUser: User = {
+    // Create a user object without the MongoDB _id
+    const newUser: Omit<User, '_id'> = {
         ...data,
         joinDate: new Date().toISOString(),
         status: 'active',
@@ -50,11 +60,14 @@ export async function createUser(data: {
         avatar: `https://placehold.co/128x128.png?text=${data.displayName.charAt(0)}`
     }
     
-    const result = await users.insertOne(newUser);
+    const result = await users.insertOne(newUser as User);
     if (!result.insertedId) {
         throw new Error("Failed to create user.");
     }
-    return { ...newUser, _id: result.insertedId };
+
+    // Fetch the newly created user to get the full document and then sanitize it
+    const createdUser = await users.findOne({ uid: data.uid });
+    return sanitizeUser(createdUser);
 }
 
 export async function updateUser(uid: string, updates: Partial<Omit<User, 'uid' | '_id'>>): Promise<void> {
