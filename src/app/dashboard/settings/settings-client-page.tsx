@@ -109,7 +109,7 @@ export default function SettingsClientPage({ initialUser }: { initialUser: User 
                 <div className="flex items-center gap-6">
                     {isLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                       <Avatar className="w-24 h-24">
-                        <AvatarImage src={user?.avatar} alt="User Avatar" data-ai-hint="profile picture" />
+                        <AvatarImage src={user?.avatar} alt={user?.displayName ?? ''} data-ai-hint="profile picture" />
                         <AvatarFallback>{user?.displayName?.substring(0, 2) ?? 'C'}</AvatarFallback>
                       </Avatar>
                     )}

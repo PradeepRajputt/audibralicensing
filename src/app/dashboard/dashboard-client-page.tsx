@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 
 
-export default function DashboardClientPage({ initialData }: { initialData: DashboardData }) {
+export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
   const { analytics, activity, user } = initialData || {};
   const creatorName = user?.displayName ?? 'Creator';
   const creatorImage = user?.avatar;

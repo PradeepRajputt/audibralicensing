@@ -188,6 +188,7 @@ export async function disconnectYoutubeChannelAction() {
         revalidatePath('/dashboard', 'layout');
         return { success: true, message: 'YouTube channel disconnected.' };
     } catch (error) {
-        return { success: false, message: 'Failed to disconnect channel.'}
+        console.error("Failed to disconnect YouTube channel:", error);
+        return { success: false, message: 'Failed to disconnect channel.'};
     }
 }

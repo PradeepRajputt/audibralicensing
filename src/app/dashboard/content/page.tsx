@@ -5,11 +5,13 @@ import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { getAllContentForUser } from '@/lib/content-store';
 import { ContentClientPage } from './content-client';
+import type { ProtectedContent } from '@/lib/types';
 
 export default async function ProtectedContentPage() {
   // In a real app, you would get the authenticated user's ID
   const userId = "user_creator_123";
-  const content = await getAllContentForUser(userId);
+  const rawContent = await getAllContentForUser(userId);
+  const content = JSON.parse(JSON.stringify(rawContent)) as ProtectedContent[];
 
   return (
     <div className="space-y-6">
