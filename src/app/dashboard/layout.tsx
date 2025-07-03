@@ -1,5 +1,4 @@
 
-
 import * as React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
@@ -10,6 +9,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { getSession } from '@/lib/session';
 import type { User } from '@/lib/types';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 
 export default async function DashboardLayout({
   children,
@@ -30,10 +30,25 @@ export default async function DashboardLayout({
     getUserById(userId),
   ]);
 
-  // Convert MongoDB document to a plain JSON-serializable object
   const user = dbUser ? JSON.parse(JSON.stringify(dbUser)) as User : undefined;
 
   const channelConnected = !!user?.youtubeChannelId;
+
+  // --- Redirect Logic ---
+  const headersList = headers();
+  const nextUrl = headersList.get('next-url') || '';
+  const pathname = new URL(nextUrl, 'http://localhost').pathname;
+
+  const allowedPathsWithoutConnection = [
+      '/dashboard/connect-platform',
+      '/dashboard/settings',
+      '/dashboard/feedback',
+  ];
+
+  if (!channelConnected && !allowedPathsWithoutConnection.includes(pathname)) {
+      redirect('/dashboard/connect-platform');
+  }
+  // --- End Redirect Logic ---
 
   return (
     <SidebarProvider>

@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { getSession } from '@/lib/session';
 import axios from 'axios';
 import { getViolationsForUser } from '@/lib/violations-store';
+import { redirect } from 'next/navigation';
 
 
 /**
@@ -166,12 +167,12 @@ export async function verifyYoutubeChannel(
 
     revalidatePath('/dashboard', 'layout');
     
-    return { success: true, message: "YouTube channel connected successfully!", channel };
-
   } catch (error) {
     console.error("Error verifying youtube channel:", error);
     return { success: false, message: "An unexpected error occurred." };
   }
+
+  redirect('/dashboard');
 }
 
 export async function disconnectYoutubeChannelAction() {

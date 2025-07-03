@@ -53,5 +53,5 @@ export async function signupAction(prevState: any, formData: FormData) {
     return { success: false, message: 'An internal error occurred. Please try again.' };
   }
   
-  redirect('/dashboard');
+  redirect('/dashboard/connect-platform');
 }
