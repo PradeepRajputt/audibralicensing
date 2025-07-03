@@ -1,11 +1,9 @@
 
 export interface User {
-  _id?: string;
-  id?: string;
-  uid: string;
+  id: string; // Changed from uid and _id for consistency with Mongoose virtuals
   displayName: string | null;
   email: string | null;
-  password?: string; 
+  password?: string;
   role: 'creator' | 'admin';
   joinDate: string; 
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
@@ -39,7 +37,7 @@ export interface UserAnalytics {
  */
 export interface ProtectedContent {
   id: string;
-  creatorId: User['uid'];
+  creatorId: string; // This will hold the User's ID
   contentType: 'video' | 'audio' | 'text' | 'image';
   videoURL?: string; // Should be renamed to contentURL
   title: string;
@@ -56,7 +54,7 @@ export interface ProtectedContent {
  */
 export interface Violation {
   id: string;
-  creatorId: User['uid'];
+  creatorId: string;
   originalContentTitle: string;
   originalContentUrl: string;
   infringingContentSnippet: string;

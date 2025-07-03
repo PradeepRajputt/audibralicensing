@@ -33,7 +33,7 @@ const platformIcons = {
 } as const;
 
 
-export default function DetailsClientPage({ initialUser, userId }: { initialUser: User | undefined, userId: string }) {
+export default function DetailsClientPage({ initialUser }: { initialUser: User | undefined }) {
   const { toast } = useToast();
   const [user, setUser] = useState<User | undefined>(initialUser);
   const [isLoading, setIsLoading] = useState<'suspend' | 'lift' | 'deactivate' | null>(null);
@@ -52,15 +52,15 @@ export default function DetailsClientPage({ initialUser, userId }: { initialUser
 
       switch(action) {
           case 'suspend':
-              result = await suspendCreator(user.uid);
+              result = await suspendCreator(user.id);
               newStatus = 'suspended';
               break;
           case 'lift':
-              result = await liftSuspension(user.uid);
+              result = await liftSuspension(user.id);
               newStatus = 'active';
               break;
           case 'deactivate':
-              result = await deactivateCreator(user.uid);
+              result = await deactivateCreator(user.id);
               newStatus = 'deactivated';
               break;
       }
@@ -119,7 +119,7 @@ export default function DetailsClientPage({ initialUser, userId }: { initialUser
           <CardContent className="space-y-4">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Creator ID</span>
-              <span className="font-mono text-sm">{user.uid}</span>
+              <span className="font-mono text-sm">{user.id}</span>
             </div>
             <Separator />
             <div className="flex justify-between">

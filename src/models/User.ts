@@ -2,15 +2,16 @@
 import mongoose, { Schema, Document, models } from 'mongoose';
 import type { User } from '@/lib/types';
 
-export interface IUser extends Document, Omit<User, 'uid'> {
-  id: string; // Virtual getter for _id
+// The IUser interface now directly uses the User type from types.ts, omitting the 'id'
+// because it's a virtual provided by Mongoose, not a field in the document.
+export interface IUser extends Document, Omit<User, 'id'> {
   password?: string;
 }
 
 const UserSchema: Schema = new Schema({
   displayName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false }, // Prevent password from being returned by default
   role: { type: String, enum: ['creator', 'admin'], default: 'creator' },
   joinDate: { type: String, default: () => new Date().toISOString() },
   platformsConnected: { type: [String], default: [] },
@@ -36,7 +37,4 @@ UserSchema.set('toObject', {
     virtuals: true
 });
 
-
-// When creating the model, we use the `IUser` interface to get type safety.
-// If the model already exists in Mongoose's cache, we use that instead of creating a new one.
 export default models.User || mongoose.model<IUser>('User', UserSchema);

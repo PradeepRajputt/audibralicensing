@@ -69,7 +69,7 @@ export default function UserManagementPage() {
             {users.map((user: User) => {
               const statusInfo = getStatusInfo(user.status);
               return (
-              <TableRow key={user.uid}>
+              <TableRow key={user.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar>
@@ -88,7 +88,7 @@ export default function UserManagementPage() {
                 </TableCell>
                 <TableCell className="text-right">
                   <Button asChild variant="ghost" size="icon">
-                    <Link href={`/admin/users/${user.uid}`}>
+                    <Link href={`/admin/users/${user.id}`}>
                       <Eye className="h-4 w-4" />
                       <span className="sr-only">View Details</span>
                     </Link>
