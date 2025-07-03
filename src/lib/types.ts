@@ -154,6 +154,5 @@ export interface Feedback {
 export type DashboardData = {
   analytics: UserAnalytics | null;
   activity: any[];
-  creatorName: string | null | undefined;
-  creatorImage: string | null | undefined;
+  user: User | undefined;
 } | null;

@@ -21,7 +21,7 @@ import type { User } from '@/lib/types';
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/overview', label: 'Quick Links', icon: LinkIcon },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
   { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
@@ -29,7 +29,7 @@ const menuItems = [
   { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
 
-export function CreatorSidebar({ user, hasUnreadFeedback }: { user: User | undefined, hasUnreadFeedback: boolean }) {
+export function CreatorSidebar({ user, hasUnreadFeedback, channelConnected }: { user: User | undefined, hasUnreadFeedback: boolean, channelConnected: boolean }) {
   const pathname = usePathname();
   const isLoading = !user; 
   const creatorName = user?.displayName;
@@ -63,23 +63,27 @@ export function CreatorSidebar({ user, hasUnreadFeedback }: { user: User | undef
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu className="gap-4">
-          {menuItems.map((item) => (
-            <SidebarMenuItem 
-              key={item.href}
-              notification={item.href === '/dashboard/feedback' ? hasUnreadFeedback : false}
-            >
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href}
-                tooltip={item.label}
+          {menuItems.map((item) => {
+            const disabled = item.requiresConnection && !channelConnected;
+            return (
+              <SidebarMenuItem 
+                key={item.href}
+                notification={item.href === '/dashboard/feedback' ? hasUnreadFeedback : false}
               >
-                <NextLink href={item.href} prefetch={false}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </NextLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={disabled ? `${item.label} (Connect YouTube)` : item.label}
+                  disabled={disabled}
+                >
+                  <NextLink href={item.href} prefetch={false}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </NextLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>

@@ -11,7 +11,9 @@ import { useDashboardData } from './dashboard-context';
 export default function DashboardClientPage() {
   const dashboardData = useDashboardData();
 
-  const { analytics, activity, creatorName, creatorImage } = dashboardData || {};
+  const { analytics, activity, user } = dashboardData || {};
+  const creatorName = user?.displayName;
+  const creatorImage = user?.avatar;
 
   return (
     <div className="space-y-8">

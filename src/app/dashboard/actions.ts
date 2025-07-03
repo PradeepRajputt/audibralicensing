@@ -3,7 +3,7 @@
 
 import { getUserById } from '@/lib/users-store';
 import { getViolationsForUser } from '@/lib/violations-store';
-import type { UserAnalytics, Violation } from '@/lib/types';
+import type { UserAnalytics, Violation, User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import { subDays } from 'date-fns';
 
@@ -24,7 +24,7 @@ export async function getDashboardData() {
   // If no channel is connected, return the basic user info.
   if (!finalChannelId) {
       console.log('YouTube Channel ID is not configured for the user.');
-      return { analytics: null, activity: [], creatorName: user?.displayName, creatorImage: user?.avatar };
+      return { analytics: null, activity: [], user: user };
   }
 
   // --- MOCK ANALYTICS SECTION (as a real implementation requires deeper API integration) ---
@@ -87,7 +87,6 @@ export async function getDashboardData() {
   return { 
     analytics: mockAnalytics, 
     activity: activity, 
-    creatorName: user?.displayName, 
-    creatorImage: user?.avatar 
+    user: user,
   };
 }
