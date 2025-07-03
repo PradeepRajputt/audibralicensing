@@ -30,6 +30,7 @@ export const StarRating = ({ rating, setRating, readOnly = false }: StarRatingPr
             onMouseEnter={() => !readOnly && setHover(ratingValue)}
             onMouseLeave={() => !readOnly && setHover(0)}
             disabled={readOnly}
+            suppressHydrationWarning={true}
           >
             <Star
               className={cn(
