@@ -3,8 +3,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { MongoDBAdapter } from "@auth/mongodb-adapter"
 import clientPromise from "./mongodb"
-import { getUserByEmail, getUserById } from "./users-store"
-import type { User } from './types';
+import { getUserByEmail } from "./users-store"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(clientPromise, { databaseName: "creator_shield_db" }),
@@ -33,7 +32,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             role: user.role,
             image: user.avatar,
             youtubeChannelId: user.youtubeChannelId,
-          } as any; // Cast to `any` to satisfy NextAuth's User type, we'll add custom fields in callbacks
+          } as any;
         }
 
         return null;

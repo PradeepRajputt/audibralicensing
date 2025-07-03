@@ -4,7 +4,9 @@
 import type { User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import clientPromise from './mongodb';
-import { Collection } from 'mongodb';
+import { Collection, ObjectId } from 'mongodb';
+import { randomUUID } from 'crypto';
+
 
 const DB_NAME = "creator_shield_db";
 const USERS_COLLECTION = "users";
@@ -19,10 +21,11 @@ async function getUsersCollection(): Promise<Collection<User>> {
 // when passing data from Server Components to Client Components.
 const sanitizeUser = (user: any): User | null => {
   if (!user) return null;
-  const { _id, ...rest } = user;
+  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+  const { _id, passwordHash, ...rest } = user as any; // Explicitly remove passwordHash
   return {
     ...rest,
-    uid: rest.uid, // ensure uid is a string
+    uid: rest.uid.toString(), // Ensure uid is a string
   };
 };
 
@@ -39,28 +42,34 @@ export async function getUserById(uid: string): Promise<User | null> {
   if (!uid) return null;
   const users = await getUsersCollection();
   const user = await users.findOne({ uid });
+  // This function is used by client pages, so we sanitize
   return sanitizeUser(user);
 }
 
-export async function getUserByEmail(email: string): Promise<User | null> {
+export async function getUserByEmail(email: string): Promise<(User & { _id?: ObjectId}) | null> {
     noStore();
     if (!email) return null;
     const users = await getUsersCollection();
     const user = await users.findOne({ email });
-    return sanitizeUser(user);
+    // This function is used by the auth system server-side, so we return the raw object with passwordHash
+    return user;
 }
 
 export async function createUser(data: {
-    uid: string;
     email: string;
     displayName: string;
     role: 'creator' | 'admin';
+    passwordHash: string; // This is a security risk for prototype only.
 }) {
     noStore();
     const users = await getUsersCollection();
     
     const newUser: Omit<User, '_id'> = {
-        ...data,
+        uid: randomUUID(),
+        email: data.email,
+        displayName: data.displayName,
+        role: data.role,
+        passwordHash: data.passwordHash,
         joinDate: new Date().toISOString(),
         status: 'active',
         platformsConnected: [],
@@ -72,7 +81,7 @@ export async function createUser(data: {
         throw new Error("Failed to create user.");
     }
 
-    const createdUser = await users.findOne({ uid: data.uid });
+    const createdUser = await users.findOne({ uid: newUser.uid });
     return sanitizeUser(createdUser);
 }
 

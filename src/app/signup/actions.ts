@@ -41,7 +41,7 @@ export async function signupAction(prevState: any, formData: FormData) {
       email,
       displayName,
       role: 'creator',
-      passwordHash: password, // This is insecure. Never do this in production.
+      passwordHash: password, 
     });
     
   } catch (error) {

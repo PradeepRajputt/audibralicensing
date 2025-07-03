@@ -7,9 +7,10 @@ import type { ObjectId } from 'mongodb';
  */
 export interface User {
   _id?: ObjectId;
-  uid: string; // Firebase Auth UID
+  uid: string; // Unique identifier for the user
   displayName: string | null;
   email: string | null;
+  passwordHash?: string; // This should be a hash, not plaintext
   role: 'creator' | 'admin';
   joinDate: string; // Using ISO string
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
