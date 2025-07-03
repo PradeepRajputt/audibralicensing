@@ -30,10 +30,10 @@ function AuthButtons() {
             ) : (
                 <>
                 <Button variant="outline" asChild>
-                    <Link href="/login">Login</Link>
+                    <Link href="/login">Login with Face ID</Link>
                 </Button>
                 <Button asChild>
-                    <Link href="/signup">Sign Up</Link>
+                    <Link href="/register">Register with Face ID</Link>
                 </Button>
                 </>
             )}

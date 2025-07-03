@@ -9,6 +9,7 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get('token')?.value;
   const { pathname } = req.nextUrl;
 
+  const isAuthRoute = pathname === '/login' || pathname === '/register';
   const isProtectedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
 
   if (!token) {
@@ -22,7 +23,7 @@ export async function middleware(req: NextRequest) {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     const userRole = payload.role as 'creator' | 'admin';
 
-    if (pathname === '/login' || pathname === '/signup') {
+    if (isAuthRoute) {
         const redirectUrl = userRole === 'admin' ? '/admin/users' : '/dashboard/overview';
         return NextResponse.redirect(new URL(redirectUrl, req.url));
     }
@@ -38,16 +39,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
 
   } catch (err) {
+    const response = NextResponse.redirect(new URL('/login', req.url));
     if (isProtectedRoute) {
-      const response = NextResponse.redirect(new URL('/login', req.url));
-      response.cookies.delete('token');
-      response.cookies.delete('user-data');
-      return response;
+        // Clear invalid tokens
+        response.cookies.delete('token');
+        response.cookies.delete('user-data');
     }
-    return NextResponse.next();
+    return response;
   }
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|models).*)'],
 };

@@ -1,9 +1,9 @@
 
+
 export interface User {
-  id: string; // Changed from uid and _id for consistency with Mongoose virtuals
+  id: string; 
   displayName: string | null;
   email: string | null;
-  password?: string;
   role: 'creator' | 'admin';
   joinDate: string; 
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
@@ -13,7 +13,13 @@ export interface User {
   legalFullName?: string;
   address?: string;
   phone?: string;
+  faceDescriptor: number[];
 }
+
+export interface IUser extends Document, Omit<User, 'id'> {
+  // This interface is for Mongoose model and includes MongoDB's _id
+}
+
 
 /**
  * Represents a user's analytics data.
@@ -61,7 +67,7 @@ export interface Violation {
   matchedURL: string;
   platform: 'youtube' | 'web' | 'instagram' | 'tiktok';
   matchScore: number; 
-  detectedAt: string; // Using ISO string
+  detectedAt: string; // ISO date string
   status: 'pending_review' | 'action_taken' | 'dismissed';
   timeline: { status: string; date: string }[];
 }

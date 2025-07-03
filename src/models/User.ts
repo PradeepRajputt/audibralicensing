@@ -2,16 +2,11 @@
 import mongoose, { Schema, Document, models } from 'mongoose';
 import type { User } from '@/lib/types';
 
-// The IUser interface now directly uses the User type from types.ts, omitting the 'id'
-// because it's a virtual provided by Mongoose, not a field in the document.
-export interface IUser extends Document, Omit<User, 'id'> {
-  password?: string;
-}
+export interface IUser extends Document, Omit<User, 'id'> {}
 
 const UserSchema: Schema = new Schema({
   displayName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true, select: false }, // Prevent password from being returned by default
   role: { type: String, enum: ['creator', 'admin'], default: 'creator' },
   joinDate: { type: String, default: () => new Date().toISOString() },
   platformsConnected: { type: [String], default: [] },
@@ -21,6 +16,7 @@ const UserSchema: Schema = new Schema({
   legalFullName: { type: String, optional: true },
   address: { type: String, optional: true },
   phone: { type: String, optional: true },
+  faceDescriptor: { type: [Number], required: true },
 });
 
 
