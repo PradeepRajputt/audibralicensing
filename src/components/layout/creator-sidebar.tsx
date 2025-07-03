@@ -12,14 +12,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Link as LinkIcon, MessageSquareHeart } from 'lucide-react';
+import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Activity, MessageSquareHeart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import type { User } from '@/lib/types';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/overview', label: 'Quick Links', icon: LinkIcon },
+  { href: '/dashboard/overview', label: 'Overview', icon: Home },
+  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
@@ -64,6 +64,8 @@ export function CreatorSidebar({ hasUnreadFeedback, channelConnected, user }: { 
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const disabled = item.requiresConnection && !channelConnected;
+            // Handle root /dashboard path to highlight activity feed
+            const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/activity');
             return (
               <SidebarMenuItem 
                 key={item.href}
@@ -71,7 +73,7 @@ export function CreatorSidebar({ hasUnreadFeedback, channelConnected, user }: { 
               >
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href}
+                  isActive={isActive}
                   tooltip={disabled ? `${item.label} (Connect YouTube)` : item.label}
                   disabled={disabled}
                 >

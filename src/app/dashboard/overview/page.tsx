@@ -32,13 +32,13 @@ const quickLinks = [
   },
 ];
 
-export default function QuickLinksPage() {
+export default function OverviewPage() {
   return (
     <div className="space-y-6">
        <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Quick Links</h1>
+        <h1 className="text-2xl font-bold">Overview</h1>
         <p className="text-muted-foreground">
-          Helpful external resources for content creators.
+          Helpful external resources and quick actions for content creators.
         </p>
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

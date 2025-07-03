@@ -39,19 +39,19 @@ export async function signupAction(prevState: any, formData: FormData) {
     // In a real app, you would hash the password here before saving
     // For this prototype, we're not storing the password.
     
-    const newUser = await createUser({
+    await createUser({
       uid: `user_${Date.now()}`, // Simple unique ID for prototype
       email,
       displayName,
       role: 'creator',
     });
     
-    await createSession(newUser);
+    // No session creation here, user must log in after signing up.
 
   } catch (error) {
     console.error(error);
     return { success: false, message: 'An internal error occurred. Please try again.' };
   }
   
-  redirect('/dashboard/connect-platform');
+  redirect('/login');
 }

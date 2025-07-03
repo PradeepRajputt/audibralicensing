@@ -1,20 +1,17 @@
 
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScanSearch, ShieldCheck, Youtube, Activity, Link as LinkIcon, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import type { DashboardData } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 
-
-export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
+export default function ActivityClientPage({ initialData }: { initialData: DashboardData | null }) {
   const { activity, user } = initialData || {};
   const isLoading = !initialData;
 
