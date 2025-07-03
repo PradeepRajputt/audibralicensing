@@ -9,7 +9,7 @@ import { ScanSearch, ShieldCheck, Youtube, Activity, Link as LinkIcon, LogIn } f
 import type { DashboardData } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 
 
 export default function DashboardClientPage({ initialData }: { initialData: DashboardData }) {
