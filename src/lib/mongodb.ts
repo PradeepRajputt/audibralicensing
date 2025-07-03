@@ -1,11 +1,21 @@
 
 import { MongoClient } from 'mongodb'
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
+let uri = process.env.MONGODB_URI
+
+if (!uri) {
+  // In a local development environment, fall back to a default local URI
+  // if MONGODB_URI is not set.
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(
+      'Warning: MONGODB_URI environment variable not found. Defaulting to local MongoDB instance. Please set this variable in your .env file for production.'
+    )
+    uri = 'mongodb://localhost:27017/creatorshield'
+  } else {
+    throw new Error('Invalid/Missing environment variable: "MONGODB_URI" in production.')
+  }
 }
 
-const uri = process.env.MONGODB_URI
 const options = {}
 
 let client
