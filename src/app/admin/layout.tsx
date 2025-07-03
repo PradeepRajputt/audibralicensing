@@ -4,7 +4,6 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
-import { UserProvider } from '@/context/user-context';
 
 
 export default async function AdminDashboardLayout({
@@ -15,7 +14,6 @@ export default async function AdminDashboardLayout({
     const hasNewFeedback = await hasUnrepliedAdminFeedback();
 
     return (
-     <UserProvider>
       <SidebarProvider>
         <AdminSidebar hasNewFeedback={hasNewFeedback} />
         <SidebarInset>
@@ -25,6 +23,5 @@ export default async function AdminDashboardLayout({
           </main>
         </SidebarInset>
       </SidebarProvider>
-     </UserProvider>
     );
 }

@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Shield, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
-import { useUser, UserProvider } from '@/context/user-context';
+import { useUser } from '@/context/user-context';
 
 
 function AuthButtons() {
@@ -42,7 +42,7 @@ function AuthButtons() {
 }
 
 
-function HomePageContent() {
+export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="p-4 md:p-6 border-b">
@@ -114,12 +114,4 @@ function HomePageContent() {
       </footer>
     </div>
   );
-}
-
-export default function Home() {
-    return (
-        <UserProvider>
-            <HomePageContent />
-        </UserProvider>
-    );
 }

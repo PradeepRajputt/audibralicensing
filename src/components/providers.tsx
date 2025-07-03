@@ -3,6 +3,7 @@
 
 import { ThemeProvider } from 'next-themes';
 import { type ThemeProviderProps } from "next-themes/dist/types"
+import { UserProvider } from '@/context/user-context';
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
@@ -13,7 +14,9 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
       disableTransitionOnChange
       {...props}
     >
-      {children}
+      <UserProvider>
+        {children}
+      </UserProvider>
     </ThemeProvider>
   );
 }
