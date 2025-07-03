@@ -1,9 +1,12 @@
 
+
 import * as React from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
 import { unstable_noStore as noStore } from 'next/cache';
+import { getSession } from '@/lib/session';
+import { redirect } from 'next/navigation';
 
 
 export default async function AdminDashboardLayout({
@@ -12,6 +15,12 @@ export default async function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
     noStore();
+    const session = await getSession();
+
+    if (!session?.uid || session.role !== 'admin') {
+      redirect('/login');
+    }
+
     const hasNewFeedback = await hasUnrepliedAdminFeedback();
 
     return (

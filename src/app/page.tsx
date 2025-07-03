@@ -12,6 +12,14 @@ export default function Home() {
         <div className="container mx-auto flex items-center gap-4">
           <Shield className="w-8 h-8 text-primary" />
           <h1 className="text-2xl font-bold text-primary">CreatorShield</h1>
+           <nav className="ml-auto flex items-center gap-2">
+            <Button variant="outline" asChild>
+                <Link href="/login">Login</Link>
+            </Button>
+            <Button asChild>
+                <Link href="/signup">Sign Up</Link>
+            </Button>
+          </nav>
         </div>
       </header>
       <main className="flex-1 flex items-center justify-center">

@@ -1,54 +1,159 @@
+'use client';
 
-import { NextResponse } from 'next/server';
-import { createSession } from '@/lib/session';
-import { getUserById, getUserByEmail, createUser } from '@/lib/users-store';
-import { adminAuth } from '@/lib/firebase-client';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-
-// This function decodes the token payload without verification
-// For prototype purposes. In production, always verify with a secure backend SDK.
-function decodeJwtPayload(token: string) {
-    try {
-        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-        return payload;
-    } catch (e) {
-        console.error("Invalid token:", e);
-        return null;
-    }
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScanSearch, ShieldCheck, Youtube, Activity, Link as LinkIcon, LogIn } from "lucide-react";
+import type { DashboardData } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import Link from 'next/link';
+import { Button } from "@/components/ui/button";
 
 
-export async function POST(request: Request) {
-    const body = await request.json();
-    const { idToken } = body;
+export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
+  const { analytics, activity, user } = initialData || {};
+  const creatorName = user?.displayName ?? 'Creator';
+  const creatorImage = user?.avatar;
+  const isLoading = !initialData;
 
-    if (!idToken) {
-        return NextResponse.json({ error: 'ID token is required' }, { status: 400 });
-    }
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-16 w-16 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Youtube className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><ScanSearch className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><ShieldCheck className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+        </div>
+        <Card>
+          <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-md mt-2" /></CardHeader>
+          <CardContent><div className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></CardContent>
+        </Card>
+      </div>
+    );
+  }
 
-    try {
-        // MOCK: In a real app, you would verify this token with a proper backend SDK
-        // For now, we trust the token from the client to get the UID.
-        const decodedToken = decodeJwtPayload(idToken);
-        if (!decodedToken || !decodedToken.user_id) {
-             return NextResponse.json({ error: 'Invalid ID token.' }, { status: 401 });
-        }
-        
-        const uid = decodedToken.user_id;
-        
-        const user = await getUserById(uid);
+  // This should not be hit if the layout redirect works, but as a fallback.
+  if (!user) {
+    return (
+       <Card className="text-center w-full max-w-lg mx-auto">
+          <CardHeader>
+              <CardTitle>Welcome to CreatorShield</CardTitle>
+              <CardDescription>To get started, please sign in.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Button asChild>
+                  <Link href="/login">
+                      <LogIn className="mr-2 h-5 w-5" />
+                      Sign In
+                  </Link>
+              </Button>
+          </CardContent>
+      </Card>
+    )
+  }
 
-        if (!user) {
-             return NextResponse.json({ error: 'User not found. Please register.' }, { status: 404 });
-        }
-        
-        await createSession(user);
+  return (
+    <div className="space-y-8">
+       <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={creatorImage ?? undefined} alt="User Avatar" data-ai-hint="profile picture" />
+            <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-3xl font-bold">Welcome back, {creatorName}!</h1>
+            <p className="text-muted-foreground">Here&#39;s a snapshot of your content&#39;s performance.</p>
+          </div>
+        </div>
 
-        return NextResponse.json({ success: true, user });
+       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Views
+            </CardTitle>
+            <Youtube className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics?.views.toLocaleString() || 'N/A'}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all your videos
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Active Monitors
+            </CardTitle>
+            <ScanSearch className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+12</div>
+            <p className="text-xs text-muted-foreground">
+              Scanning across 3 platforms
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Resolved Strikes
+            </CardTitle>
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+5</div>
+            <p className="text-xs text-muted-foreground">
+              This month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-    } catch (error) {
-        console.error('Login error:', error);
-        const message = error instanceof Error ? error.message : "Internal Server Error";
-        return NextResponse.json({ error: message }, { status: 500 });
-    }
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>A log of recent automated scans and actions for your connected account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+           {activity && activity.length > 0 ? (
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Date</TableHead>
+                </TableRow>
+                </TableHeader>
+                <TableBody>
+                {activity.map((activity, index) => (
+                    <TableRow key={index}>
+                    <TableCell className="font-medium">{activity.type}</TableCell>
+                    <TableCell>{activity.details}</TableCell>
+                    <TableCell>
+                        <Badge variant={activity.variant as any}>{activity.status}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{activity.date}</TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+           ) : (
+            <div className="text-center py-10 text-muted-foreground">
+                <p>No recent activity to display.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

@@ -1,4 +1,5 @@
 
+
 import * as React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { CreatorSidebar } from '@/components/layout/creator-sidebar';
@@ -8,6 +9,7 @@ import { getUserById } from '@/lib/users-store';
 import { unstable_noStore as noStore } from 'next/cache';
 import { getSession } from '@/lib/session';
 import type { User } from '@/lib/types';
+import { redirect } from 'next/navigation';
 
 export default async function DashboardLayout({
   children,
@@ -17,8 +19,11 @@ export default async function DashboardLayout({
   noStore();
   const session = await getSession();
   
-  // In a real app, this would be from the session. For the prototype, we use a fixed ID if no session.
-  const userId = session?.uid || "user_creator_123";
+  if (!session?.uid) {
+    redirect('/login');
+  }
+  
+  const userId = session.uid;
   
   const [hasUnread, dbUser] = await Promise.all([
     hasUnreadCreatorFeedback(userId),

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +42,7 @@ export default function DashboardClientPage({ initialData }: { initialData: Dash
     );
   }
 
+  // This should not be hit if the layout redirect works, but as a fallback.
   if (!user) {
     return (
        <Card className="text-center w-full max-w-lg mx-auto">
@@ -50,7 +52,7 @@ export default function DashboardClientPage({ initialData }: { initialData: Dash
           </CardHeader>
           <CardContent>
               <Button asChild>
-                  <Link href="/api/auth/signin">
+                  <Link href="/login">
                       <LogIn className="mr-2 h-5 w-5" />
                       Sign In
                   </Link>
