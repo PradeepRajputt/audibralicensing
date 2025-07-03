@@ -15,17 +15,7 @@ export default async function UserManagementPage() {
   // Fetch data directly on the server
   const dbUsers = await getAllUsers();
   // Sanitize data for client component consumption
-  const users: User[] = dbUsers.map(user => ({
-    uid: user.uid,
-    displayName: user.displayName,
-    email: user.email,
-    role: user.role,
-    joinDate: user.joinDate,
-    platformsConnected: user.platformsConnected,
-    youtubeChannelId: user.youtubeChannelId,
-    status: user.status,
-    avatar: user.avatar,
-  }));
+  const users = JSON.parse(JSON.stringify(dbUsers)) as User[];
   
   const getStatusInfo = (status: User['status']) => {
     switch (status) {

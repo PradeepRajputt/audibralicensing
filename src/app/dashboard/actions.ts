@@ -29,12 +29,14 @@ export async function getDashboardData() {
   const userId = session.uid;
 
   try {
-    const user = await getUserById(userId);
+    const dbUser = await getUserById(userId);
 
-    if (!user) {
+    if (!dbUser) {
         console.log(`User with id ${userId} not found.`);
         return null;
     }
+
+    const user = JSON.parse(JSON.stringify(dbUser)) as User;
     
     // --- MOCK ANALYTICS SECTION (as a real implementation requires deeper API integration) ---
     const mockAnalytics: UserAnalytics = {
