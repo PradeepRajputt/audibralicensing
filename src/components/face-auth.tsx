@@ -8,7 +8,7 @@ import { Loader2, Camera, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
-const MODEL_URL = '/models';
+const MODEL_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
 const BLINK_THRESHOLD = 0.25;
 
 interface FaceAuthProps {
