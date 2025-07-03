@@ -1,15 +1,20 @@
 
 import { MongoClient } from 'mongodb'
 
-const uri = process.env.MONGODB_URI
+const uri = process.env.MONGODB_URI;
+
+// For debugging: log the URI to confirm it's loaded from .env
+console.log("MongoDB Connection URI:", uri ? `Loaded (ending with ...${uri.slice(-10)})` : "NOT FOUND");
+
 
 if (!uri) {
+  // This error will be thrown if the MONGODB_URI is not set in your .env file
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
 }
 
 const options = {}
 
-let client
+let client: MongoClient
 let clientPromise: Promise<MongoClient>
 
 if (process.env.NODE_ENV === 'development') {

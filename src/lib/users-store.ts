@@ -6,22 +6,29 @@ import { unstable_noStore as noStore } from 'next/cache';
 import clientPromise from './mongodb';
 import { Collection, Db } from 'mongodb';
 
+const DB_NAME = "creator_shield_db";
+const USERS_COLLECTION = "users";
+
 let db: Db;
 let users: Collection<User>;
 
 async function init() {
-  if (db) return;
+  if (db && users) return;
   try {
     const client = await clientPromise;
-    // Explicitly select the database
-    db = client.db("creator_shield_db");
-    users = db.collection<User>('users');
+    // The database name should be in the MONGODB_URI.
+    // If it's not, client.db() will use the one provided here.
+    db = client.db(DB_NAME); 
+    users = db.collection<User>(USERS_COLLECTION);
+    console.log(`Successfully connected to database "${DB_NAME}" and collection "${USERS_COLLECTION}".`);
   } catch (error) {
-    console.error("Database connection failed:", error);
-    throw new Error('Failed to connect to the database.');
+    console.error("Database initialization failed:", error);
+    // Re-throwing a more specific error to help with debugging.
+    throw new Error(`Failed to connect to the database. Please check your MONGODB_URI and network/IP allowlist settings. Original error: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
+// Ensure the connection is initialized when the module is first loaded.
 (async () => {
   await init();
 })();
