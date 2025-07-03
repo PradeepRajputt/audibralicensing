@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials"
 import { MongoDBAdapter } from "@auth/mongodb-adapter"
 import clientPromise from "./mongodb"
 import { getUserByEmail } from "./users-store"
+import { NextResponse } from 'next/server'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(clientPromise, { databaseName: "creator_shield_db" }),
@@ -40,6 +41,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    authorized({ request: req, auth: session }) {
+      const { nextUrl } = req;
+      const isLoggedIn = !!session?.user;
+
+      const isAdminRoute = nextUrl.pathname.startsWith('/admin');
+      const isDashboardRoute = nextUrl.pathname.startsWith('/dashboard');
+
+      if (isLoggedIn) {
+        if (isAdminRoute && session.user.role !== 'admin') {
+          return NextResponse.redirect(new URL('/dashboard', req.url));
+        }
+        if (isDashboardRoute && session.user.role === 'admin') {
+          return NextResponse.redirect(new URL('/admin', req.url));
+        }
+        return true;
+      }
+
+      // If not logged in, `authorized` returns false by default,
+      // which redirects to the login page.
+      return false;
+    },
     async jwt({ token, user }) {
         if (user) {
             token.uid = user.id;
