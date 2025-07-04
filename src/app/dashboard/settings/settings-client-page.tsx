@@ -19,7 +19,7 @@ import { useUser } from "@/context/user-context";
 
 export default function SettingsClientPage() {
     const router = useRouter();
-    const { user, isLoading: isUserLoading, logout } = useUser();
+    const { user, isLoading: isUserLoading, logout, refetchUser } = useUser();
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     
@@ -30,8 +30,8 @@ export default function SettingsClientPage() {
         const result = await disconnectYoutubeChannelAction();
         if (result.success) {
             toast({ title: "Platform Disconnected", description: result.message });
-            // For this prototype, we'll just refresh to get updated user context
-            window.location.reload();
+            // Re-fetch user data to update the UI without a full page reload
+            refetchUser();
         } else {
             toast({ variant: 'destructive', title: "Action Failed", description: result.message });
         }
@@ -57,7 +57,7 @@ export default function SettingsClientPage() {
                     {isUserLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                       <Avatar className="w-24 h-24">
                         <AvatarImage src={user?.avatar ?? undefined} alt={user?.displayName ?? ''} data-ai-hint="profile picture" />
-                        <AvatarFallback>{user?.displayName?.substring(0, 2) ?? 'C'}</AvatarFallback>
+                        <AvatarFallback>{user?.displayName?.substring(0,2) ?? 'C'}</AvatarFallback>
                       </Avatar>
                     )}
                     <div className="space-y-2">
@@ -140,4 +140,3 @@ export default function SettingsClientPage() {
     </div>
   )
 }
-

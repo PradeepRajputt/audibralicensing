@@ -76,7 +76,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
           type: "Infringement Detected",
           details: `On ${violation.platform}: ${violation.matchedURL}`,
           status,
-          date: new Date(violation.detectedAt).toLocaleDateString(),
+          date: new Date(violation.detectedAt).toISOString(),
           variant
       };
     });
@@ -153,7 +153,9 @@ export async function disconnectYoutubeChannelAction() {
     try {
         await updateUser(userId, {
             youtubeChannelId: undefined,
-            platformsConnected: [] // Assuming only one platform for now
+            avatar: 'https://placehold.co/128x128.png', // Reset avatar
+            displayName: 'Sample Creator', // Reset name
+            platformsConnected: [] 
         });
         revalidatePath('/dashboard', 'layout');
         return { success: true, message: 'YouTube channel disconnected.' };

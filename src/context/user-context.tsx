@@ -4,56 +4,53 @@
 import * as React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import type { DecodedJWT } from '@/lib/types';
+import type { User } from '@/lib/types';
+import { getUserById } from '@/lib/users-store';
 import { Loader2 } from 'lucide-react';
 
-// Hardcoded mock users for testing without a database
-const mockCreator: DecodedJWT = {
-    id: 'user_creator_123',
-    email: 'creator@example.com',
-    displayName: 'Sample Creator',
-    role: 'creator',
-    avatar: 'https://placehold.co/128x128.png',
-    iat: Date.now(),
-    exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
-};
-
-const mockAdmin: DecodedJWT = {
-    id: 'user_admin_123',
-    email: 'admin@creatorshield.com',
-    displayName: 'Admin User',
-    role: 'admin',
-    avatar: 'https://placehold.co/128x128.png',
-    iat: Date.now(),
-    exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
-};
+// MOCK USER IDs
+const CREATOR_ID = 'user_creator_123';
+const ADMIN_ID = 'user_admin_123';
 
 
 interface UserContextType {
-  user: DecodedJWT | null;
+  user: User | null;
   isLoading: boolean;
   logout: () => Promise<void>;
+  refetchUser: () => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<DecodedJWT | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   
-  useEffect(() => {
-    // Determine which user to mock based on the URL path for easy testing
+  const fetchUser = useCallback(async () => {
+    setIsLoading(true);
+    let userId: string | null = null;
+    
     if (pathname.startsWith('/admin')) {
-      setUser(mockAdmin);
+      userId = ADMIN_ID;
     } else if (pathname.startsWith('/dashboard')) {
-      setUser(mockCreator);
+      userId = CREATOR_ID;
+    }
+
+    if (userId) {
+      // Fetch user from the store, which will have the latest data
+      const userData = await getUserById(userId);
+      setUser(userData || null);
     } else {
-        setUser(null); // No user on landing/login/register pages
+        setUser(null);
     }
     setIsLoading(false);
   }, [pathname]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   const logout = useCallback(async () => {
     // Simulate logout
@@ -61,7 +58,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   }, [router]);
   
-  const value = { user, isLoading, logout };
+  const value = { user, isLoading, logout, refetchUser: fetchUser };
 
   return (
     <UserContext.Provider value={value}>

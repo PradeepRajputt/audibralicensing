@@ -1,6 +1,4 @@
 
-
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,8 +26,10 @@ export default function DashboardClientPage() {
                 setData(fetchedData);
                 setIsLoadingData(false);
             });
+        } else if (!isUserLoading) {
+            setIsLoadingData(false);
         }
-    }, [user]);
+    }, [user, isUserLoading]);
 
   const { activity } = data || {};
   const isLoading = isUserLoading || isLoadingData;
@@ -106,4 +106,3 @@ export default function DashboardClientPage() {
     </div>
   );
 }
-
