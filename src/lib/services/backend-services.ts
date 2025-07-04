@@ -159,3 +159,31 @@ export async function sendTakedownConfirmationEmail(data: {
     return { success: false, simulated: false, error: (error as Error).message };
   }
 }
+
+export async function sendLoginOtpEmail({ to, otp }: { to: string; otp: string }) {
+   if (!resend) {
+    console.warn(`Resend not configured. OTP for ${to} is: ${otp}. This will not be sent.`);
+    return { success: true, simulated: true };
+  }
+  
+  try {
+    await resend.emails.send({
+        from: fromEmail,
+        to: to,
+        subject: 'Your CreatorShield Login Code',
+        html: `
+            <h1>Your Login Code</h1>
+            <p>Here is your one-time password to log in to CreatorShield:</p>
+            <h2 style="font-size: 24px; letter-spacing: 4px; text-align: center;">${otp}</h2>
+            <p>This code will expire in 10 minutes.</p>
+            <br/>
+            <p>If you did not request this, you can safely ignore this email.</p>
+        `,
+    });
+    console.log(`Sent OTP to ${to}`);
+    return { success: true, simulated: false };
+  } catch (error) {
+    console.error(`Error sending OTP email to ${to}:`, error);
+    return { success: false, simulated: false, error: (error as Error).message };
+  }
+}

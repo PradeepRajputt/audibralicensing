@@ -1,8 +1,7 @@
 export interface User {
   id: string; 
   displayName: string | null;
-  email: string | null;
-  password?: string; // Should not be sent to client, but needed for creation
+  email: string;
   role: 'creator' | 'admin';
   joinDate: string; 
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
@@ -12,6 +11,13 @@ export interface User {
   legalFullName?: string;
   address?: string;
   phone?: string;
+  emailOtpHash?: string | null;
+  otpExpires?: Date | null;
+  backupPinHash?: string | null;
+}
+
+export interface UserWithPassword extends User {
+    password?: string;
 }
 
 /**

@@ -1,3 +1,4 @@
+
 'use server';
 import type { User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
@@ -44,26 +45,32 @@ export async function findUserByEmail(email: string): Promise<User | null> {
     return mongoDocToUser(user);
 }
 
-export async function findUserByEmailWithPassword(email: string): Promise<User | null> {
+export async function findUserByEmailWithAuth(email: string): Promise<User | null> {
     noStore();
     await connectToDatabase();
-    // Use .select('+password') to explicitly include the password field
-    // which is excluded by default in the schema.
-    const user = await UserModel.findOne({ email }).select('+password').lean();
+    const user = await UserModel.findOne({ email }).select('+emailOtpHash +otpExpires +backupPinHash').lean();
     return mongoDocToUser(user);
 }
 
-
-export async function createUser(data: Omit<User, 'id'>): Promise<User> {
+export async function findOrCreateUserByEmail(email: string): Promise<User> {
     noStore();
     await connectToDatabase();
-    const newUser = new UserModel(data);
+    const existingUser = await UserModel.findOne({ email }).lean();
+
+    if (existingUser) {
+        return mongoDocToUser(existingUser)!;
+    }
+
+    const newUser = new UserModel({
+        email,
+        displayName: email.split('@')[0], // Default display name
+        avatar: `https://placehold.co/128x128.png`,
+    });
     await newUser.save();
-    // Use .toObject() before our transform to get a plain object.
     return mongoDocToUser(newUser.toObject())!;
 }
 
-export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 'password'>>): Promise<void> {
+export async function updateUser(id: string, updates: Partial<Omit<User, 'id'>>): Promise<void> {
     noStore();
     await connectToDatabase();
     await UserModel.findByIdAndUpdate(id, updates);
@@ -71,4 +78,21 @@ export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 
 
 export async function updateUserStatus(id: string, status: User['status']): Promise<void> {
     await updateUser(id, { status });
+}
+
+export async function setUserOtp(email: string, hashedOtp: string, expires: Date): Promise<void> {
+  await connectToDatabase();
+  await UserModel.updateOne({ email }, {
+    $set: {
+      emailOtpHash: hashedOtp,
+      otpExpires: expires
+    }
+  });
+}
+
+export async function setBackupPin(userId: string, hashedPin: string): Promise<void> {
+    await connectToDatabase();
+    await UserModel.findByIdAndUpdate(userId, {
+        $set: { backupPinHash: hashedPin }
+    });
 }
