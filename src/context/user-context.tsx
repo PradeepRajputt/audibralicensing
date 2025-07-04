@@ -5,13 +5,8 @@ import * as React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
-import { getUserById } from '@/lib/users-store';
 import { Loader2 } from 'lucide-react';
-
-// MOCK USER IDs
-const CREATOR_ID = 'user_creator_123';
-const ADMIN_ID = 'user_admin_123';
-
+import axios from 'axios';
 
 interface UserContextType {
   user: User | null;
@@ -30,31 +25,29 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
-    let userId: string | null = null;
-    
-    if (pathname.startsWith('/admin')) {
-      userId = ADMIN_ID;
-    } else if (pathname.startsWith('/dashboard')) {
-      userId = CREATOR_ID;
-    }
-
-    if (userId) {
-      // Fetch user from the store, which will have the latest data
-      const userData = await getUserById(userId);
-      setUser(userData || null);
-    } else {
+    try {
+        const { data } = await axios.get('/api/auth/user');
+        setUser(data.user || null);
+    } catch (error) {
+        console.error("Failed to fetch user, they are likely not logged in.", error);
         setUser(null);
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    // Only fetch user on client-side routes that are not public
+    if (!['/login', '/register', '/'].includes(pathname)) {
+        fetchUser();
+    } else {
+        setIsLoading(false);
+    }
+  }, [pathname, fetchUser]);
 
   const logout = useCallback(async () => {
-    // Simulate logout
     setUser(null);
+    await axios.post('/api/auth/logout');
     router.push('/login');
   }, [router]);
   

@@ -5,6 +5,23 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createContent } from '@/lib/content-store';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+import type { DecodedJWT } from '@/lib/types';
+
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
+
+async function getUserIdFromSession(): Promise<string | null> {
+    const token = cookies().get('auth_token')?.value;
+    if (!token) return null;
+    try {
+        const { payload } = await jwtVerify(token, JWT_SECRET) as { payload: DecodedJWT };
+        return payload.id;
+    } catch (e) {
+        return null;
+    }
+}
 
 
 const formSchema = z.object({
@@ -16,8 +33,11 @@ const formSchema = z.object({
 });
 
 export async function addProtectedContentAction(values: z.infer<typeof formSchema>) {
-  // In a real app, you would get the authenticated user's ID
-  const creatorId = "user_creator_123";
+  const creatorId = await getUserIdFromSession();
+
+  if (!creatorId) {
+      return { success: false, message: 'Authentication failed. Please log in again.' };
+  }
   
   const parsed = formSchema.safeParse(values);
 

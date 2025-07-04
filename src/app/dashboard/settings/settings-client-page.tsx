@@ -2,20 +2,31 @@
 'use client';
 
 import * as React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Youtube, Loader2, Trash2, LogOut } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
 import { disconnectYoutubeChannelAction } from '@/app/dashboard/actions';
 import { useRouter } from "next/navigation";
 import { ThemeSettings } from "@/components/settings/theme-settings";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { useUser } from "@/context/user-context";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function SettingsClientPage() {
     const router = useRouter();
@@ -72,6 +83,35 @@ export default function SettingsClientPage() {
                     </div>
                 </div>
             </CardContent>
+             <CardFooter className="border-t pt-6 flex justify-between">
+                  <Button variant="outline" onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                </Button>
+
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Account
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your
+                            account and remove your data from our servers.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => toast({ description: "Account deletion is not implemented in this prototype."})}>
+                            Continue
+                        </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
         </Card>
 
         <Card>
@@ -117,26 +157,6 @@ export default function SettingsClientPage() {
         </Card>
 
         <ThemeSettings />
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Security</CardTitle>
-                <CardDescription>Manage your account security settings.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="font-medium">Sign Out</h3>
-                        <p className="text-sm text-muted-foreground">Sign out of your account on this device.</p>
-                    </div>
-                    <Button variant="outline" onClick={logout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-
     </div>
   )
 }

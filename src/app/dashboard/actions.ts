@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { UserAnalytics, Violation, User, DashboardData } from '@/lib/types';
+import type { User, UserAnalytics, Violation, DashboardData } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import { subDays, format } from 'date-fns';
 import { getUserById, updateUser } from '@/lib/users-store';
@@ -10,9 +10,22 @@ import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+import type { DecodedJWT } from '@/lib/types';
 
-// MOCKED USER ID for prototype purposes
-const MOCK_USER_ID = 'user_creator_123';
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
+
+async function getUserIdFromSession(): Promise<string | null> {
+    const token = cookies().get('auth_token')?.value;
+    if (!token) return null;
+    try {
+        const { payload } = await jwtVerify(token, JWT_SECRET) as { payload: DecodedJWT };
+        return payload.id;
+    } catch (e) {
+        return null;
+    }
+}
 
 /**
  * Fetches dashboard data.
@@ -21,7 +34,12 @@ const MOCK_USER_ID = 'user_creator_123';
 export async function getDashboardData(): Promise<DashboardData | null> {
   noStore();
   
-  const userId = MOCK_USER_ID;
+  const userId = await getUserIdFromSession();
+  
+  if (!userId) {
+      console.log("No user session found.");
+      return null;
+  }
 
   try {
     const dbUser = await getUserById(userId);
@@ -105,7 +123,12 @@ export async function verifyYoutubeChannel(
   prevState: any,
   formData: FormData
 ) {
-  const userId = MOCK_USER_ID;
+  const userId = await getUserIdFromSession();
+
+  if (!userId) {
+      return { success: false, message: "Authentication error. Please sign in again."};
+  }
+
 
   const validatedFields = verifyChannelFormSchema.safeParse({
     channelId: formData.get("channelId"),
@@ -148,7 +171,10 @@ export async function verifyYoutubeChannel(
 }
 
 export async function disconnectYoutubeChannelAction() {
-    const userId = MOCK_USER_ID;
+    const userId = await getUserIdFromSession();
+     if (!userId) {
+        return { success: false, message: "Authentication error."};
+    }
     
     try {
         await updateUser(userId, {
