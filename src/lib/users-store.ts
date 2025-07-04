@@ -5,32 +5,53 @@ import { unstable_noStore as noStore } from 'next/cache';
 import connectToDatabase from './mongodb';
 import UserModel from '@/models/User';
 
+// Helper to convert a Mongoose document from .lean() to our User type.
+// .lean() returns a plain JS object, not a Mongoose document.
+function mongoDocToUser(doc: any): User | null {
+    if (!doc) return null;
+    const user = { ...doc };
+    user.id = user._id.toString();
+    delete user._id;
+    delete user.__v;
+    return user as User;
+}
+
 export async function getAllUsers(): Promise<Omit<User, 'password'>[]> {
   noStore();
   await connectToDatabase();
-  const users = await UserModel.find({ role: 'creator' }).select('-password');
-  return JSON.parse(JSON.stringify(users)); // Serialize to plain objects
+  // .lean() returns plain JS objects, which is faster and safer.
+  const users = await UserModel.find({ role: 'creator' }).lean();
+  // We still map to ensure the ID is transformed correctly.
+  return users.map(user => mongoDocToUser(user)!).filter(Boolean) as Omit<User, 'password'>[];
 }
 
 export async function getUserById(id: string): Promise<User | undefined> {
   noStore();
   await connectToDatabase();
-  const user = await UserModel.findById(id).select('-password');
-  return user ? JSON.parse(JSON.stringify(user)) : undefined;
+  try {
+    const user = await UserModel.findById(id).lean();
+    return mongoDocToUser(user) ?? undefined;
+  } catch (error) {
+    // Mongoose can throw an error if the ID format is invalid.
+    console.error("Error finding user by ID (likely invalid ID format):", id, error);
+    return undefined;
+  }
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
     noStore();
     await connectToDatabase();
-    const user = await UserModel.findOne({ email });
-    return user ? JSON.parse(JSON.stringify(user, (key, value) => key === '_id' ? value.toString() : value)) : null;
+    const user = await UserModel.findOne({ email }).lean();
+    return mongoDocToUser(user);
 }
 
 export async function findUserByEmailWithPassword(email: string): Promise<User | null> {
     noStore();
     await connectToDatabase();
-    const user = await UserModel.findOne({ email }).select('+password');
-    return user ? JSON.parse(JSON.stringify(user, (key, value) => key === '_id' ? value.toString() : value)) : null;
+    // Use .select('+password') to explicitly include the password field
+    // which is excluded by default in the schema.
+    const user = await UserModel.findOne({ email }).select('+password').lean();
+    return mongoDocToUser(user);
 }
 
 
@@ -39,7 +60,8 @@ export async function createUser(data: Omit<User, 'id'>): Promise<User> {
     await connectToDatabase();
     const newUser = new UserModel(data);
     await newUser.save();
-    return JSON.parse(JSON.stringify(newUser));
+    // Use .toObject() before our transform to get a plain object.
+    return mongoDocToUser(newUser.toObject())!;
 }
 
 export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 'password'>>): Promise<void> {
