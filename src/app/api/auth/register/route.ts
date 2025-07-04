@@ -13,12 +13,12 @@ export async function POST(request: Request) {
 
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
-      return NextResponse.json({ message: 'User already exists' }, { status: 409 });
+      return NextResponse.json({ message: 'A user with this email already exists.' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await createUser({
+    await createUser({
       email,
       password: hashedPassword,
       displayName,
@@ -29,11 +29,18 @@ export async function POST(request: Request) {
       avatar: `https://placehold.co/128x128.png`
     });
     
-    // We don't sign in the user automatically, redirect them to login
     return NextResponse.json({ success: true, message: 'Registration successful! Please log in.' }, { status: 201 });
 
   } catch (error) {
-    console.error('Registration Error:', error);
-    return NextResponse.json({ message: 'An internal server error occurred' }, { status: 500 });
+    if (error instanceof Error) {
+        console.error('Registration Error:', error.message);
+        // Check for duplicate key error from MongoDB, which has code 11000
+        if (error.message.includes('E11000 duplicate key error')) {
+            return NextResponse.json({ message: 'A user with this email already exists.' }, { status: 409 });
+        }
+    } else {
+        console.error('An unknown registration error occurred:', error);
+    }
+    return NextResponse.json({ message: 'An internal server error occurred during registration.' }, { status: 500 });
   }
 }
