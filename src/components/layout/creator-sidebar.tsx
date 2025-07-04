@@ -46,19 +46,13 @@ export function CreatorSidebar() {
     }
   }, [user?.id]);
   
-   React.useEffect(() => {
-    if (!isLoading && !user) {
-        router.push('/login');
-    }
-  }, [isLoading, user, router]);
-  
-  // This redirect is now handled by middleware, but kept as a client-side safeguard
+   // This redirect is now handled by middleware, but kept as a client-side safeguard
    React.useEffect(() => {
     const allowedPathsWithoutConnection = [
       '/dashboard/connect-platform',
       '/dashboard/settings',
       '/dashboard/feedback',
-      '/dashboard/overview', // Let's allow overview
+      '/dashboard/overview',
       '/dashboard/activity',
     ];
 

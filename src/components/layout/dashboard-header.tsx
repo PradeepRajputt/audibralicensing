@@ -9,12 +9,15 @@ import { useUser } from '@/context/user-context';
 
 export function DashboardHeader() {
   const { user, isLoading } = useUser();
-  const title = user?.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard';
+  const getTitle = () => {
+    if (!user) return 'CreatorShield';
+    return user.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard';
+  }
 
   return (
      <header className="p-4 md:p-6 border-b flex items-center gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10">
         <SidebarTrigger />
-        <h1 className="text-xl font-semibold">{title}</h1>
+        <h1 className="text-xl font-semibold">{getTitle()}</h1>
         <div className="ml-auto">
             {isLoading ? <Skeleton className="h-9 w-9 rounded-full" /> : (
               user && (

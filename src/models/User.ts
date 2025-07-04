@@ -20,15 +20,11 @@ const UserSchema: Schema = new Schema({
 });
 
 
-// Mongoose virtuals are a good way to transform the _id field into id
-UserSchema.virtual('id').get(function() {
-    return this._id.toHexString();
-});
-
-// Ensure virtuals are included in toJSON and toObject outputs
+// Ensure virtuals are included in toJSON and toObject outputs and transform _id to id
 UserSchema.set('toJSON', {
     virtuals: true,
     transform: (doc, ret) => {
+        ret.id = ret._id.toString();
         delete ret._id;
         delete ret.__v;
     }
@@ -36,6 +32,7 @@ UserSchema.set('toJSON', {
 UserSchema.set('toObject', {
     virtuals: true,
      transform: (doc, ret) => {
+        ret.id = ret._id.toString();
         delete ret._id;
         delete ret.__v;
     }
