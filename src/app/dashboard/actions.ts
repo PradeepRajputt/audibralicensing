@@ -1,15 +1,15 @@
 
 'use server';
 
-import type { UserAnalytics, Violation, User } from '@/lib/types';
+import type { UserAnalytics, Violation, User, DashboardData } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
-import { subDays } from 'date-fns';
+import { subDays, format } from 'date-fns';
 import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { getViolationsForUser } from '@/lib/violations-store';
-import { DecodedJWT } from '@/lib/types';
+import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
 
 // MOCKED USER ID for prototype purposes
 const MOCK_USER_ID = 'user_creator_123';
@@ -18,10 +18,10 @@ const MOCK_USER_ID = 'user_creator_123';
  * Fetches dashboard data.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
-export async function getDashboardData() {
+export async function getDashboardData(): Promise<DashboardData | null> {
   noStore();
   
-  const userId = MOCK_USER_ID; // Using mock user ID instead of JWT
+  const userId = MOCK_USER_ID;
 
   try {
     const dbUser = await getUserById(userId);
@@ -31,27 +31,35 @@ export async function getDashboardData() {
         return null;
     }
     
-    // --- MOCK ANALYTICS SECTION (as a real implementation requires deeper API integration) ---
-    const mockAnalytics: UserAnalytics = {
-      subscribers: 124567,
-      views: 9876543,
-      mostViewedVideo: {
-        title: 'My Most Epic Adventure Yet!',
-        views: 1200345
-      },
-      dailyData: Array.from({ length: 90 }, (_, i) => {
-          const date = subDays(new Date(), 89 - i);
-          const dayFactor = (i + 1) / 90;
-          const randomFactor = 0.8 + Math.random() * 0.4;
-          const dailyViews = Math.max(0, Math.floor((1500000 / 90) * dayFactor * randomFactor * 1.5));
-          const dailySubscribers = Math.max(0, Math.floor((12000 / 200) * dayFactor * randomFactor + Math.random() * 5));
-          return {
-            date: date.toISOString().split('T')[0],
-            views: dailyViews,
-            subscribers: dailySubscribers,
-          };
-      }),
-    };
+    let userAnalytics: UserAnalytics | null = null;
+    if (dbUser.youtubeChannelId) {
+        const [stats, mostViewed] = await Promise.all([
+            getChannelStats(dbUser.youtubeChannelId),
+            getMostViewedVideo(dbUser.youtubeChannelId)
+        ]);
+        
+        if (stats) {
+            userAnalytics = {
+                subscribers: stats.subscribers,
+                views: stats.views,
+                mostViewedVideo: mostViewed,
+                 // Generate plausible daily data based on real totals
+                dailyData: Array.from({ length: 90 }, (_, i) => {
+                    const date = subDays(new Date(), 89 - i);
+                    const dayFactor = (i + 1) / 90;
+                    const randomFactor = 0.8 + Math.random() * 0.4;
+                    const dailyViews = Math.max(0, Math.floor((stats.views / 90) * dayFactor * randomFactor * 1.5));
+                    const dailySubscribers = Math.max(0, Math.floor((stats.subscribers / 200) * dayFactor * randomFactor + Math.random() * 5));
+                    return {
+                        date: date.toISOString().split('T')[0],
+                        views: dailyViews,
+                        subscribers: dailySubscribers,
+                    };
+                }),
+            }
+        }
+    }
+
 
     // --- REAL ACTIVITY DATA SECTION ---
     const violations = await getViolationsForUser(userId);
@@ -74,12 +82,17 @@ export async function getDashboardData() {
     });
 
     return { 
-      analytics: dbUser.youtubeChannelId ? mockAnalytics : null, 
+      analytics: userAnalytics, 
       activity: activity, 
       user: dbUser,
     };
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
+    // If the error is from the YouTube service, we can still return partial data
+    const dbUser = await getUserById(userId);
+     if (dbUser) {
+        return { analytics: null, activity: [], user: dbUser };
+     }
     return null;
   }
 }
@@ -108,27 +121,18 @@ export async function verifyYoutubeChannel(
   const { channelId } = validatedFields.data;
 
   try {
-    // In a real app, this would be a call to the YouTube API.
-    // For this prototype, we'll just mock a successful response.
-    const youtubeResponse = {
-        success: true,
-        channel: {
-            id: channelId,
-            name: "Sample YouTube Channel",
-            avatar: "https://placehold.co/128x128/E62117/white?text=YT",
-        }
-    };
+    const channelStats = await getChannelStats(channelId);
 
-    if (!youtubeResponse.success) {
-      return { success: false, message: "Could not verify channel." };
+    if (!channelStats) {
+      return { success: false, message: "Could not find a YouTube channel with that ID." };
     }
 
-    const { channel } = youtubeResponse;
-
     await updateUser(userId, { 
-      youtubeChannelId: channel.id,
-      displayName: channel.name, // Usually you might not want to override this
-      avatar: channel.avatar, // Or this
+      youtubeChannelId: channelId,
+      // You might not want to override name/avatar if they already exist from a social login
+      // but for this flow, it makes sense.
+      displayName: channelStats.title || "YouTube Creator", 
+      avatar: channelStats.avatar, 
       platformsConnected: ['youtube'],
     });
 
@@ -136,7 +140,8 @@ export async function verifyYoutubeChannel(
     
   } catch (error) {
     console.error("Error verifying youtube channel:", error);
-    return { success: false, message: "An unexpected error occurred." };
+    const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+    return { success: false, message };
   }
 
   redirect('/dashboard/analytics');
