@@ -1,75 +1,79 @@
 
 'use server';
-import connectToDatabase from '@/lib/mongodb';
-import UserModel from '@/models/User';
 import type { User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
-import bcrypt from 'bcryptjs';
 
-// Helper to convert Mongoose doc to a plain User object and remove password
-const toPlainUser = (userDoc: any): Omit<User, 'password'> | null => {
-  if (!userDoc) return null;
-  const userObject = userDoc.toObject();
-  const { password, ...safeUser } = userObject;
-  return safeUser;
-};
+// This is now an in-memory mock store, replacing the database connection.
+let mockUsers: User[] = [
+  {
+    id: 'user_creator_123',
+    displayName: 'Sample Creator',
+    email: 'creator@example.com',
+    role: 'creator',
+    joinDate: '2024-01-15T10:00:00.000Z',
+    platformsConnected: ['youtube'],
+    youtubeChannelId: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw',
+    status: 'active',
+    avatar: 'https://placehold.co/128x128.png',
+  },
+  {
+    id: 'user_creator_456',
+    displayName: 'Alice Vlogs',
+    email: 'alice@example.com',
+    role: 'creator',
+    joinDate: '2024-02-20T11:00:00.000Z',
+    platformsConnected: ['instagram'],
+    status: 'active',
+    avatar: 'https://placehold.co/128x128.png',
+  },
+  {
+    id: 'user_creator_789',
+    displayName: 'Bob Builds',
+    email: 'bob@example.com',
+    role: 'creator',
+    joinDate: '2024-03-10T12:00:00.000Z',
+    platformsConnected: ['tiktok'],
+    status: 'suspended',
+    avatar: 'https://placehold.co/128x128.png',
+  },
+  {
+    id: 'user_creator_xyz',
+    displayName: 'Deleted User',
+    email: 'deleted@example.com',
+    role: 'creator',
+    joinDate: '2024-01-01T09:00:00.000Z',
+    platformsConnected: [],
+    status: 'deactivated',
+    avatar: 'https://placehold.co/128x128.png',
+  },
+   {
+    id: 'user_admin_123',
+    displayName: 'Admin User',
+    email: 'admin@creatorshield.com',
+    role: 'admin',
+    joinDate: '2024-01-01T00:00:00.000Z',
+    platformsConnected: [],
+    status: 'active',
+    avatar: 'https://placehold.co/128x128.png',
+  }
+];
 
 export async function getAllUsers(): Promise<Omit<User, 'password'>[]> {
   noStore();
-  await connectToDatabase();
-  const users = await UserModel.find({}).sort({ joinDate: -1 });
-  return users.map(userDoc => toPlainUser(userDoc)!);
+  return Promise.resolve(mockUsers.filter(u => u.role === 'creator'));
 }
 
-export async function getUserById(id: string): Promise<User | null> {
+export async function getUserById(id: string): Promise<User | undefined> {
   noStore();
-  if (!id) return null;
-  await connectToDatabase();
-  const user = await UserModel.findById(id);
-  // Returns with password field undefined by default
-  return user ? user.toObject() : null;
-}
-
-export async function getUserByEmail(email: string): Promise<User | null> {
-    noStore();
-    if (!email) return null;
-    await connectToDatabase();
-    // We explicitly select the password field as it's needed for login verification
-    const user = await UserModel.findOne({ email: email.toLowerCase() }).select('+password');
-    return user ? user.toObject() : null;
-}
-
-export async function createUser(data: Pick<User, 'email' | 'displayName' | 'password'> & { role?: User['role'] }): Promise<Omit<User, 'password'>> {
-    noStore();
-    await connectToDatabase();
-
-    const existingUser = await UserModel.findOne({ email: data.email?.toLowerCase() });
-    if (existingUser) {
-        throw new Error("User with this email already exists.");
-    }
-    
-    const hashedPassword = await bcrypt.hash(data.password!, 10);
-
-    const newUserDoc = new UserModel({
-        email: data.email,
-        displayName: data.displayName,
-        password: hashedPassword,
-        role: data.role || 'creator',
-        avatar: `https://placehold.co/128x128.png?text=${data.displayName?.charAt(0)}`
-    });
-
-    await newUserDoc.save();
-    return toPlainUser(newUserDoc)!;
+  return Promise.resolve(mockUsers.find(u => u.id === id));
 }
 
 export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 'password'>>): Promise<void> {
     noStore();
-    await connectToDatabase();
-    await UserModel.findByIdAndUpdate(id, updates);
-    console.log(`Updated user ${id}.`);
+    mockUsers = mockUsers.map(u => u.id === id ? { ...u, ...updates } : u);
+    console.log(`MOCK: Updated user ${id}.`);
 }
 
 export async function updateUserStatus(id: string, status: User['status']): Promise<void> {
-    noStore();
     await updateUser(id, { status });
 }

@@ -3,10 +3,31 @@
 
 import * as React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import Cookies from 'js-cookie';
+import { usePathname, useRouter } from 'next/navigation';
 import type { DecodedJWT } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+
+// Hardcoded mock users for testing without a database
+const mockCreator: DecodedJWT = {
+    id: 'user_creator_123',
+    email: 'creator@example.com',
+    displayName: 'Sample Creator',
+    role: 'creator',
+    avatar: 'https://placehold.co/128x128.png',
+    iat: Date.now(),
+    exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
+};
+
+const mockAdmin: DecodedJWT = {
+    id: 'user_admin_123',
+    email: 'admin@creatorshield.com',
+    displayName: 'Admin User',
+    role: 'admin',
+    avatar: 'https://placehold.co/128x128.png',
+    iat: Date.now(),
+    exp: Date.now() + 1000 * 60 * 60 * 24 * 7,
+};
+
 
 interface UserContextType {
   user: DecodedJWT | null;
@@ -21,61 +42,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-
-  const syncLogout = useCallback(() => {
-    setUser(null);
-    if (!['/login', '/register', '/'].includes(pathname)) {
-        router.push('/login');
-    }
-  }, [router, pathname]);
-
-
+  
   useEffect(() => {
-    try {
-        const userDataCookie = Cookies.get('user-data');
-        if (userDataCookie) {
-            const userData: DecodedJWT = JSON.parse(userDataCookie);
-            setUser(userData);
-        } else {
-            setUser(null);
-        }
-    } catch (error) {
-        console.error("Failed to parse user data from cookie:", error);
-        setUser(null);
+    // Determine which user to mock based on the URL path for easy testing
+    if (pathname.startsWith('/admin')) {
+      setUser(mockAdmin);
+    } else if (pathname.startsWith('/dashboard')) {
+      setUser(mockCreator);
+    } else {
+        setUser(null); // No user on landing/login/register pages
     }
     setIsLoading(false);
-
-    // Listen for changes in other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-        if (e.key === 'logout-event') {
-            syncLogout();
-        }
-    }
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-        window.removeEventListener('storage', handleStorageChange);
-    }
-
-  }, [syncLogout]);
+  }, [pathname]);
 
   const logout = useCallback(async () => {
-    try {
-        await fetch('/api/auth/logout', { method: 'POST' });
-    } catch(error) {
-        console.error("Logout API call failed:", error)
-    } finally {
-        // Trigger storage event to logout in other tabs
-        window.localStorage.setItem('logout-event', Date.now().toString());
-        syncLogout();
-    }
-  }, [syncLogout]);
+    // Simulate logout
+    setUser(null);
+    router.push('/login');
+  }, [router]);
   
-  // Show a global loading spinner if user state is loading, to prevent flicker
-  if (isLoading) {
-    return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
-  }
-
   const value = { user, isLoading, logout };
 
   return (
