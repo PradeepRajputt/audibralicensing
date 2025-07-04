@@ -34,8 +34,7 @@ export function CreatorSidebar() {
   const pathname = usePathname();
   const { user, isLoading, logout } = useUser();
   const [hasUnread, setHasUnread] = React.useState(false);
-  const router = useRouter();
-
+  
   const channelConnected = !!user?.youtubeChannelId;
   const creatorName = user?.displayName ?? 'Creator';
   const creatorImage = user?.avatar;
@@ -46,21 +45,6 @@ export function CreatorSidebar() {
     }
   }, [user?.id]);
   
-   // This redirect is now handled by middleware, but kept as a client-side safeguard
-   React.useEffect(() => {
-    const allowedPathsWithoutConnection = [
-      '/dashboard/connect-platform',
-      '/dashboard/settings',
-      '/dashboard/feedback',
-      '/dashboard/overview',
-      '/dashboard/activity',
-    ];
-
-    if (!isLoading && user && !channelConnected && !allowedPathsWithoutConnection.some(p => pathname.startsWith(p))) {
-        router.push('/dashboard/connect-platform');
-    }
-  }, [isLoading, user, channelConnected, pathname, router]);
-
   return (
     <Sidebar>
       <SidebarHeader>

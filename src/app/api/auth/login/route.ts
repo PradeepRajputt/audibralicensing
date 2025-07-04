@@ -9,6 +9,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-for-prototype-at-least-32-chars-long');
+const AUTH_SECRET = process.env.AUTH_SECRET || 'fallback-auth-secret';
+
 
 export async function POST(req: NextRequest) {
   try {
