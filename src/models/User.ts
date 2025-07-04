@@ -1,13 +1,13 @@
 
-import mongoose, { Schema, Document, models } from 'mongoose';
+import mongoose, { Schema, Document, models, Model } from 'mongoose';
 import type { User } from '@/lib/types';
 
-export interface IUser extends Document, Omit<User, 'id'> {}
+export interface IUser extends Omit<User, 'id'>, Document {}
 
 const UserSchema: Schema = new Schema({
   displayName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  password: { type: String, required: true, select: false }, // Don't return password by default
   role: { type: String, enum: ['creator', 'admin'], default: 'creator' },
   joinDate: { type: String, default: () => new Date().toISOString() },
   platformsConnected: { type: [String], default: [] },
@@ -20,17 +20,25 @@ const UserSchema: Schema = new Schema({
 });
 
 
-// Mongoose virtuals are a good way to transform the _id field
+// Mongoose virtuals are a good way to transform the _id field into id
 UserSchema.virtual('id').get(function() {
     return this._id.toHexString();
 });
 
 // Ensure virtuals are included in toJSON and toObject outputs
 UserSchema.set('toJSON', {
-    virtuals: true
+    virtuals: true,
+    transform: (doc, ret) => {
+        delete ret._id;
+        delete ret.__v;
+    }
 });
 UserSchema.set('toObject', {
-    virtuals: true
+    virtuals: true,
+     transform: (doc, ret) => {
+        delete ret._id;
+        delete ret.__v;
+    }
 });
 
-export default models.User || mongoose.model<IUser>('User', UserSchema);
+export default (models.User as Model<IUser>) || mongoose.model<IUser>('User', UserSchema);
