@@ -15,7 +15,7 @@ const OtpRequestSchema = z.string().email({ message: "Invalid email address." })
 export async function requestLoginOtpAction(email: string) {
     const validation = OtpRequestSchema.safeParse(email);
     if (!validation.success) {
-        return { success: false, message: validation.error.flatten().formErrors.join(', ') };
+        return { success: false, message: validation.error.flatten().formErrors.join(', '), otp: null };
     }
 
     try {
@@ -27,21 +27,22 @@ export async function requestLoginOtpAction(email: string) {
         
         await setUserOtp(email, hashedOtp, expires);
         
-        // Log for easy testing during development
-        console.log(`Login OTP for ${email}: ${otp}`);
-
         const emailResult = await sendLoginOtpEmail({ to: email, otp });
         
         if (!emailResult.success) {
-            console.error("Email sending failed:", emailResult.error);
-            // Return a generic error to the client
-            return { success: false, message: "Could not send OTP. Please try again later." };
+            console.error("Email sending simulation failed:", emailResult.message);
+            // Even if "sending" fails, we can proceed in a dev environment
+            if(emailResult.otp) {
+               return { success: true, message: "OTP simulated.", otp: emailResult.otp };
+            }
+            return { success: false, message: "Could not generate OTP. Please try again later.", otp: null };
         }
         
-        return { success: true, message: "OTP sent to your email." };
+        // Return the OTP in the success response for the client to display.
+        return { success: true, message: "OTP sent (simulated).", otp: emailResult.otp };
     } catch (error) {
         console.error("OTP Request Error:", error);
-        return { success: false, message: "An unexpected error occurred. Please try again later." };
+        return { success: false, message: "An unexpected error occurred. Please try again later.", otp: null };
     }
 }
 

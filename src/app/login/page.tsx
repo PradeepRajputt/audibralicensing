@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -55,12 +54,19 @@ export default function LoginPage() {
     const handleEmailSubmit = async (values: z.infer<typeof emailSchema>) => {
         setIsLoading(true);
         const result = await requestLoginOtpAction(values.email);
-        if (result.success) {
-            toast({ title: "OTP Sent", description: "Check your email for the one-time password." });
+        if (result.success && result.otp) {
+            toast({ 
+                title: "OTP Generated (For Testing)", 
+                description: `Your login code is: ${result.otp}` 
+            });
             setEmail(values.email);
             setStep('otp');
         } else {
-            toast({ variant: 'destructive', title: "Failed to send OTP", description: result.message });
+            toast({ 
+                variant: 'destructive', 
+                title: "Failed to get OTP", 
+                description: result.message || "An unknown error occurred." 
+            });
         }
         setIsLoading(false);
     }
