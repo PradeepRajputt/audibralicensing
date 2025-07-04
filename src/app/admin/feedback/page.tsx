@@ -49,8 +49,6 @@ export default function AdminFeedbackPage() {
 
   const loadFeedback = React.useCallback(async () => {
     try {
-      // Data is already sanitized in a server component if this were a server page,
-      // but here we fetch on client, so the returned value from the server action should be clean.
       const data = await getAllFeedback();
       setFeedbackList(JSON.parse(JSON.stringify(data)));
     } catch (error) {
