@@ -5,8 +5,8 @@ import { z } from "zod";
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
-import { findOrCreateUserByEmail, setUserOtp, findUserByEmailWithAuth } from "@/lib/users-store";
-import { sendLoginOtpEmail } from "@/lib/services/backend-services";
+import { findOrCreateUserByEmail, setUserOtp, findUserByEmailWithAuth } from '@/lib/users-store';
+import { sendLoginOtpEmail } from '@/lib/services/backend-services';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
 
@@ -27,16 +27,21 @@ export async function requestLoginOtpAction(email: string) {
         
         await setUserOtp(email, hashedOtp, expires);
         
-        // In a real app, you might hide the OTP from the server response
-        // But for this prototype, we'll log it for easy testing.
+        // Log for easy testing during development
         console.log(`Login OTP for ${email}: ${otp}`);
 
-        await sendLoginOtpEmail({ to: email, otp });
+        const emailResult = await sendLoginOtpEmail({ to: email, otp });
+        
+        if (!emailResult.success) {
+            console.error("Email sending failed:", emailResult.error);
+            // Return a generic error to the client
+            return { success: false, message: "Could not send OTP. Please try again later." };
+        }
         
         return { success: true, message: "OTP sent to your email." };
     } catch (error) {
         console.error("OTP Request Error:", error);
-        return { success: false, message: "Could not send OTP. Please try again later." };
+        return { success: false, message: "An unexpected error occurred. Please try again later." };
     }
 }
 
