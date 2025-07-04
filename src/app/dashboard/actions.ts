@@ -7,11 +7,12 @@ import { subDays } from 'date-fns';
 import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
 import { redirect } from 'next/navigation';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { DecodedJWT } from '@/lib/types';
+
+// MOCKED USER ID for prototype purposes
+const MOCK_USER_ID = 'user_creator_123';
 
 /**
  * Fetches dashboard data.
@@ -20,21 +21,7 @@ import { DecodedJWT } from '@/lib/types';
 export async function getDashboardData() {
   noStore();
   
-  const token = cookies().get('token')?.value;
-  if (!token) {
-    console.log("No session found, returning null.");
-    return null;
-  }
-  
-  let decoded: DecodedJWT;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedJWT;
-  } catch (error) {
-    console.error("Invalid token:", error);
-    return null;
-  }
-
-  const userId = decoded.id;
+  const userId = MOCK_USER_ID; // Using mock user ID instead of JWT
 
   try {
     const dbUser = await getUserById(userId);
@@ -105,17 +92,7 @@ export async function verifyYoutubeChannel(
   prevState: any,
   formData: FormData
 ) {
-  const token = cookies().get('token')?.value;
-  if (!token) return { success: false, message: 'Authentication required.' };
-  
-  let decoded: DecodedJWT;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedJWT;
-  } catch (e) {
-    return { success: false, message: 'Authentication required.' };
-  }
-
-  const userId = decoded.id;
+  const userId = MOCK_USER_ID;
 
   const validatedFields = verifyChannelFormSchema.safeParse({
     channelId: formData.get("channelId"),
@@ -166,18 +143,10 @@ export async function verifyYoutubeChannel(
 }
 
 export async function disconnectYoutubeChannelAction() {
-    const token = cookies().get('token')?.value;
-    if (!token) return { success: false, message: 'Authentication required.' };
-
-    let decoded: DecodedJWT;
-    try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedJWT;
-    } catch (e) {
-        return { success: false, message: 'Authentication required.' };
-    }
+    const userId = MOCK_USER_ID;
     
     try {
-        await updateUser(decoded.id, {
+        await updateUser(userId, {
             youtubeChannelId: undefined,
             platformsConnected: [] // Assuming only one platform for now
         });
