@@ -42,7 +42,7 @@ export async function getAllUsers(): Promise<Omit<User, 'password'>[]> {
 
 export async function getUserById(id: string): Promise<User | undefined> {
   noStore();
-  return Promise.resolve(mockUsers.find(u => u.id === id));
+  return Promise.resolve(mockUsers.find(u => u.id === id || u.uid === id));
 }
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
@@ -77,7 +77,7 @@ export async function createUser(data: Omit<User, 'joinDate' | 'status' | 'platf
 }
 
 
-export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 'uid'>>): Promise<void> {
+export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 'uid' | 'email'>>): Promise<void> {
     noStore();
     mockUsers = mockUsers.map(u => u.id === id ? { ...u, ...updates } : u);
     console.log(`MOCK: Updated user ${id}`, mockUsers.find(u=> u.id === id));

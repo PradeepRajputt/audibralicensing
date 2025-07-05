@@ -16,32 +16,36 @@ import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, B
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import React from 'react';
+import { useAuth } from '@/context/auth-context';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 
+
 const menuItems = [
-  { href: '/dashboard/overview', label: 'Overview', icon: Home },
-  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: false },
-  { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
-  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
-  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
-  { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
-  { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
+  { href: '/dashboard/overview', label: 'Overview', icon: Home, requiresConnection: false },
+  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity, requiresConnection: false },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
+  { href: '/dashboard/content', label: 'My Content', icon: FileVideo, requiresConnection: false },
+  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch, requiresConnection: true },
+  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert, requiresConnection: true },
+  { href: '/dashboard/reports', label: 'Submit Report', icon: FileText, requiresConnection: false },
+  { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart, requiresConnection: false },
 ];
 
 export function CreatorSidebar() {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
   const [hasUnread, setHasUnread] = React.useState(false);
   
-  // Mock user data since auth is removed
-  const creatorName = 'Sample Creator';
-  const creatorImage = 'https://placehold.co/128x128.png';
-  const avatarFallback = 'SC';
-  
+  const creatorName = user?.displayName;
+  const creatorImage = user?.photoURL;
+  const avatarFallback = creatorName ? creatorName.substring(0,2) : 'C';
+  const youtubeConnected = !!user?.youtubeChannelId;
+
   React.useEffect(() => {
-    // Mock check for unread feedback
-    hasUnreadCreatorFeedback("user_creator_123").then(setHasUnread);
-  }, [pathname]);
+    if (user) {
+      hasUnreadCreatorFeedback(user.uid).then(setHasUnread);
+    }
+  }, [pathname, user]);
   
   return (
     <Sidebar>
@@ -63,6 +67,7 @@ export function CreatorSidebar() {
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/overview');
+            const isDisabled = item.requiresConnection && !youtubeConnected;
             return (
               <SidebarMenuItem 
                 key={item.href}
@@ -71,9 +76,11 @@ export function CreatorSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
-                  tooltip={item.label}
+                  tooltip={isDisabled ? `${item.label} (requires YouTube connection)` : item.label}
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled}
                 >
-                  <NextLink href={item.href} prefetch={false}>
+                  <NextLink href={item.href} prefetch={false} className={isDisabled ? "pointer-events-none" : ""}>
                     <item.icon />
                     <span>{item.label}</span>
                   </NextLink>

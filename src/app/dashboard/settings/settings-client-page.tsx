@@ -12,21 +12,50 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import { useAuth } from "@/context/auth-context";
+import { signInWithYouTube, signOut } from "@/lib/auth";
+import { updateUserAction } from "./actions";
 
 export default function SettingsClientPage() {
     const { toast } = useToast();
+    const { user, loading, revalidateUser } = useAuth();
     const [isSaving, setIsSaving] = React.useState(false);
-    const [profilePicture, setProfilePicture] = React.useState("https://placehold.co/128x128.png");
+    const [profilePicture, setProfilePicture] = React.useState(user?.photoURL);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    // Mock user data - in a real app this would come from a hook or context
-    const user = {
-        name: 'Sample Creator',
-        email: 'creator@example.com',
-        image: 'https://placehold.co/128x128.png',
-        youtubeChannelId: 'UC-mock-channel-id'
+    React.useEffect(() => {
+        setProfilePicture(user?.photoURL);
+    }, [user]);
+
+    const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!user) return;
+
+        setIsSaving(true);
+        const formData = new FormData(e.currentTarget);
+        const displayName = formData.get('displayName') as string;
+
+        try {
+            await updateUserAction(user.uid, { displayName });
+            await revalidateUser();
+            toast({ title: "Profile Updated", description: "Your profile information has been saved." });
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Update Failed", description: "Could not update your profile." });
+        } finally {
+            setIsSaving(false);
+        }
     };
+    
+    const handleConnect = async () => {
+        try {
+            await signInWithYouTube();
+            await revalidateUser();
+            toast({ title: 'YouTube Connected', description: 'Your channel analytics will be available shortly.' });
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Connection Failed', description: 'Could not connect to YouTube. Please try again.' });
+        }
+    }
 
   return (
     <div className="space-y-6">
@@ -43,18 +72,11 @@ export default function SettingsClientPage() {
                  <CardDescription>This is how your profile appears on the platform.</CardDescription>
             </CardHeader>
              <CardContent>
-                <form className="space-y-6" onSubmit={(e) => {
-                    e.preventDefault();
-                    setIsSaving(true);
-                    setTimeout(() => {
-                        toast({title: "Profile Updated", description: "Your profile information has been saved."});
-                        setIsSaving(false);
-                    }, 1500)
-                }}>
+                <form className="space-y-6" onSubmit={handleProfileUpdate}>
                     <div className="flex items-center gap-6">
                         <Avatar className="w-24 h-24">
-                            <AvatarImage src={profilePicture} data-ai-hint="profile picture" />
-                            <AvatarFallback>{user?.name?.substring(0,2)}</AvatarFallback>
+                            <AvatarImage src={profilePicture ?? undefined} data-ai-hint="profile picture" />
+                            <AvatarFallback>{user?.displayName?.substring(0,2) ?? "C"}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-2">
                            <Input id="picture" type="file" ref={fileInputRef} className="hidden" onChange={(e) => {
@@ -62,15 +84,16 @@ export default function SettingsClientPage() {
                                 if (file) setProfilePicture(URL.createObjectURL(file));
                            }} accept="image/png, image/jpeg" />
                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Picture</Button>
+                           <p className="text-xs text-muted-foreground">Picture updates are not implemented.</p>
                         </div>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="displayName">Display Name</Label>
-                        <Input id="displayName" defaultValue={user.name ?? ""} className="max-w-sm" />
+                        <Input id="displayName" name="displayName" defaultValue={user?.displayName ?? ""} className="max-w-sm" />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" value={user.email ?? ""} disabled className="max-w-sm" />
+                        <Input id="email" type="email" value={user?.email ?? ""} disabled className="max-w-sm" />
                     </div>
                     <Button type="submit" disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -93,14 +116,18 @@ export default function SettingsClientPage() {
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {user.youtubeChannelId ? (
-                                <p className="text-sm text-muted-foreground">Connected as: {user.name}</p>
+                            {user?.youtubeChannelId ? (
+                                <p className="text-sm text-muted-foreground">Connected: {user.displayName}</p>
                             ) : (
                                 <p className="text-sm text-muted-foreground">Not connected</p>
                             )}
                         </div>
                     </div>
-                     <Button variant="destructive" disabled>Disconnect</Button>
+                     {user?.youtubeChannelId ? (
+                        <Button variant="destructive" disabled>Disconnect</Button>
+                     ) : (
+                        <Button onClick={handleConnect}>Connect YouTube</Button>
+                     )}
                 </div>
             </CardContent>
         </Card>
@@ -111,7 +138,7 @@ export default function SettingsClientPage() {
                 <CardDescription>Sign out of your CreatorShield account.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button variant="outline">
+                <Button variant="outline" onClick={signOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                 </Button>
