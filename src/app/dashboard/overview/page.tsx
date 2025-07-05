@@ -2,13 +2,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@/context/user-context';
+import { useSession, signIn } from 'next-auth/react';
 import { getDashboardData } from '../actions';
 import type { DashboardData } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Users, Eye, Video, Youtube, LogIn } from 'lucide-react';
+import { Users, Eye, Video, Youtube, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -54,7 +54,6 @@ function ConnectYoutubePlaceholder() {
 }
 
 function LoginPlaceholder() {
-    // This should ideally not be shown due to layout protection, but as a safeguard.
      return (
        <Card className="text-center w-full max-w-lg mx-auto">
           <CardHeader>
@@ -62,11 +61,9 @@ function LoginPlaceholder() {
               <CardDescription>To get started, please sign in.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button asChild>
-                  <Link href="/">
-                      <LogIn className="mr-2 h-5 w-5" />
-                      Sign In
-                  </Link>
+              <Button onClick={() => signIn('google', { callbackUrl: '/dashboard' })}>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In with Google
               </Button>
           </CardContent>
       </Card>
@@ -75,27 +72,27 @@ function LoginPlaceholder() {
 
 
 export default function OverviewPage() {
-    const { user, isLoading: isUserLoading } = useUser();
+    const { data: session, status } = useSession();
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     useEffect(() => {
-        if(user) {
+        if (status === 'authenticated') {
             setIsLoadingData(true);
             getDashboardData().then(data => {
                 setDashboardData(data);
                 setIsLoadingData(false);
             })
-        } else if (!isUserLoading) {
-            // User is not logged in, stop loading
+        } else if (status === 'unauthenticated') {
             setIsLoadingData(false);
         }
-    }, [user, isUserLoading]);
+    }, [status]);
 
-    const isLoading = isUserLoading || isLoadingData;
+    const isLoading = status === 'loading' || isLoadingData;
     const analytics = dashboardData?.analytics;
-    const creatorName = user?.displayName ?? 'Creator';
-    const avatar = user?.avatar;
+    const user = session?.user;
+    const creatorName = user?.name ?? 'Creator';
+    const avatar = user?.image;
     const avatarFallback = creatorName.charAt(0);
 
 
@@ -116,7 +113,7 @@ export default function OverviewPage() {
         <div className="space-y-6">
             <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                    <AvatarImage src={avatar} alt={creatorName} data-ai-hint="profile picture" />
+                    <AvatarImage src={avatar ?? undefined} alt={creatorName} data-ai-hint="profile picture" />
                     <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
                 <div>

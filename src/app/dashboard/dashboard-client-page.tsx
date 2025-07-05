@@ -10,29 +10,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
-import { useUser } from "@/context/user-context";
-import { useState, useEffect } from "react";
-import { getDashboardData } from './actions';
+import { useSession, signIn } from 'next-auth/react';
 
+export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
+    const { data: session, status } = useSession();
+    const { activity } = initialData || {};
+    const isLoading = status === 'loading' || !initialData;
 
-export default function DashboardClientPage() {
-    const { user, isLoading: isUserLoading } = useUser();
-    const [data, setData] = useState<DashboardData | null>(null);
-    const [isLoadingData, setIsLoadingData] = useState(true);
-
-    useEffect(() => {
-        if(user) {
-            getDashboardData().then(fetchedData => {
-                setData(fetchedData);
-                setIsLoadingData(false);
-            });
-        } else if (!isUserLoading) {
-            setIsLoadingData(false);
-        }
-    }, [user, isUserLoading]);
-
-  const { activity } = data || {};
-  const isLoading = isUserLoading || isLoadingData;
 
   if (isLoading) {
     return (
@@ -44,9 +28,8 @@ export default function DashboardClientPage() {
       </div>
     );
   }
-
-  // This should not be hit if the layout redirect works, but as a fallback.
-  if (!user) {
+  
+  if (!session) {
     return (
        <Card className="text-center w-full max-w-lg mx-auto">
           <CardHeader>
@@ -54,11 +37,9 @@ export default function DashboardClientPage() {
               <CardDescription>To get started, please sign in.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button asChild>
-                  <Link href="/login">
-                      <LogIn className="mr-2 h-5 w-5" />
-                      Sign In
-                  </Link>
+              <Button onClick={() => signIn('google')}>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In with Google
               </Button>
           </CardContent>
       </Card>

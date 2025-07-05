@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
-import { disconnectYoutubeChannelAction } from '@/app/dashboard/actions';
 import { ThemeSettings } from "@/components/settings/theme-settings";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
@@ -38,9 +37,7 @@ export default function SettingsClientPage() {
 
     const handleDisconnect = async () => {
         setIsActionLoading(true);
-        // This part needs a server action if we want to clear it from the database.
-        // For now, it will just sign the user out which effectively disconnects.
-        toast({ title: "Channel Disconnected", description: "You have been signed out."});
+        toast({ title: "Channel Disconnected", description: "You have been signed out to clear permissions."});
         signOut({ callbackUrl: '/' });
         setIsActionLoading(false);
     }

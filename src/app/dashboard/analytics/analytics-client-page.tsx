@@ -13,7 +13,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useUser } from '@/context/user-context';
+import { useSession, signIn } from 'next-auth/react';
 import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -95,21 +95,24 @@ function ConnectYoutubePlaceholder() {
 
 
 export default function AnalyticsClientPage() {
-    const { user, isLoading: isUserLoading } = useUser();
+    const { data: session, status } = useSession();
     const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
 
     React.useEffect(() => {
-        if(user) {
+        if(status === 'authenticated') {
             setIsLoadingData(true);
             getDashboardData().then(data => {
                 setDashboardData(data);
                 setIsLoadingData(false);
             })
+        } else if (status === 'unauthenticated') {
+            setIsLoadingData(false);
         }
-    }, [user]);
+    }, [status]);
 
     const analytics = dashboardData?.analytics ?? null;
+    const isLoading = status === 'loading' || isLoadingData;
 
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
     const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
@@ -184,7 +187,7 @@ export default function AnalyticsClientPage() {
         }
     }
 
-    if (isUserLoading || isLoadingData) {
+    if (isLoading) {
         return <AnalyticsLoadingSkeleton />;
     }
 

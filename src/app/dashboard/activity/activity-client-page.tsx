@@ -10,10 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
+import { useSession, signIn } from 'next-auth/react';
 
 export default function ActivityClientPage({ initialData }: { initialData: DashboardData | null }) {
+  const { data: session, status } = useSession();
   const { activity, user } = initialData || {};
-  const isLoading = !initialData;
+  const isLoading = status === 'loading' && !initialData;
 
   if (isLoading) {
     return (
@@ -26,8 +28,7 @@ export default function ActivityClientPage({ initialData }: { initialData: Dashb
     );
   }
 
-  // This should not be hit if the layout redirect works, but as a fallback.
-  if (!user) {
+  if (!session) {
     return (
        <Card className="text-center w-full max-w-lg mx-auto">
           <CardHeader>
@@ -35,11 +36,9 @@ export default function ActivityClientPage({ initialData }: { initialData: Dashb
               <CardDescription>To get started, please sign in.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button asChild>
-                  <Link href="/login">
-                      <LogIn className="mr-2 h-5 w-5" />
-                      Sign In
-                  </Link>
+              <Button onClick={() => signIn('google')}>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In with Google
               </Button>
           </CardContent>
       </Card>
