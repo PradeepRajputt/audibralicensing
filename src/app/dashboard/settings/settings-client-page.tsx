@@ -2,10 +2,10 @@
 'use client';
 
 import * as React from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Youtube, Loader2, Trash2, LogOut, KeyRound } from "lucide-react";
+import { Youtube, Loader2, Trash2, LogOut } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,13 +28,13 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function SettingsClientPage() {
-    const { data: session, status, update: updateSession } = useSession();
+    const { data: session, status } = useSession();
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     
     const user = session?.user;
     const isLoading = status === 'loading';
-    const channelConnected = !!user?.youtubeChannelId;
+    const channelConnected = !!(user && 'youtubeChannelId' in user && (user as any).youtubeChannelId);
 
     const handleDisconnect = async () => {
         setIsActionLoading(true);
@@ -63,7 +63,7 @@ export default function SettingsClientPage() {
                 <div className="flex items-center gap-6">
                     {isLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                       <Avatar className="w-24 h-24">
-                        <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ''} data-ai-hint="profile picture" />
+                        <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? 'User'} data-ai-hint="profile picture" />
                         <AvatarFallback>{user?.name?.substring(0,2) ?? 'C'}</AvatarFallback>
                       </Avatar>
                     )}
@@ -121,9 +121,9 @@ export default function SettingsClientPage() {
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {isLoading ? <Skeleton className="h-4 w-40 mt-1" /> : user ? (
+                            {isLoading ? <Skeleton className="h-4 w-40 mt-1" /> : channelConnected ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Connected as: {user.name}
+                                    Connected as: {user?.name}
                                 </p>
                             ) : (
                                 <p className="text-sm text-muted-foreground">
@@ -132,12 +132,12 @@ export default function SettingsClientPage() {
                             )}
                         </div>
                     </div>
-                    {isLoading ? <Skeleton className="h-10 w-28" /> : user ? (
+                    {isLoading ? <Skeleton className="h-10 w-28" /> : channelConnected ? (
                          <div className="flex items-center gap-4">
-                             <Avatar>
-                                 <AvatarImage src={user.image!} data-ai-hint="channel icon" />
+                             {user?.image && <Avatar>
+                                 <AvatarImage src={user.image} data-ai-hint="channel icon" />
                                  <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                             </Avatar>
+                             </Avatar>}
                              <Button variant="destructive" onClick={handleDisconnect} disabled={isActionLoading}>
                                  {isActionLoading && <Loader2 className="mr-2 animate-spin" />}
                                  Disconnect
