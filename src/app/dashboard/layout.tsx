@@ -9,6 +9,7 @@ import { useYouTube } from '@/context/youtube-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Youtube } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardLayout({
   children,
@@ -35,7 +36,6 @@ export default function DashboardLayout({
 }
 
 function ConnectYoutubePlaceholder() {
-    const { setIsYouTubeConnected } = useYouTube();
     return (
         <div className="flex-1 flex items-center justify-center">
              <Card className="text-center w-full max-w-lg mx-auto">
@@ -47,8 +47,10 @@ function ConnectYoutubePlaceholder() {
                     <CardDescription>To view your dashboard and use monitoring features, please connect your YouTube channel in settings.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                     <Button onClick={() => setIsYouTubeConnected(true)}>
-                        Go to Settings
+                     <Button asChild>
+                        <Link href="/dashboard/settings">
+                            Go to Settings
+                        </Link>
                     </Button>
                 </CardContent>
             </Card>
