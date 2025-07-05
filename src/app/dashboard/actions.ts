@@ -3,7 +3,7 @@
 
 import type { User, UserAnalytics, Violation, DashboardData } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
-import { subDays } from 'date-fns';
+import { subDays, format } from 'date-fns';
 import { getUserById } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { getViolationsForUser } from '@/lib/violations-store';
@@ -11,14 +11,13 @@ import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-serv
 
 /**
  * Fetches dashboard data for a given user ID.
- * @param userId The ID of the user.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
-export async function getDashboardData(userId?: string): Promise<DashboardData | null> {
+export async function getDashboardData(): Promise<DashboardData | null> {
   noStore();
   
   // Since auth is removed, we'll use a mock user ID but structure it to be easily adaptable.
-  const effectiveUserId = userId || 'user_creator_123';
+  const effectiveUserId = 'user_creator_123';
 
   try {
     const dbUser = await getUserById(effectiveUserId);
@@ -49,7 +48,7 @@ export async function getDashboardData(userId?: string): Promise<DashboardData |
                         const dailyViews = Math.max(0, Math.floor((stats.views / 90) * dayFactor * randomFactor * 1.5));
                         const dailySubscribers = Math.max(0, Math.floor((stats.subscribers / 200) * dayFactor * randomFactor + Math.random() * 5));
                         return {
-                            date: date.toISOString().split('T')[0],
+                            date: format(date, 'yyyy-MM-dd'),
                             views: dailyViews,
                             subscribers: dailySubscribers,
                         };
@@ -62,7 +61,6 @@ export async function getDashboardData(userId?: string): Promise<DashboardData |
             userAnalytics = null;
         }
     }
-
 
     const violations = await getViolationsForUser(effectiveUserId);
     const activity = violations.slice(0, 5).map((violation: Violation) => {

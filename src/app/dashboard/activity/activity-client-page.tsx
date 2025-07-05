@@ -8,9 +8,8 @@ import type { DashboardData } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
-export default function ActivityClientPage({ initialData }: { initialData: DashboardData | null }) {
+export default function ActivityClientPage({ initialData, isLoading }: { initialData: DashboardData | null, isLoading: boolean }) {
   const { activity } = initialData || {};
-  const isLoading = !initialData;
 
   if (isLoading) {
     return (

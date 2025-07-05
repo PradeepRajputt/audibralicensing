@@ -1,26 +1,14 @@
 
 'use client';
-import { getDashboardData } from '../actions';
 import type { DashboardData } from '@/lib/types';
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
 import ActivityClientPage from './activity-client-page';
+import { useDashboardData } from '../dashboard-context';
+import { useYouTube } from '@/context/youtube-context';
 
 export default function ActivityPage() {
-    const [data, setData] = useState<DashboardData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        setIsLoading(true);
-        getDashboardData().then(data => {
-            setData(data);
-            setIsLoading(false);
-        });
-    }, []);
-
-    if(isLoading) {
-        return <div className="flex items-center justify-center h-full py-10"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
-    }
+    const dashboardData = useDashboardData();
+    const { isYouTubeConnected } = useYouTube();
+    const isLoading = !dashboardData && isYouTubeConnected;
     
-    return <ActivityClientPage initialData={data} />;
+    return <ActivityClientPage initialData={dashboardData} isLoading={isLoading} />;
 }

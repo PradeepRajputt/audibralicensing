@@ -5,17 +5,17 @@ import * as React from 'react';
 import { format, subDays, startOfWeek, endOfMonth, startOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Users, Eye, Video, Palette, Youtube, Loader2 } from 'lucide-react';
+import { Users, Eye, Video, Palette, Youtube, LogIn, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { DashboardData } from '@/lib/types';
 import { useYouTube } from '@/context/youtube-context';
+import { useDashboardData } from '../dashboard-context';
+import { useRouter } from 'next/navigation';
 
 type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
@@ -52,15 +52,34 @@ function ColorPicker({ color, setColor }: { color: string, setColor: (color: str
 
 function AnalyticsLoadingSkeleton() {
     return (
-        <div className="flex items-center justify-center h-full py-10">
-            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <div className="space-y-6 animate-pulse">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="space-y-1">
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-full max-w-md" />
+                </div>
+                 <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <Skeleton className="h-10 w-full sm:w-[120px]" />
+                    <Skeleton className="h-10 w-full sm:w-[300px]" />
+                </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                 <Card><CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                 <Card><CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                 <Card><CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+            </div>
+             <div className="grid gap-6 lg:grid-cols-2">
+                <Card><CardHeader className="flex flex-row items-start justify-between gap-4"><div><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></div><Skeleton className="h-10 w-32" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-start justify-between gap-4"><div><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></div><Skeleton className="h-10 w-32" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
+            </div>
         </div>
     )
 }
 
 function ConnectYoutubePlaceholder() {
+    const router = useRouter();
     return (
-        <Card className="text-center w-full max-w-lg mx-auto">
+       <Card className="text-center w-full max-w-lg mx-auto">
           <CardHeader>
               <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
                 <Youtube className="w-12 h-12 text-primary" />
@@ -69,8 +88,9 @@ function ConnectYoutubePlaceholder() {
               <CardDescription>To view your analytics, please connect your YouTube channel in settings.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button disabled>
-                  Connect YouTube
+              <Button onClick={() => router.push('/dashboard/settings')}>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Connect YouTube in Settings
               </Button>
           </CardContent>
       </Card>
@@ -78,24 +98,11 @@ function ConnectYoutubePlaceholder() {
 }
 
 export default function AnalyticsClientPage() {
-    const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
-    const [isLoadingData, setIsLoadingData] = React.useState(true);
+    const dashboardData = useDashboardData();
     const { isYouTubeConnected } = useYouTube();
 
-    React.useEffect(() => {
-        if (isYouTubeConnected) {
-            setIsLoadingData(true);
-            getDashboardData().then(data => {
-                setDashboardData(data);
-                setIsLoadingData(false);
-            })
-        } else {
-            setIsLoadingData(false);
-        }
-    }, [isYouTubeConnected]);
-
     const analytics = dashboardData?.analytics ?? null;
-    const isLoading = isLoadingData;
+    const isLoading = !dashboardData && isYouTubeConnected;
 
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
     const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
@@ -174,8 +181,19 @@ export default function AnalyticsClientPage() {
         return <AnalyticsLoadingSkeleton />;
     }
     
-    if (!analytics) {
+    if (!isYouTubeConnected) {
         return <ConnectYoutubePlaceholder />;
+    }
+
+     if (!analytics) {
+        return (
+            <Card className="text-center">
+                <CardHeader>
+                    <CardTitle>Analytics Data Unavailable</CardTitle>
+                    <CardDescription>We couldn't fetch your YouTube analytics. Please check your connection or try again later.</CardDescription>
+                </CardHeader>
+            </Card>
+        )
     }
 
     return (

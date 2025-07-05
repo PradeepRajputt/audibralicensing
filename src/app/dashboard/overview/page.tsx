@@ -1,9 +1,6 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getDashboardData } from '../actions';
-import type { DashboardData } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +8,7 @@ import { Users, Eye, Video, Youtube, LogIn } from 'lucide-react';
 import { useYouTube } from '@/context/youtube-context';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { useDashboardData } from '../dashboard-context';
 
 function OverviewLoadingSkeleton() {
     return (
@@ -23,9 +21,9 @@ function OverviewLoadingSkeleton() {
                 </div>
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-4" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
             </div>
         </div>
     );
@@ -54,20 +52,11 @@ function ConnectYoutubePlaceholder() {
 
 
 export default function OverviewPage() {
-    const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const dashboardData = useDashboardData();
     const { isYouTubeConnected } = useYouTube();
-
-    useEffect(() => {
-        if (isYouTubeConnected) {
-            getDashboardData().then(data => {
-                setDashboardData(data);
-                setIsLoading(false);
-            })
-        } else {
-            setIsLoading(false);
-        }
-    }, [isYouTubeConnected]);
+    
+    // Data is loading if we don't have dashboardData BUT a connection is expected/established
+    const isLoading = !dashboardData && isYouTubeConnected;
 
     const analytics = dashboardData?.analytics;
     const user = dashboardData?.user;
@@ -97,10 +86,10 @@ export default function OverviewPage() {
             </div>
             
             {!analytics ? (
-                <Card className="text-center w-full max-w-lg mx-auto">
+                <Card className="text-center w-full">
                     <CardHeader>
                         <CardTitle>Analytics Data Unavailable</CardTitle>
-                        <CardDescription>We couldn't fetch your YouTube analytics at the moment. Please check your connection or try again later.</CardDescription>
+                        <CardDescription>We couldn't fetch your YouTube analytics. Please check your connection or try again later.</CardDescription>
                     </CardHeader>
                 </Card>
             ) : (
