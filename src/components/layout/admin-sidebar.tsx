@@ -16,18 +16,25 @@ import Link from 'next/link';
 import { signOut } from "firebase/auth";
 import { auth } from '@/lib/firebase';
 import React from 'react';
+import { useAuth } from '@/context/auth-context';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
 
 const menuItems = [
-  { href: '/admin', label: 'Dashboard', icon: BarChart },
+  { href: '/admin/overview', label: 'Overview', icon: BarChart },
   { href: '/admin/users', label: 'Creator Management', icon: Users },
   { href: '/admin/strikes', label: 'Strike Requests', icon: Gavel },
   { href: '/admin/reactivations', label: 'Reactivation Requests', icon: UserCheck },
   { href: '/admin/feedback', label: 'Creator Feedback', icon: MessageSquareQuote },
 ];
 
-export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
+export function AdminSidebar() {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
+  const [hasNewFeedback, setHasNewFeedback] = React.useState(false);
+
+  React.useEffect(() => {
+    hasUnrepliedAdminFeedback().then(setHasNewFeedback);
+  }, [pathname]); // Re-check on navigation
 
   return (
     <Sidebar>
@@ -46,7 +53,7 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
             >
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href || (pathname === '/admin' && item.href === '/admin/analytics')}
+                isActive={pathname === item.href || (pathname === '/admin' && item.href === '/admin/overview')}
                 tooltip={item.label}
               >
                 <Link href={item.href}>
@@ -74,14 +81,11 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
           </SidebarMenuItem>
            <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               tooltip="Logout"
               onClick={() => signOut(auth)}
             >
-              <button>
                 <LogOut />
                 <span>Logout</span>
-              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

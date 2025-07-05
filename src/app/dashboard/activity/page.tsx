@@ -24,7 +24,7 @@ export default function ActivityPage() {
         }
     }, [user, authLoading]);
 
-    if(isLoading || authLoading) {
+    if(isLoading) {
         return <div className="flex items-center justify-center h-full py-10"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
     }
     
