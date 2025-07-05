@@ -10,12 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
-import { useSession, signIn } from 'next-auth/react';
+import { useAuth } from '@/context/auth-context';
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from '@/lib/firebase';
 
 export default function ActivityClientPage({ initialData }: { initialData: DashboardData | null }) {
-  const { data: session, status } = useSession();
-  const { activity, user } = initialData || {};
-  const isLoading = status === 'loading' && !initialData;
+  const { user, loading: authLoading } = useAuth();
+  const { activity } = initialData || {};
+  const isLoading = authLoading && !initialData;
 
   if (isLoading) {
     return (
@@ -27,8 +29,8 @@ export default function ActivityClientPage({ initialData }: { initialData: Dashb
       </div>
     );
   }
-
-  if (!session) {
+  
+  if (!user) {
     return (
        <Card className="text-center w-full max-w-lg mx-auto">
           <CardHeader>
@@ -36,7 +38,10 @@ export default function ActivityClientPage({ initialData }: { initialData: Dashb
               <CardDescription>To get started, please sign in.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button onClick={() => signIn('google')}>
+              <Button onClick={async () => {
+                  const provider = new GoogleAuthProvider();
+                  await signInWithPopup(auth, provider);
+              }}>
                   <LogIn className="mr-2 h-5 w-5" />
                   Sign In with Google
               </Button>

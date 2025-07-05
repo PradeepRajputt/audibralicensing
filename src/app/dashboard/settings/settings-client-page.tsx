@@ -2,7 +2,8 @@
 'use client';
 
 import * as React from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut } from "firebase/auth";
+import { auth } from '@/lib/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Youtube, Loader2, Trash2, LogOut } from "lucide-react";
@@ -25,20 +26,56 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from "@/context/auth-context";
+import { useRouter } from 'next/navigation';
+import { updateUser } from "@/lib/users-store";
+import { upsertUser } from "@/lib/auth-actions";
 
 export default function SettingsClientPage() {
-    const { data: session, status, update } = useSession();
-    const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
+    const { user, dbUser, loading, updateDbUser } = useAuth();
+    const router = useRouter();
+    const [isActionLoading, setIsActionLoading] = React.useState(false);
     
-    const user = session?.user;
-    const isLoading = status === 'loading';
-    const channelConnected = !!(user && 'youtubeChannelId' in user && (user as any).youtubeChannelId);
+    const channelConnected = !!dbUser?.youtubeChannelId;
+
+    const handleConnect = async () => {
+        setIsActionLoading(true);
+        const provider = new GoogleAuthProvider();
+        provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const firebaseUser = result.user;
+            if (firebaseUser) {
+                 const updatedDbUser = await upsertUser({ 
+                    id: firebaseUser.uid, 
+                    email: firebaseUser.email, 
+                    displayName: firebaseUser.displayName, 
+                    avatar: firebaseUser.photoURL 
+                });
+                
+                if (updatedDbUser) {
+                    updateDbUser(updatedDbUser);
+                }
+                
+                toast({ title: "Connected!", description: "YouTube channel successfully connected." });
+                router.push('/dashboard/analytics');
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Connection Failed", description: "Could not connect to YouTube." });
+        } finally {
+            setIsActionLoading(false);
+        }
+    }
 
     const handleDisconnect = async () => {
         setIsActionLoading(true);
-        toast({ title: "Channel Disconnected", description: "You have been signed out to clear permissions."});
-        await signOut({ callbackUrl: '/' }); // Use await to ensure sign out completes
+        if (dbUser) {
+           await updateUser(dbUser.id, { youtubeChannelId: undefined, platformsConnected: [] });
+           updateDbUser({ youtubeChannelId: undefined, platformsConnected: [] });
+           toast({ title: "Channel Disconnected", description: "Your YouTube channel has been disconnected."});
+        }
         setIsActionLoading(false);
     }
 
@@ -58,26 +95,26 @@ export default function SettingsClientPage() {
             </CardHeader>
              <CardContent>
                 <div className="flex items-center gap-6">
-                    {isLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
+                    {loading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                       <Avatar className="w-24 h-24">
-                        <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? 'User'} data-ai-hint="profile picture" />
-                        <AvatarFallback>{user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
+                        <AvatarImage src={user?.photoURL ?? undefined} alt={user?.displayName ?? 'User'} data-ai-hint="profile picture" />
+                        <AvatarFallback>{user?.displayName?.charAt(0) ?? 'C'}</AvatarFallback>
                       </Avatar>
                     )}
                     <div className="space-y-2">
                          <div className="space-y-1">
                             <Label>Display Name</Label>
-                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.name || ''} disabled className="max-w-xs" />}
+                            {loading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.displayName || ''} disabled className="max-w-xs" />}
                         </div>
                          <div className="space-y-1">
                             <Label>Email</Label>
-                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
+                            {loading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
                         </div>
                     </div>
                 </div>
             </CardContent>
              <CardFooter className="border-t pt-6 flex justify-between">
-                  <Button variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
+                  <Button variant="outline" onClick={() => firebaseSignOut(auth)}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                 </Button>
@@ -118,9 +155,9 @@ export default function SettingsClientPage() {
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {isLoading ? <Skeleton className="h-4 w-40 mt-1" /> : channelConnected ? (
+                            {loading ? <Skeleton className="h-4 w-40 mt-1" /> : channelConnected ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Connected as: {user?.name}
+                                    Connected as: {dbUser?.displayName}
                                 </p>
                             ) : (
                                 <p className="text-sm text-muted-foreground">
@@ -129,11 +166,11 @@ export default function SettingsClientPage() {
                             )}
                         </div>
                     </div>
-                    {isLoading ? <Skeleton className="h-10 w-28" /> : channelConnected ? (
+                    {loading ? <Skeleton className="h-10 w-28" /> : channelConnected ? (
                          <div className="flex items-center gap-4">
-                             {user?.image && <Avatar>
-                                 <AvatarImage src={user.image} data-ai-hint="channel icon" />
-                                 <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                             {user?.photoURL && <Avatar>
+                                 <AvatarImage src={user.photoURL} data-ai-hint="channel icon" />
+                                 <AvatarFallback>{dbUser?.displayName?.charAt(0)}</AvatarFallback>
                              </Avatar>}
                              <Button variant="destructive" onClick={handleDisconnect} disabled={isActionLoading}>
                                  {isActionLoading && <Loader2 className="mr-2 animate-spin" />}
@@ -141,8 +178,9 @@ export default function SettingsClientPage() {
                             </Button>
                          </div>
                     ) : (
-                       <Button asChild>
-                          <Link href="/dashboard/connect-platform">Connect</Link>
+                       <Button onClick={handleConnect} disabled={isActionLoading}>
+                           {isActionLoading && <Loader2 className="mr-2 animate-spin" />}
+                           Connect
                        </Button>
                     )}
                 </div>

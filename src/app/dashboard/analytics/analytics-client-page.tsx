@@ -1,23 +1,24 @@
 
-
 'use client';
 
 import * as React from 'react';
-import { format, subDays, startOfWeek, startOfMonth } from 'date-fns';
+import { format, subDays, startOfWeek, startOfMonth, startOfYear, endOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Users, Eye, Video, Palette, LogIn, Youtube } from 'lucide-react';
+import { Users, Eye, Video, Palette, LogIn, Youtube, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useSession, signIn } from 'next-auth/react';
+import { useAuth } from '@/context/auth-context';
 import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import type { DashboardData } from '@/lib/types';
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { auth } from '@/lib/firebase';
 
 
 type ChartType = 'area' | 'bar' | 'line';
@@ -93,26 +94,46 @@ function ConnectYoutubePlaceholder() {
     )
 }
 
+function LoginPlaceholder() {
+     return (
+       <Card className="text-center w-full max-w-lg mx-auto">
+          <CardHeader>
+              <CardTitle>Welcome to CreatorShield</CardTitle>
+              <CardDescription>To get started, please sign in.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Button onClick={async () => {
+                  const provider = new GoogleAuthProvider();
+                  await signInWithPopup(auth, provider);
+              }}>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In with Google
+              </Button>
+          </CardContent>
+      </Card>
+    )
+}
+
 
 export default function AnalyticsClientPage() {
-    const { data: session, status } = useSession();
+    const { user, dbUser, loading: authLoading } = useAuth();
     const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
 
     React.useEffect(() => {
-        if(status === 'authenticated') {
+        if (user) {
             setIsLoadingData(true);
-            getDashboardData().then(data => {
+            getDashboardData(user.uid).then(data => {
                 setDashboardData(data);
                 setIsLoadingData(false);
             })
-        } else if (status === 'unauthenticated') {
+        } else if (!authLoading) {
             setIsLoadingData(false);
         }
-    }, [status]);
+    }, [user, authLoading]);
 
     const analytics = dashboardData?.analytics ?? null;
-    const isLoading = status === 'loading' || isLoadingData;
+    const isLoading = authLoading || isLoadingData;
 
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
     const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
@@ -189,6 +210,10 @@ export default function AnalyticsClientPage() {
 
     if (isLoading) {
         return <AnalyticsLoadingSkeleton />;
+    }
+    
+    if (!user || !dbUser) {
+        return <LoginPlaceholder />;
     }
 
     if (!analytics) {
@@ -309,4 +334,3 @@ export default function AnalyticsClientPage() {
         </div>
     );
 }
-

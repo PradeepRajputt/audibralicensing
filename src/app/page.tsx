@@ -1,13 +1,37 @@
 
 'use client';
-import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useAuth } from '@/context/auth-context';
 import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Home() {
-    const { status } = useSession();
+    const { user, dbUser, loading } = useAuth();
+    const router = useRouter();
 
-    if (status === "loading" || status === "authenticated") {
+    useEffect(() => {
+        if (!loading && user && dbUser) {
+             const redirectUrl = dbUser.role === 'admin' ? '/admin' : '/dashboard';
+             router.push(redirectUrl);
+        }
+    }, [user, dbUser, loading, router]);
+
+    const handleSignIn = async () => {
+        const provider = new GoogleAuthProvider();
+        provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
+        try {
+            await signInWithPopup(auth, provider);
+            // The onAuthStateChanged listener in AuthProvider will handle the rest,
+            // including the redirect.
+        } catch (error) {
+            console.error("Error during sign-in:", error);
+        }
+    };
+    
+    if (loading || user) {
         return (
             <div className="flex h-screen w-full items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -26,7 +50,7 @@ export default function Home() {
             <p className="max-w-xl text-center text-muted-foreground mb-12">
                 Your all-in-one platform for content protection, analytics, and copyright management. Sign in to continue.
             </p>
-            <Button onClick={() => signIn('google')}>
+            <Button onClick={handleSignIn}>
                 <LogIn className="mr-2 h-5 w-5" /> Sign in with Google
             </Button>
         </div>

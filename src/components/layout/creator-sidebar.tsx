@@ -15,7 +15,9 @@ import { Skeleton } from '../ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Activity, MessageSquareHeart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
+import { signOut } from "firebase/auth";
+import { auth } from '@/lib/firebase';
+import { useAuth } from '@/context/auth-context';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 import React from 'react';
 
@@ -32,26 +34,24 @@ const menuItems = [
 
 export function CreatorSidebar() {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { dbUser, loading } = useAuth();
   const [hasUnread, setHasUnread] = React.useState(false);
   
-  const user = session?.user;
-  const isLoading = status === 'loading';
-  const channelConnected = !!(user && 'youtubeChannelId' in user && (user as any).youtubeChannelId);
-  const creatorName = user?.name ?? 'Creator';
-  const creatorImage = user?.image;
+  const channelConnected = !!dbUser?.youtubeChannelId;
+  const creatorName = dbUser?.displayName ?? 'Creator';
+  const creatorImage = dbUser?.avatar;
   
   React.useEffect(() => {
-    if (user?.id) {
-        hasUnreadCreatorFeedback(user.id).then(setHasUnread);
+    if (dbUser?.id) {
+        hasUnreadCreatorFeedback(dbUser.id).then(setHasUnread);
     }
-  }, [user?.id]);
+  }, [dbUser?.id]);
   
   return (
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-3 p-2">
-            {isLoading ? (
+            {loading ? (
                 <>
                     <Skeleton className="h-10 w-10 rounded-full" />
                     <div className="space-y-2">
@@ -66,7 +66,7 @@ export function CreatorSidebar() {
                         <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                        <span className="font-semibold text-sidebar-foreground truncate">{creatorName || 'CreatorShield'}</span>
+                        <span className="font-semibold text-sidebar-foreground truncate">{creatorName}</span>
                         <span className="text-xs text-sidebar-foreground/70">Creator Dashboard</span>
                     </div>
                 </NextLink>
@@ -116,7 +116,7 @@ export function CreatorSidebar() {
            <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Logout"
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut(auth)}
             >
                 <LogOut />
                 <span>Logout</span>

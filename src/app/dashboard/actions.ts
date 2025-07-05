@@ -8,24 +8,17 @@ import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
-import { auth } from '@/lib/auth';
-
-async function getUserIdFromSession(): Promise<string | null> {
-    const session = await auth();
-    return session?.user?.id ?? null;
-}
 
 /**
- * Fetches dashboard data.
+ * Fetches dashboard data for a given user ID.
+ * @param userId The ID of the user.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
-export async function getDashboardData(): Promise<DashboardData | null> {
+export async function getDashboardData(userId: string): Promise<DashboardData | null> {
   noStore();
   
-  const userId = await getUserIdFromSession();
-  
   if (!userId) {
-      console.log("No user session found.");
+      console.log("No user ID provided to getDashboardData.");
       return null;
   }
 
@@ -99,53 +92,5 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         return { analytics: null, activity: [], user: JSON.parse(JSON.stringify(dbUser)) };
      }
     return null;
-  }
-}
-
-export async function verifyYoutubeChannel(
-  prevState: any,
-  formData: FormData
-) {
-  const userId = await getUserIdFromSession();
-
-  if (!userId) {
-      return { success: false, message: "Authentication error. Please sign in again.", user: null };
-  }
-  
-  const channelId = formData.get("channelId") as string;
-
-  if (!channelId || channelId.trim().length < 5) {
-    return {
-      success: false,
-      message: "Please enter a valid Channel ID.",
-      user: null
-    };
-  }
-
-  try {
-    const channelStats = await getChannelStats(channelId);
-
-    if (!channelStats) {
-      return { success: false, message: "Could not find a YouTube channel with that ID.", user: null };
-    }
-
-    const updates = { 
-      youtubeChannelId: channelId,
-      displayName: channelStats.title || "YouTube Creator", 
-      avatar: channelStats.avatar, 
-      platformsConnected: ['youtube'],
-    };
-    await updateUser(userId, updates);
-    
-    const updatedUser = await getUserById(userId);
-    
-    revalidatePath('/dashboard', 'layout');
-
-    return { success: true, message: "Channel connected successfully.", user: updatedUser ? JSON.parse(JSON.stringify(updatedUser)) : null };
-    
-  } catch (error) {
-    console.error("Error verifying youtube channel:", error);
-    const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-    return { success: false, message, user: null };
   }
 }

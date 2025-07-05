@@ -13,8 +13,10 @@ import {
 import { Shield, Users, Gavel, Settings, LogOut, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
+import { signOut } from "firebase/auth";
+import { auth } from '@/lib/firebase';
 import React from 'react';
+import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
 
 const menuItems = [
   { href: '/admin/users', label: 'Creator Management', icon: Users },
@@ -74,7 +76,7 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
             <SidebarMenuButton
               asChild
               tooltip="Logout"
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut(auth)}
             >
               <button>
                 <LogOut />

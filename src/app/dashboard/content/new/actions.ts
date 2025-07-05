@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createContent } from '@/lib/content-store';
-import { auth } from '@/lib/auth';
+import { auth } from '@/lib/firebase'; // Using firebase auth now
 
 
 const formSchema = z.object({
@@ -16,10 +16,9 @@ const formSchema = z.object({
   tags: z.string().optional(),
 });
 
-export async function addProtectedContentAction(values: z.infer<typeof formSchema>) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
+// This function needs the user ID passed from the client
+export async function addProtectedContentAction(userId: string, values: z.infer<typeof formSchema>) {
+  if (!userId) {
       return { success: false, message: 'Authentication failed. Please log in again.' };
   }
   
@@ -31,12 +30,12 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
   }
   
   try {
-    const tagsArray = parsed.data.tags ? parsed.data.tags.split(',').map(tag => tag.trim()) : [];
+    const tagsArray = parsed.data.tags ? parsed.data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
     
     await createContent({
         ...parsed.data,
         tags: tagsArray,
-        creatorId: session.user.id,
+        creatorId: userId,
     });
     
   } catch (error) {

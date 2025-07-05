@@ -32,6 +32,7 @@ import { getAllContentForUser } from "@/lib/content-store";
 import { getViolationsForUser } from "@/lib/violations-store";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
+import { useAuth } from '@/context/auth-context';
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -50,6 +51,8 @@ export default function SubmitReportPage() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
+
 
   const [violations, setViolations] = useState<Violation[]>([]);
   const [protectedContent, setProtectedContent] = useState<ProtectedContent[]>([]);
@@ -68,14 +71,13 @@ export default function SubmitReportPage() {
   });
 
    const loadData = useCallback(async () => {
-    // In a real app, you would get the authenticated user's ID
-    const userId = "user_creator_123";
+    if (!user?.uid) return;
     setIsFetching(true);
     try {
         const [reports, violationsData, contentData] = await Promise.all([
-          getReportsForUser(userId),
-          getViolationsForUser(userId),
-          getAllContentForUser(userId),
+          getReportsForUser(user.uid),
+          getViolationsForUser(user.uid),
+          getAllContentForUser(user.uid),
         ]);
         setSubmittedReports(reports);
         setViolations(violationsData);
@@ -89,11 +91,13 @@ export default function SubmitReportPage() {
         })
     }
     setIsFetching(false);
-  }, [toast]);
+  }, [toast, user?.uid]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (user) {
+        loadData();
+    }
+  }, [user, loadData]);
 
 
   useEffect(() => {
@@ -169,9 +173,13 @@ Sincerely,
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user?.uid) {
+        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to submit a report." });
+        return;
+    }
     setIsLoading(true);
     
-    const result = await submitManualReportAction(values);
+    const result = await submitManualReportAction(user.uid, values);
 
     if (result.success) {
       toast({

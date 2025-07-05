@@ -1,23 +1,10 @@
 
-import type { DefaultSession } from 'next-auth';
-
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      role: 'creator' | 'admin';
-    } & DefaultSession['user'];
-    accessToken?: string;
-  }
-}
-
 export interface User {
   id: string; 
   name?: string | null;
   displayName?: string | null;
   email: string | null;
-  emailVerified?: Date | null;
-  image?: string | null;
+  image?: string | null; // From OAuth provider
   role: 'creator' | 'admin';
   joinDate: string; 
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
@@ -151,17 +138,3 @@ export type DashboardData = {
   activity: any[];
   user: User | undefined;
 } | null;
-
-// For extending JWT session object
-export interface DecodedJWT {
-    id: string;
-    name?: string;
-    email?: string;
-    picture?: string;
-    sub: string;
-    accessToken: string;
-    refreshToken?: string;
-    iat: number;
-    exp: number;
-    jti: string;
-}

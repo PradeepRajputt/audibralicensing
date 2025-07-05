@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession, signIn } from 'next-auth/react';
+import { useAuth } from '@/context/auth-context';
 import { getDashboardData } from '../actions';
 import type { DashboardData } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Eye, Video, Youtube, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 function LoadingSkeleton() {
     return (
@@ -61,7 +63,10 @@ function LoginPlaceholder() {
               <CardDescription>To get started, please sign in.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button onClick={() => signIn('google', { callbackUrl: '/dashboard' })}>
+              <Button onClick={async () => {
+                  const provider = new GoogleAuthProvider();
+                  await signInWithPopup(auth, provider);
+              }}>
                   <LogIn className="mr-2 h-5 w-5" />
                   Sign In with Google
               </Button>
@@ -72,27 +77,26 @@ function LoginPlaceholder() {
 
 
 export default function OverviewPage() {
-    const { data: session, status } = useSession();
+    const { user, dbUser, loading: authLoading } = useAuth();
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     useEffect(() => {
-        if (status === 'authenticated') {
+        if (user) {
             setIsLoadingData(true);
-            getDashboardData().then(data => {
+            getDashboardData(user.uid).then(data => {
                 setDashboardData(data);
                 setIsLoadingData(false);
             })
-        } else if (status === 'unauthenticated') {
+        } else if (!authLoading) {
             setIsLoadingData(false);
         }
-    }, [status]);
+    }, [user, authLoading]);
 
-    const isLoading = status === 'loading' || isLoadingData;
+    const isLoading = authLoading || isLoadingData;
     const analytics = dashboardData?.analytics;
-    const user = session?.user;
-    const creatorName = user?.name ?? 'Creator';
-    const avatar = user?.image;
+    const creatorName = dbUser?.displayName ?? 'Creator';
+    const avatar = dbUser?.avatar;
     const avatarFallback = creatorName.charAt(0);
 
 
@@ -100,7 +104,7 @@ export default function OverviewPage() {
         return <LoadingSkeleton />;
     }
 
-    if (!user) {
+    if (!user || !dbUser) {
         return <LoginPlaceholder />;
     }
     

@@ -5,7 +5,9 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createReport } from '@/lib/reports-store';
 import { getContentById } from '@/lib/content-store';
-import { auth } from '@/lib/auth';
+import { auth } from '@/lib/firebase';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { getUserById } from '@/lib/users-store';
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -14,13 +16,18 @@ const formSchema = z.object({
   reason: z.string().min(10, { message: 'Reason must be at least 10 characters.' }),
 });
 
-export async function submitManualReportAction(values: z.infer<typeof formSchema>) {
-  const session = await auth();
-  
-  if (!session?.user?.id || !session.user.name) {
+export async function submitManualReportAction(userId: string, values: z.infer<typeof formSchema>) {
+  if (!userId) {
       return { success: false, message: 'Authentication failed. Please log in again.' };
   }
-  const { id: creatorId, name: creatorName } = session.user;
+  
+  const user = await getUserById(userId);
+
+  if (!user || !user.displayName) {
+     return { success: false, message: 'Could not find user information.' };
+  }
+
+  const { displayName: creatorName } = user;
   
   const parsed = formSchema.safeParse(values);
 
@@ -40,7 +47,7 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
       ...parsed.data,
       originalContentUrl: originalContent.videoURL || 'N/A',
       originalContentTitle: originalContent.title,
-      creatorId: creatorId,
+      creatorId: userId,
       creatorName: creatorName,
     });
     

@@ -23,6 +23,7 @@ import { Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
 import { addProtectedContentAction } from './actions';
+import { useAuth } from '@/context/auth-context';
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -35,7 +36,7 @@ const formSchema = z.object({
 export default function AddContentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,18 +50,18 @@ export default function AddContentPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+        toast({ variant: "destructive", title: "Not authenticated", description: "You must be signed in to add content."});
+        return;
+    }
+
     setIsLoading(true);
     
-    const result = await addProtectedContentAction(values);
+    const result = await addProtectedContentAction(user.uid, values);
 
-    if (result.success) {
+    // If successful, the action redirects. If not, it returns an error.
+    if (result && !result.success) {
         toast({
-            title: "Content Added",
-            description: "Your content is now being monitored by CreatorShield.",
-        });
-        // The action will handle the redirect, no need for router.push
-    } else {
-         toast({
             variant: "destructive",
             title: "Submission Failed",
             description: result.message,
