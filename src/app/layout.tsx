@@ -2,7 +2,6 @@
 import type {Metadata} from 'next';
 import { Inter, Source_Code_Pro } from 'next/font/google';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
 
@@ -36,7 +35,6 @@ export default function RootLayout({
       <body className={cn("font-body antialiased", inter.variable, sourceCodePro.variable)} suppressHydrationWarning>
         <Providers>
             {children}
-          <Toaster />
         </Providers>
       </body>
     </html>

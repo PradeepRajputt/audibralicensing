@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,13 +6,13 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { usePathname, useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
-import axios from 'axios';
+import { getUserById } from '@/lib/users-store';
 
 interface UserContextType {
   user: User | null;
   isLoading: boolean;
-  logout: () => Promise<void>;
-  refetchUser: () => void;
+  logout: () => void;
+  refetchUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -24,30 +25,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
+    const isAdminRoute = pathname.startsWith('/admin');
+    const userId = isAdminRoute ? 'user_admin_123' : 'user_creator_123';
+    
     try {
-        const { data } = await axios.get('/api/auth/user');
-        setUser(data.user || null);
+        const userData = await getUserById(userId);
+        setUser(userData || null);
     } catch (error) {
-        console.error("Failed to fetch user, they are likely not logged in.", error);
+        console.error("Failed to fetch mock user.", error);
         setUser(null);
     } finally {
         setIsLoading(false);
     }
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
-    // Only fetch user on client-side routes that are not public
-    if (!['/login', '/register', '/'].includes(pathname)) {
-        fetchUser();
-    } else {
-        setIsLoading(false);
-    }
-  }, [pathname, fetchUser]);
+    fetchUser();
+  }, [fetchUser]);
 
-  const logout = useCallback(async () => {
-    setUser(null);
-    await axios.post('/api/auth/logout');
-    router.push('/login');
+  const logout = useCallback(() => {
+    setUser(null); // Clear user state
+    router.push('/'); // Redirect to landing page
   }, [router]);
   
   const value = { user, isLoading, logout, refetchUser: fetchUser };

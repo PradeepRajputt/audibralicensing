@@ -2,97 +2,83 @@
 'use server';
 import type { User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
-import connectToDatabase from './mongodb';
-import UserModel from '@/models/User';
 
-// Helper to convert a Mongoose document from .lean() to our User type.
-// .lean() returns a plain JS object, not a Mongoose document.
-function mongoDocToUser(doc: any): User | null {
-    if (!doc) return null;
-    const user = { ...doc };
-    user.id = user._id.toString();
-    delete user._id;
-    delete user.__v;
-    return user as User;
-}
+// Mock in-memory database for users
+let mockUsers: User[] = [
+    { 
+        id: 'user_creator_123', 
+        displayName: 'Sample Creator',
+        email: 'creator@example.com',
+        role: 'creator',
+        joinDate: new Date('2024-01-15T10:00:00Z').toISOString(),
+        platformsConnected: [],
+        status: 'active',
+        avatar: 'https://placehold.co/128x128.png',
+        legalFullName: 'Sample Creator Name',
+        address: '123 Creative Lane, Art City, 12345',
+        phone: '555-123-4567',
+    },
+    { 
+        id: 'user_admin_123', 
+        displayName: 'Admin User',
+        email: 'admin@creatorshield.com',
+        role: 'admin',
+        joinDate: new Date('2024-01-10T10:00:00Z').toISOString(),
+        platformsConnected: [],
+        status: 'active',
+        avatar: 'https://placehold.co/128x128.png',
+    },
+    { 
+        id: 'user_creator_456', 
+        displayName: 'Alice Vlogs',
+        email: 'alice@example.com',
+        role: 'creator',
+        joinDate: new Date('2024-02-20T10:00:00Z').toISOString(),
+        platformsConnected: ['youtube'],
+        youtubeChannelId: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw', // Google's channel for example
+        status: 'active',
+        avatar: 'https://placehold.co/128x128.png',
+    },
+    { 
+        id: 'user_creator_789', 
+        displayName: 'Bob Builds',
+        email: 'bob@example.com',
+        role: 'creator',
+        joinDate: new Date('2024-03-10T10:00:00Z').toISOString(),
+        platformsConnected: [],
+        status: 'suspended',
+        avatar: 'https://placehold.co/128x128.png',
+    },
+     { 
+        id: 'user_creator_xyz', 
+        displayName: 'Deleted User',
+        email: 'deleted@example.com',
+        role: 'creator',
+        joinDate: new Date('2024-01-01T10:00:00Z').toISOString(),
+        platformsConnected: [],
+        status: 'deactivated',
+        avatar: 'https://placehold.co/128x128.png',
+    }
+];
 
 export async function getAllUsers(): Promise<Omit<User, 'password'>[]> {
   noStore();
-  await connectToDatabase();
-  // .lean() returns plain JS objects, which is faster and safer.
-  const users = await UserModel.find({ role: 'creator' }).lean();
-  // We still map to ensure the ID is transformed correctly.
-  return users.map(user => mongoDocToUser(user)!).filter(Boolean) as Omit<User, 'password'>[];
+  return Promise.resolve(mockUsers.filter(u => u.role === 'creator'));
 }
 
 export async function getUserById(id: string): Promise<User | undefined> {
   noStore();
-  await connectToDatabase();
-  try {
-    const user = await UserModel.findById(id).lean();
-    return mongoDocToUser(user) ?? undefined;
-  } catch (error) {
-    // Mongoose can throw an error if the ID format is invalid.
-    console.error("Error finding user by ID (likely invalid ID format):", id, error);
-    return undefined;
-  }
-}
-
-export async function findUserByEmail(email: string): Promise<User | null> {
-    noStore();
-    await connectToDatabase();
-    const user = await UserModel.findOne({ email }).lean();
-    return mongoDocToUser(user);
-}
-
-export async function findUserByEmailWithAuth(email: string): Promise<User | null> {
-    noStore();
-    await connectToDatabase();
-    const user = await UserModel.findOne({ email }).select('+emailOtpHash +otpExpires +backupPinHash').lean();
-    return mongoDocToUser(user);
-}
-
-export async function findOrCreateUserByEmail(email: string): Promise<User> {
-    noStore();
-    await connectToDatabase();
-    const existingUser = await UserModel.findOne({ email }).lean();
-
-    if (existingUser) {
-        return mongoDocToUser(existingUser)!;
-    }
-
-    const newUser = new UserModel({
-        email,
-        displayName: email.split('@')[0], // Default display name
-        avatar: `https://placehold.co/128x128.png`,
-    });
-    await newUser.save();
-    return mongoDocToUser(newUser.toObject())!;
+  return Promise.resolve(mockUsers.find(u => u.id === id));
 }
 
 export async function updateUser(id: string, updates: Partial<Omit<User, 'id'>>): Promise<void> {
     noStore();
-    await connectToDatabase();
-    await UserModel.findByIdAndUpdate(id, updates);
+    mockUsers = mockUsers.map(u => u.id === id ? { ...u, ...updates } : u);
+    console.log(`MOCK: Updated user ${id}`, mockUsers.find(u=> u.id === id));
 }
 
 export async function updateUserStatus(id: string, status: User['status']): Promise<void> {
-    await updateUser(id, { status });
-}
-
-export async function setUserOtp(email: string, hashedOtp: string, expires: Date): Promise<void> {
-  await connectToDatabase();
-  await UserModel.updateOne({ email }, {
-    $set: {
-      emailOtpHash: hashedOtp,
-      otpExpires: expires
-    }
-  });
-}
-
-export async function setBackupPin(userId: string, hashedPin: string): Promise<void> {
-    await connectToDatabase();
-    await UserModel.findByIdAndUpdate(userId, {
-        $set: { backupPinHash: hashedPin }
-    });
+    noStore();
+    mockUsers = mockUsers.map(u => u.id === id ? { ...u, status } : u);
+     console.log(`MOCK: Updated status for user ${id} to ${status}`);
 }

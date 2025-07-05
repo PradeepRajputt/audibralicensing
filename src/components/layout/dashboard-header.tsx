@@ -6,12 +6,17 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 import { useUser } from '@/context/user-context';
+import { usePathname } from 'next/navigation';
 
 export function DashboardHeader() {
   const { user, isLoading } = useUser();
+  const pathname = usePathname();
+  
   const getTitle = () => {
-    if (!user) return 'CreatorShield';
-    return user.role === 'admin' ? 'Admin Dashboard' : 'Creator Dashboard';
+    if (pathname.startsWith('/admin')) {
+      return 'Admin Dashboard';
+    }
+    return 'Creator Dashboard';
   }
 
   return (
