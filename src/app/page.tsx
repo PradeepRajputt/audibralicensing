@@ -1,25 +1,25 @@
 
 'use client';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-context';
 import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-// Firebase Studio / Google OAuth Note:
-// Google OAuth pop-ups may be blocked by the browser when running inside the
-// Firebase Studio preview iframe. This is a security feature.
-// To test Google Sign-In, please use either:
-// 1. Your local development environment (http://localhost:9002)
-// 2. Your deployed Firebase Hosting URL (https://shieldview-5ns5s.web.app)
-// Make sure both `localhost` and your `web.app` domain are added as
-// authorized domains in your Firebase project's Authentication settings.
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Home() {
     const { user, dbUser, loading } = useAuth();
     const router = useRouter();
+    const [isInIframe, setIsInIframe] = useState(false);
+
+    useEffect(() => {
+        // This check determines if the app is running inside an iframe (like the Studio preview)
+        if (typeof window !== 'undefined' && window.self !== window.top) {
+            setIsInIframe(true);
+        }
+    }, []);
 
     useEffect(() => {
         if (!loading && user && dbUser) {
@@ -33,8 +33,7 @@ export default function Home() {
         provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
         try {
             await signInWithPopup(auth, provider);
-            // The onAuthStateChanged listener in AuthProvider will handle the rest,
-            // including the redirect.
+            // The onAuthStateChanged listener in AuthProvider will handle the rest
         } catch (error) {
             console.error("Error during sign-in:", error);
         }
@@ -56,12 +55,41 @@ export default function Home() {
                 <Shield className="w-12 h-12 text-primary" />
                 <h1 className="text-4xl font-bold text-primary">CreatorShield</h1>
             </div>
-            <p className="max-w-xl text-center text-muted-foreground mb-12">
-                Your all-in-one platform for content protection, analytics, and copyright management. Sign in to continue.
-            </p>
-            <Button onClick={handleSignIn}>
-                <LogIn className="mr-2 h-5 w-5" /> Sign in with Google
-            </Button>
+            
+            {isInIframe ? (
+                 <Card className="w-full max-w-lg text-center">
+                    <CardHeader>
+                        <CardTitle>Testing Google Sign-In</CardTitle>
+                        <CardDescription>
+                            For security reasons, Google Sign-In cannot be used inside this preview window.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm">To test your authentication flow, please use one of these options:</p>
+                        <div className="flex justify-center gap-4">
+                             <Button asChild>
+                                <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer">
+                                    Open on Localhost
+                                </a>
+                            </Button>
+                            <Button asChild variant="secondary">
+                                <a href="https://shieldview-5ns5s.web.app" target="_blank" rel="noopener noreferrer">
+                                    Open Deployed Site
+                                </a>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            ) : (
+                <>
+                    <p className="max-w-xl text-center text-muted-foreground mb-12">
+                        Your all-in-one platform for content protection, analytics, and copyright management. Sign in to continue.
+                    </p>
+                    <Button onClick={handleSignIn}>
+                        <LogIn className="mr-2 h-5 w-5" /> Sign in with Google
+                    </Button>
+                </>
+            )}
         </div>
     );
 }
