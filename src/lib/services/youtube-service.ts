@@ -1,9 +1,14 @@
-
 'use server';
+
+import dotenv from "dotenv";
+dotenv.config();
+
 
 import { google } from 'googleapis';
 
 const getYouTubeClient = () => {
+    console.log("ENV KEY:", process.env.YOUTUBE_API_KEY);
+
     if (!process.env.YOUTUBE_API_KEY) {
         throw new Error("YouTube API key is not configured.");
     }
