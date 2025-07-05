@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Youtube, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { verifyYoutubeChannel } from '@/app/dashboard/actions';
+import { useUser } from '@/context/user-context';
+import { useRouter } from 'next/navigation';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -19,15 +21,24 @@ function SubmitButton() {
 
 export default function ConnectPlatformPage() {
   const { toast } = useToast();
+  const router = useRouter();
+  const { refetchUser } = useUser();
   const formRef = React.useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(verifyYoutubeChannel, null);
 
   React.useEffect(() => {
     if (!state) return;
-    if (!state.success) {
+    
+    if (state.success) {
+      toast({ title: "Verification Successful", description: state.message });
+      // Refetch user data in the global context, then redirect
+      refetchUser().then(() => {
+        router.push('/dashboard/analytics');
+      });
+    } else {
       toast({ variant: 'destructive', title: "Verification Failed", description: state.message });
     }
-  }, [state, toast]);
+  }, [state, toast, router, refetchUser]);
 
   return (
     <div className="flex items-center justify-center h-full">

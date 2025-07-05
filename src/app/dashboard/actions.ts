@@ -6,7 +6,6 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { subDays, format } from 'date-fns';
 import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
 
@@ -140,14 +139,13 @@ export async function verifyYoutubeChannel(
     });
 
     revalidatePath('/dashboard', 'layout');
+    return { success: true, message: "Channel connected successfully." };
     
   } catch (error) {
     console.error("Error verifying youtube channel:", error);
     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
     return { success: false, message };
   }
-
-  redirect('/dashboard/analytics');
 }
 
 export async function disconnectYoutubeChannelAction() {
