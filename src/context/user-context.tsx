@@ -10,6 +10,7 @@ import { getUserById } from '@/lib/users-store';
 interface UserContextType {
   user: User | null;
   isLoading: boolean;
+  channelConnected: boolean;
   logout: () => void;
   refetchUser: () => Promise<void>;
 }
@@ -21,7 +22,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // This function will only be created once and won't depend on pathname changes.
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
     // Use window.location.pathname for a stable value on the client-side
@@ -37,20 +37,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } finally {
         setIsLoading(false);
     }
-  }, []); // Empty dependency array means this function is created once.
+  }, []); 
 
-  // This effect runs only once when the component mounts.
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
 
   const logout = useCallback(() => {
-    setUser(null); // Clear user state
-    router.push('/'); // Redirect to landing page
+    setUser(null); 
+    router.push('/'); 
   }, [router]);
   
-  // The value provided by the context. refetchUser is the same as fetchUser.
-  const value = { user, isLoading, logout, refetchUser: fetchUser };
+  const channelConnected = !!user?.youtubeChannelId;
+
+  const value = { user, isLoading, logout, refetchUser: fetchUser, channelConnected };
 
   return (
     <UserContext.Provider value={value}>

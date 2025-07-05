@@ -32,10 +32,9 @@ const menuItems = [
 
 export function CreatorSidebar() {
   const pathname = usePathname();
-  const { user, isLoading, logout } = useUser();
+  const { user, isLoading, logout, channelConnected } = useUser();
   const [hasUnread, setHasUnread] = React.useState(false);
   
-  const channelConnected = !!user?.youtubeChannelId;
   const creatorName = user?.displayName ?? 'Creator';
   const creatorImage = user?.avatar;
   
