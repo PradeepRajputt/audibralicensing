@@ -83,12 +83,11 @@ function ConnectYoutubePlaceholder() {
             const credential = GoogleAuthProvider.credentialFromResult(result);
             if (credential) {
                 const user = result.user;
-                await upsertUser({
-                    id: user.uid,
-                    email: user.email,
-                    displayName: user.displayName,
-                    avatar: user.photoURL,
-                    accessToken: credential.accessToken,
+                await upsertUser({ 
+                    id: user.uid, 
+                    email: user.email, 
+                    displayName: user.displayName, 
+                    avatar: user.photoURL 
                 });
                 window.location.reload();
             }

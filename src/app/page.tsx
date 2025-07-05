@@ -71,8 +71,13 @@ export default function Home() {
                         CreatorShield is your all-in-one platform for content protection, analytics, and copyright management.
                     </p>
                     
+                    {/* 
+                        This conditional rendering handles the Firebase Studio preview environment.
+                        Google OAuth popups are blocked inside iframes for security reasons.
+                        Instead of showing a broken button, we guide the user to test authentication
+                        in a real browser tab, which is the correct workflow.
+                    */}
                     {isInIframe ? (
-                        // Special UI for the Firebase Studio preview environment
                          <Card className="w-full max-w-lg text-center">
                             <CardHeader>
                                 <CardTitle>Sign-In Required</CardTitle>

@@ -31,19 +31,12 @@ export async function getDashboardData(userId: string): Promise<DashboardData | 
     }
     
     let userAnalytics: UserAnalytics | null = null;
-    if (dbUser.accessToken) {
+    if (dbUser.youtubeChannelId) {
         try {
-            const stats = await getChannelStats(userId);
+            const stats = await getChannelStats(dbUser.youtubeChannelId);
             
-            if (stats && stats.id) {
-                // If channelId is not in our db, update it
-                if (stats.id !== dbUser.youtubeChannelId) {
-                    await updateUser(dbUser.id, { youtubeChannelId: stats.id, platformsConnected: ['youtube'] });
-                    dbUser.youtubeChannelId = stats.id;
-                    dbUser.platformsConnected = ['youtube'];
-                }
-                
-                const mostViewed = await getMostViewedVideo(userId, stats.id);
+            if (stats) {
+                 const mostViewed = await getMostViewedVideo(dbUser.youtubeChannelId);
                 
                 userAnalytics = {
                     subscribers: stats.subscribers,

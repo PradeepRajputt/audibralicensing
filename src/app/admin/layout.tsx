@@ -38,8 +38,7 @@ export default function AdminDashboardLayout({
 
     return (
       <SidebarProvider>
-        {/* hasNewFeedback is hardcoded to false, you can make this dynamic */}
-        <AdminSidebar hasNewFeedback={false} />
+        <AdminSidebar />
         <SidebarInset>
           <DashboardHeader />
           <main className="p-4 md:p-6">
