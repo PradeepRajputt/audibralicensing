@@ -4,6 +4,8 @@ import { Inter, Source_Code_Pro } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
+import { AuthProvider } from '@/context/auth-context';
+import { DashboardDataProvider } from './dashboard/dashboard-context';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -34,7 +36,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn("font-body antialiased", inter.variable, sourceCodePro.variable)} suppressHydrationWarning>
         <Providers>
-            {children}
+            <AuthProvider>
+              <DashboardDataProvider>
+                {children}
+              </DashboardDataProvider>
+            </AuthProvider>
         </Providers>
       </body>
     </html>

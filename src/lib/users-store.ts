@@ -28,7 +28,8 @@ let mockUsers: User[] = [
         email: 'admin@creatorshield.com',
         role: 'admin',
         joinDate: new Date('2024-01-10T10:00:00Z').toISOString(),
-        platformsConnected: [],
+        platformsConnected: ['youtube'],
+        youtubeChannelId: 'UC_admin_channel',
         status: 'active',
         avatar: 'https://placehold.co/128x128.png',
     }
@@ -51,7 +52,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
 }
 
 
-export async function createUser(data: Omit<User, 'joinDate' | 'status' | 'platformsConnected'| 'avatar' | 'uid'> & { image?: string | null }): Promise<User> {
+export async function createUser(data: Omit<User, 'joinDate' | 'status'> & { image?: string | null }): Promise<User> {
     noStore();
     const existingUser = mockUsers.find(u => u.email === data.email);
     if (existingUser) {
@@ -60,15 +61,9 @@ export async function createUser(data: Omit<User, 'joinDate' | 'status' | 'platf
     }
 
     const newUser: User = {
-        name: data.name,
-        displayName: data.displayName,
-        email: data.email,
-        role: data.role,
-        id: data.id,
-        uid: data.id,
+        ...data,
         joinDate: new Date().toISOString(),
         status: 'active',
-        platformsConnected: [],
         avatar: data.image ?? 'https://placehold.co/128x128.png',
     };
     mockUsers.push(newUser);

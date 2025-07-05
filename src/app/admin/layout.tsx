@@ -11,11 +11,12 @@ export default function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+    // This layout no longer needs an auth check, as the root layout will handle it.
     return (
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
-          <DashboardHeader />
+          <DashboardHeader title="Admin Dashboard" />
           <main className="p-4 md:p-6">
               {children}
           </main>

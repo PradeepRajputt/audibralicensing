@@ -19,12 +19,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const themes = [
     { name: 'dark', label: 'Dark', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(283 44% 67%)' } },
-    { name: 'light', label: 'Light', colors: { primary: 'hsl(210 22% 29%)', accent: 'hsl(283 44% 47%)' } },
     { name: 'zinc', label: 'Zinc', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(240 3.7% 15.9%)' } },
-    { name: 'rose', label: 'Rose', colors: { primary: 'hsl(349 61% 72%)', accent: 'hsl(350 51% 32%)' } },
-    { name: 'blue-black', label: 'Blue & Black', colors: { primary: 'hsl(217 91% 60%)', accent: 'hsl(217 33% 17%)' } },
     { name: 'light-trio', label: 'Light Trio', colors: { primary: 'hsl(217 91% 60%)', accent: 'hsl(43 74% 66%)' } },
-    { name: 'orange-black', label: 'Orange & Black', colors: { primary: 'hsl(27 87% 67%)', accent: 'hsl(20 14% 15%)' } },
 ] as const;
 
 
@@ -62,7 +58,7 @@ export function ThemeSettings() {
                 key={t.name}
                 htmlFor={`theme-${t.name}`}
                 className={cn(
-                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground",
+                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
                   theme === t.name && "border-primary"
                 )}
               >

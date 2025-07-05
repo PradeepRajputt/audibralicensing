@@ -12,33 +12,33 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from 'next/link';
-
-// Mock user data since auth is completely removed
-const mockUser = {
-  displayName: "Creator",
-  email: "creator@example.com",
-  photoURL: "https://placehold.co/128x128.png",
-  youtubeChannelId: null, // to show connect button
-};
+import { useAuth } from "@/context/auth-context";
 
 export default function SettingsClientPage() {
     const { toast } = useToast();
+    const { user, signInWithGoogle, signOut } = useAuth();
     const [isSaving, setIsSaving] = React.useState(false);
-    const [profilePicture, setProfilePicture] = React.useState(mockUser.photoURL);
+    
+    // For this prototype, we'll just simulate the name update
+    const [displayName, setDisplayName] = React.useState(user?.displayName || "Creator");
+    const [profilePicture, setProfilePicture] = React.useState(user?.photoURL);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        if(user) {
+            setDisplayName(user.displayName || "Creator");
+            setProfilePicture(user.photoURL);
+        }
+    }, [user])
 
     const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSaving(true);
-        // Simulate API call
+        // Simulate API call to update display name
         await new Promise(resolve => setTimeout(resolve, 1000));
-        toast({ title: "Profile Updated", description: "Your profile information has been saved." });
+        toast({ title: "Profile Updated", description: "Your display name has been saved." });
         setIsSaving(false);
     };
-    
-    const handleConnect = async () => {
-        toast({ title: 'Connect YouTube', description: 'This is a demo. In a real app, this would initiate the YouTube connection process.' });
-    }
 
   return (
     <div className="space-y-6">
@@ -59,7 +59,7 @@ export default function SettingsClientPage() {
                     <div className="flex items-center gap-6">
                         <Avatar className="w-24 h-24">
                             <AvatarImage src={profilePicture ?? undefined} data-ai-hint="profile picture" />
-                            <AvatarFallback>{mockUser?.displayName?.substring(0,2) ?? "C"}</AvatarFallback>
+                            <AvatarFallback>{displayName?.substring(0,2) ?? "C"}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-2">
                            <Input id="picture" type="file" ref={fileInputRef} className="hidden" onChange={(e) => {
@@ -67,16 +67,16 @@ export default function SettingsClientPage() {
                                 if (file) setProfilePicture(URL.createObjectURL(file));
                            }} accept="image/png, image/jpeg" />
                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Picture</Button>
-                           <p className="text-xs text-muted-foreground">Picture updates are not implemented.</p>
+                           <p className="text-xs text-muted-foreground">Picture updates are not implemented in this demo.</p>
                         </div>
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="displayName">Display Name</Label>
-                        <Input id="displayName" name="displayName" defaultValue={mockUser?.displayName ?? ""} className="max-w-sm" />
+                        <Input id="displayName" name="displayName" value={displayName} onChange={e => setDisplayName(e.target.value)} className="max-w-sm" />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" value={mockUser?.email ?? ""} disabled className="max-w-sm" />
+                        <Input id="email" type="email" value={user?.email ?? "Not logged in"} disabled className="max-w-sm" />
                     </div>
                     <Button type="submit" disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -91,7 +91,7 @@ export default function SettingsClientPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Connected Platforms</CardTitle>
-                <CardDescription>Manage your connected account to fetch analytics and monitor content.</CardDescription>
+                <CardDescription>Connect your YouTube account to fetch analytics and monitor content.</CardDescription>
             </CardHeader>
             <CardContent>
                  <div className="flex items-center justify-between p-4 rounded-lg border">
@@ -99,17 +99,17 @@ export default function SettingsClientPage() {
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {mockUser.youtubeChannelId ? (
-                                <p className="text-sm text-muted-foreground">Connected: {mockUser.displayName}</p>
+                            {user?.youtubeChannelId ? (
+                                <p className="text-sm text-muted-foreground">Connected: {user.displayName}</p>
                             ) : (
                                 <p className="text-sm text-muted-foreground">Not connected</p>
                             )}
                         </div>
                     </div>
-                     {mockUser.youtubeChannelId ? (
-                        <Button variant="destructive" disabled>Disconnect</Button>
+                     {user?.youtubeChannelId ? (
+                        <Button variant="destructive" onClick={signOut}>Disconnect</Button>
                      ) : (
-                        <Button onClick={handleConnect}>Connect YouTube</Button>
+                        <Button onClick={signInWithGoogle}>Connect YouTube</Button>
                      )}
                 </div>
             </CardContent>
@@ -121,11 +121,9 @@ export default function SettingsClientPage() {
                 <CardDescription>Sign out of your CreatorShield account.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button variant="outline" asChild>
-                  <Link href="/">
+                <Button variant="outline" onClick={signOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
-                  </Link>
                 </Button>
             </CardContent>
         </Card>
