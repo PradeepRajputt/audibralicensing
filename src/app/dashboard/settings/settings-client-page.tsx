@@ -12,29 +12,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from 'next/link';
-import { useAuth } from "@/context/auth-context";
 
 export default function SettingsClientPage() {
     const { toast } = useToast();
-    const { user, signInWithGoogle, signOut } = useAuth();
     const [isSaving, setIsSaving] = React.useState(false);
     
-    // For this prototype, we'll just simulate the name update
-    const [displayName, setDisplayName] = React.useState(user?.displayName || "Creator");
-    const [profilePicture, setProfilePicture] = React.useState(user?.photoURL);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    // Mock data for display
+    const mockUser = {
+        displayName: 'Sample Creator',
+        email: 'creator@example.com',
+        photoURL: 'https://placehold.co/128x128.png',
+    };
 
-    React.useEffect(() => {
-        if(user) {
-            setDisplayName(user.displayName || "Creator");
-            setProfilePicture(user.photoURL);
-        }
-    }, [user])
+    const [displayName, setDisplayName] = React.useState(mockUser.displayName);
+    const [profilePicture, setProfilePicture] = React.useState(mockUser.photoURL);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSaving(true);
-        // Simulate API call to update display name
         await new Promise(resolve => setTimeout(resolve, 1000));
         toast({ title: "Profile Updated", description: "Your display name has been saved." });
         setIsSaving(false);
@@ -76,7 +72,7 @@ export default function SettingsClientPage() {
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" value={user?.email ?? "Not logged in"} disabled className="max-w-sm" />
+                        <Input id="email" type="email" value={mockUser.email} disabled className="max-w-sm" />
                     </div>
                     <Button type="submit" disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -99,32 +95,11 @@ export default function SettingsClientPage() {
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {user?.youtubeChannelId ? (
-                                <p className="text-sm text-muted-foreground">Connected: {user.displayName}</p>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">Not connected</p>
-                            )}
+                            <p className="text-sm text-muted-foreground">Not connected</p>
                         </div>
                     </div>
-                     {user?.youtubeChannelId ? (
-                        <Button variant="destructive" onClick={signOut}>Disconnect</Button>
-                     ) : (
-                        <Button onClick={signInWithGoogle}>Connect YouTube</Button>
-                     )}
+                     <Button variant="outline" onClick={() => toast({ title: "Authentication Removed", description: "The login system has been removed from this app."})}>Connect YouTube</Button>
                 </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <CardTitle>Sign Out</CardTitle>
-                <CardDescription>Sign out of your CreatorShield account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button variant="outline" onClick={signOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                </Button>
             </CardContent>
         </Card>
     </div>

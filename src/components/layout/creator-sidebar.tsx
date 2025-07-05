@@ -16,15 +16,15 @@ import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import React from 'react';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
-import { useAuth } from '@/context/auth-context';
+
 
 const menuItems = [
   { href: '/dashboard/overview', label: 'Overview', icon: Home },
   { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
-  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch, requiresConnection: true },
-  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert, requiresConnection: true },
+  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
+  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
   { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
   { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
@@ -32,15 +32,11 @@ const menuItems = [
 export function CreatorSidebar() {
   const pathname = usePathname();
   const [hasUnread, setHasUnread] = React.useState(false);
-  const { user, signOut, loading: authLoading } = useAuth();
-
-  const isYouTubeConnected = !!user?.youtubeChannelId;
 
   React.useEffect(() => {
-    if (user) {
-      hasUnreadCreatorFeedback(user.uid).then(setHasUnread);
-    }
-  }, [pathname, user]);
+    // Using a mock user ID as auth has been removed
+    hasUnreadCreatorFeedback("user_creator_123").then(setHasUnread);
+  }, [pathname]);
   
   return (
     <Sidebar>
@@ -48,11 +44,11 @@ export function CreatorSidebar() {
         <div className="flex items-center gap-3 p-2">
             <NextLink href="/dashboard/settings" className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.photoURL ?? undefined} data-ai-hint="profile picture" />
-                    <AvatarFallback>{user?.displayName?.charAt(0) ?? 'C'}</AvatarFallback>
+                    <AvatarImage src={"https://placehold.co/128x128.png"} data-ai-hint="profile picture" />
+                    <AvatarFallback>C</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                    <span className="font-semibold text-sidebar-foreground truncate">{user?.displayName ?? 'Creator'}</span>
+                    <span className="font-semibold text-sidebar-foreground truncate">Creator</span>
                     <span className="text-xs text-sidebar-foreground/70">Creator Dashboard</span>
                 </div>
             </NextLink>
@@ -62,8 +58,6 @@ export function CreatorSidebar() {
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/overview');
-            const isDisabled = item.requiresConnection && !isYouTubeConnected;
-            const tooltip = isDisabled ? `${item.label} (requires YouTube connection)` : item.label;
 
             return (
               <SidebarMenuItem 
@@ -73,9 +67,7 @@ export function CreatorSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
-                  tooltip={tooltip}
-                  disabled={isDisabled}
-                  aria-disabled={isDisabled}
+                  tooltip={item.label}
                 >
                   <NextLink href={item.href} prefetch={false}>
                     <item.icon />
@@ -102,10 +94,10 @@ export function CreatorSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-             <SidebarMenuButton asChild tooltip="Logout" onClick={signOut}>
+             <SidebarMenuButton asChild tooltip="Home">
                 <NextLink href="/" prefetch={false}>
                     <LogOut />
-                    <span>Logout</span>
+                    <span>Back to Home</span>
                 </NextLink>
              </SidebarMenuButton>
           </SidebarMenuItem>
