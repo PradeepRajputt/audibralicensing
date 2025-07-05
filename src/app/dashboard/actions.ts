@@ -99,3 +99,29 @@ export async function getDashboardData(userId: string): Promise<DashboardData | 
     return null;
   }
 }
+
+export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
+  const channelId = formData.get('channelId') as string;
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, message: 'Not authenticated.' };
+  }
+  
+  // In a real app, you'd verify this channel ID with the YouTube Data API
+  // to confirm the user actually owns it. For now, we'll just simulate it.
+  if (channelId && (channelId.startsWith('UC') || channelId.startsWith('@'))) {
+    await updateUser(session.user.id, { 
+      youtubeChannelId: channelId,
+      platformsConnected: ['youtube']
+    });
+    
+    revalidatePath('/dashboard/settings');
+    revalidatePath('/dashboard/analytics');
+
+    const user = await getUserById(session.user.id);
+    return { success: true, message: 'Channel verified successfully!', user };
+  }
+
+  return { success: false, message: 'Invalid YouTube Channel ID format.' };
+}

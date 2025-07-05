@@ -1,6 +1,7 @@
 
 export interface User {
   id: string; 
+  uid: string; // Firebase UID
   name?: string | null;
   displayName?: string | null;
   email: string | null;
@@ -14,6 +15,7 @@ export interface User {
   legalFullName?: string;
   address?: string;
   phone?: string;
+  accessToken?: string; // To store OAuth access token
 }
 
 /**
@@ -23,7 +25,7 @@ export interface UserAnalytics {
   subscribers: number;
   views: number;
   mostViewedVideo: {
-    title: string;
+    title: string | undefined;
     views: number | string;
   };
   dailyData: {

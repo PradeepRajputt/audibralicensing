@@ -31,6 +31,7 @@ import { useRouter } from 'next/navigation';
 import { updateUser } from "@/lib/users-store";
 import { upsertUser } from "@/lib/auth-actions";
 
+
 export default function SettingsClientPage() {
     const { toast } = useToast();
     const { user, dbUser, loading, updateDbUser } = useAuth();

@@ -72,10 +72,10 @@ export default function Home() {
                     </p>
                     
                     {/* 
-                        This conditional rendering handles the Firebase Studio preview environment.
-                        Google OAuth popups are blocked inside iframes for security reasons.
-                        Instead of showing a broken button, we guide the user to test authentication
-                        in a real browser tab, which is the correct workflow.
+                      This conditional rendering handles the Firebase Studio preview environment.
+                      Google OAuth popups are blocked inside iframes for security reasons.
+                      Instead of showing a broken button, we guide the user to test authentication
+                      in a real browser tab, which is the correct workflow.
                     */}
                     {isInIframe ? (
                          <Card className="w-full max-w-lg text-center">

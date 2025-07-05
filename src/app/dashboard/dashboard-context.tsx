@@ -4,15 +4,19 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import type { DashboardData } from '@/lib/types';
 import { getDashboardData } from './actions';
+import { useAuth } from '@/context/auth-context';
 
 const DashboardContext = createContext<DashboardData | undefined>(undefined);
 
 export function DashboardDataProvider({ children }: { children: ReactNode; }) {
   const [data, setData] = useState<DashboardData | null>(null);
-
+  const { user } = useAuth();
+  
   useEffect(() => {
-    getDashboardData().then(setData);
-  }, []);
+    if (user) {
+      getDashboardData(user.uid).then(setData);
+    }
+  }, [user]);
 
   return (
     <DashboardContext.Provider value={data}>

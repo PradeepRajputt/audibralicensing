@@ -7,6 +7,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 let mockUsers: User[] = [
     { 
         id: 'user_creator_123',
+        uid: 'user_creator_123',
         name: 'Sample Creator',
         displayName: 'Sample Creator',
         email: 'creator@example.com',
@@ -21,6 +22,7 @@ let mockUsers: User[] = [
     },
     { 
         id: 'admin_user_id', // A stable ID for the admin
+        uid: 'admin_user_id',
         name: 'Admin User',
         displayName: 'Admin User',
         email: 'admin@creatorshield.com',
@@ -49,7 +51,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
 }
 
 
-export async function createUser(data: Omit<User, 'joinDate' | 'status' | 'platformsConnected'| 'avatar'> & { image?: string | null }): Promise<User> {
+export async function createUser(data: Omit<User, 'joinDate' | 'status' | 'platformsConnected'| 'avatar' | 'uid'> & { image?: string | null }): Promise<User> {
     noStore();
     const existingUser = mockUsers.find(u => u.email === data.email);
     if (existingUser) {
@@ -63,6 +65,7 @@ export async function createUser(data: Omit<User, 'joinDate' | 'status' | 'platf
         email: data.email,
         role: data.role,
         id: data.id,
+        uid: data.id,
         joinDate: new Date().toISOString(),
         status: 'active',
         platformsConnected: [],
@@ -74,7 +77,7 @@ export async function createUser(data: Omit<User, 'joinDate' | 'status' | 'platf
 }
 
 
-export async function updateUser(id: string, updates: Partial<Omit<User, 'id'>>): Promise<void> {
+export async function updateUser(id: string, updates: Partial<Omit<User, 'id' | 'uid'>>): Promise<void> {
     noStore();
     mockUsers = mockUsers.map(u => u.id === id ? { ...u, ...updates } : u);
     console.log(`MOCK: Updated user ${id}`, mockUsers.find(u=> u.id === id));

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, FileText, Video as FileVideo, Image as ImageIcon } from "lucide-react";
+import { MoreHorizontal, FileText, Video as FileVideo, Image as ImageIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
 import type { Violation } from '@/lib/types';
 import { getViolationsForUser, updateViolationStatus } from '@/lib/violations-store';
 import Image from 'next/image';
+import { useAuth } from '@/context/auth-context';
 
 const statusMapping: Record<Violation['status'], { text: string; variant: "secondary" | "default" | "outline" }> = {
     pending_review: { text: "New", variant: "secondary" },
@@ -40,12 +41,18 @@ function formatStatus(status: string) {
 
 export default function ViolationsPage() {
     const { toast } = useToast();
+    const { user } = useAuth();
     const [violations, setViolations] = useState<Violation[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const userId = "user_creator_123";
-        getViolationsForUser(userId).then(setViolations);
-    }, []);
+        if (user?.uid) {
+            getViolationsForUser(user.uid).then(data => {
+                setViolations(JSON.parse(JSON.stringify(data)));
+                setIsLoading(false);
+            });
+        }
+    }, [user]);
 
     const handleAction = async (action: 'dismiss' | 'report', violationId: string) => {
         let newStatus: Violation['status'] = 'pending_review';
@@ -78,6 +85,14 @@ export default function ViolationsPage() {
             });
         }
     };
+    
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
 
   return (
     <Card>
