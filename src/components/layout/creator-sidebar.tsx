@@ -20,7 +20,8 @@ import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 import React from 'react';
 
 const menuItems = [
-  { href: '/dashboard', label: 'Activity Feed', icon: Activity },
+  { href: '/dashboard/overview', label: 'Overview', icon: Home },
+  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
@@ -74,7 +75,7 @@ export function CreatorSidebar() {
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const disabled = item.requiresConnection && !channelConnected;
-            const isActive = pathname === item.href || (pathname === '/dashboard/overview' && item.href === '/dashboard');
+            const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/overview');
             return (
               <SidebarMenuItem 
                 key={item.href}
