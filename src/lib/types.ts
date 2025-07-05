@@ -1,3 +1,4 @@
+
 export interface User {
   id: string; 
   displayName: string | null;
@@ -11,13 +12,6 @@ export interface User {
   legalFullName?: string;
   address?: string;
   phone?: string;
-  emailOtpHash?: string | null;
-  otpExpires?: Date | null;
-  backupPinHash?: string | null;
-}
-
-export interface UserWithPassword extends User {
-    password?: string;
 }
 
 /**
@@ -142,13 +136,3 @@ export type DashboardData = {
   activity: any[];
   user: User | undefined;
 } | null;
-
-export interface DecodedJWT {
-    id: string;
-    email: string;
-    displayName: string;
-    role: 'creator' | 'admin';
-    avatar?: string;
-    iat: number;
-    exp: number;
-}

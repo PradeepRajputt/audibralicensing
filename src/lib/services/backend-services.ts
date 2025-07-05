@@ -7,11 +7,10 @@
 
 import { createViolation } from '@/lib/violations-store';
 import type { Violation } from '@/lib/types';
-// The Resend import is removed as we are simulating email sending.
-// import { Resend } from 'resend';
+import { Resend } from 'resend';
 
 // Initialize Resend
-// const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const fromEmail = 'CreatorShield <onboarding@resend.dev>'; // This would be your verified domain
 
 /**
@@ -19,11 +18,9 @@ const fromEmail = 'CreatorShield <onboarding@resend.dev>'; // This would be your
  * This function is intended to be called by a webhook from our FastAPI service.
  */
 export async function processViolationFromFastApi(violationData: Omit<Violation, 'id' | 'detectedAt'> & { creatorEmail: string }) {
-  // if (!resend) {
-  //   console.error('Resend API key is not configured. Email will not be sent.');
-  // }
-  console.log("Simulating sending email for violation: ", violationData.matchedURL)
-
+  if (!resend) {
+    console.warn('Resend API key is not configured. Email will not be sent, but violation will be stored.');
+  }
 
   try {
     const newViolation = await createViolation({
@@ -39,13 +36,16 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
     });
     console.log(`Stored violation with ID: ${newViolation.id}`);
 
-    // Real email sending logic is commented out for the prototype.
-    /*
     if (resend) {
-        await resend.emails.send({ ... });
+        await resend.emails.send({
+            from: fromEmail,
+            to: violationData.creatorEmail,
+            subject: 'New Potential Copyright Violation Detected',
+            html: `<p>Hi,</p><p>CreatorShield found a potential violation of your content at ${violationData.matchedURL}. Please log in to your dashboard to review.</p>`
+        });
         console.log(`Sent violation alert email to ${violationData.creatorEmail}`);
     }
-    */
+    
     return { success: true, violationId: newViolation.id };
   } catch (error) {
     console.error('Error processing violation or sending email:', error);
@@ -60,13 +60,41 @@ export async function updateAllUserAnalytics() {
 }
 
 export async function sendReactivationApprovalEmail({ to, name }: { to: string; name:string }) {
-  console.warn(`SIMULATING: Sending reactivation approval email to ${to}.`);
-  return { success: true, simulated: true };
+  if (!resend) {
+    console.warn(`SIMULATING: Sending reactivation approval email to ${to}. RESEND_API_KEY not configured.`);
+    return { success: true, simulated: true };
+  }
+  try {
+    await resend.emails.send({
+        from: fromEmail,
+        to: to,
+        subject: 'Your CreatorShield Account has been Reactivated',
+        html: `<p>Hi ${name},</p><p>Your account has been reactivated. You can now log in.</p>`,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send reactivation approval email:", error);
+    return { success: false, message: "Could not send email." };
+  }
 }
 
 export async function sendReactivationDenialEmail({ to, name }: { to: string; name: string }) {
- console.warn(`SIMULATING: Sending reactivation denial email to ${to}.`);
- return { success: true, simulated: true };
+ if (!resend) {
+    console.warn(`SIMULATING: Sending reactivation denial email to ${to}. RESEND_API_KEY not configured.`);
+    return { success: true, simulated: true };
+  }
+  try {
+    await resend.emails.send({
+        from: fromEmail,
+        to: to,
+        subject: 'Update on Your CreatorShield Account Reactivation Request',
+        html: `<p>Hi ${name},</p><p>We've reviewed your request for account reactivation and have decided not to proceed at this time. Thank you for your understanding.</p>`,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send reactivation denial email:", error);
+    return { success: false, message: "Could not send email." };
+  }
 }
 
 export async function sendTakedownConfirmationEmail(data: {
@@ -75,46 +103,20 @@ export async function sendTakedownConfirmationEmail(data: {
   infringingUrl: string;
   originalUrl: string;
 }) {
-  console.warn(`SIMULATING: Sending takedown confirmation email to ${data.to}.`);
-  return { success: true, simulated: true };
-}
-
-export async function sendLoginOtpEmail({ to, otp }: { to: string; otp: string }) {
-    // For this prototype, we will not send a real email to avoid configuration issues.
-    // We will log it to the server console and return it so the client can display it for easy testing.
-    console.log(`**************************************************`);
-    console.log(`** OTP for ${to} is: ${otp} **`);
-    console.log(`**************************************************`);
-    
-    // In a real app, you would uncomment and use the Resend code below:
-    /*
-    if (!resend) {
-        const message = 'Resend API key is not configured. Cannot send email.';
-        console.error(message);
-        return { success: false, message, otp: null };
-    }
-    
-    try {
-        await resend.emails.send({
-            from: fromEmail,
-            to: to,
-            subject: 'Your CreatorShield Login Code',
-            html: `
-                <h1>Your Login Code</h1>
-                <p>Here is your one-time password to log in to CreatorShield:</p>
-                <h2 style="font-size: 24px; letter-spacing: 4px; text-align: center;">${otp}</h2>
-                <p>This code will expire in 10 minutes.</p>
-                <br/>
-                <p>If you did not request this, you can safely ignore this email.</p>
-            `,
-        });
-        console.log(`Sent OTP to ${to}`);
-        return { success: true, otp: null }; // Don't send OTP to client in production
-    } catch (error) {
-        console.error(`Error sending OTP email to ${to}:`, error);
-        return { success: false, message: "Could not send OTP email.", otp: null };
-    }
-    */
-
-    return { success: true, message: "OTP Generated (simulation)", otp };
+  if (!resend) {
+    console.warn(`SIMULATING: Sending takedown confirmation email to ${data.to}. RESEND_API_KEY not configured.`);
+    return { success: true, simulated: true };
+  }
+  try {
+      await resend.emails.send({
+          from: fromEmail,
+          to: data.to,
+          subject: 'Your DMCA Takedown Notice has been Submitted to YouTube',
+          html: `<p>Hi ${data.creatorName},</p><p>This is a confirmation that your takedown request for the content at ${data.infringingUrl} has been submitted to YouTube.</p><p>We will notify you of any updates.</p>`,
+      });
+      return { success: true };
+  } catch (error) {
+      console.error("Failed to send takedown confirmation email:", error);
+      return { success: false, message: "Could not send email." };
+  }
 }

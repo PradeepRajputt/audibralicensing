@@ -11,7 +11,6 @@ import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
 
 // MOCK IMPLEMENTATION: Simulates getting the logged-in user's ID.
-// In a real app, this would come from a session provider or token.
 async function getUserIdFromSession(): Promise<string | null> {
     // For the creator dashboard, we always assume the mock creator is logged in.
     return 'user_creator_123';
