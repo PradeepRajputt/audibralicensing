@@ -30,7 +30,7 @@ import {
 
 export default function SettingsClientPage() {
     const router = useRouter();
-    const { user, isLoading: isUserLoading, logout, refetchUser } = useUser();
+    const { user, isLoading: isUserLoading, logout, updateUserInContext } = useUser();
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     
@@ -39,10 +39,10 @@ export default function SettingsClientPage() {
     const handleDisconnect = async () => {
         setIsActionLoading(true);
         const result = await disconnectYoutubeChannelAction();
-        if (result.success) {
+        if (result.success && result.user) {
             toast({ title: "Platform Disconnected", description: result.message });
             // Re-fetch user data to update the UI without a full page reload
-            refetchUser();
+            updateUserInContext(result.user);
         } else {
             toast({ variant: 'destructive', title: "Action Failed", description: result.message });
         }
@@ -160,3 +160,5 @@ export default function SettingsClientPage() {
     </div>
   )
 }
+
+    

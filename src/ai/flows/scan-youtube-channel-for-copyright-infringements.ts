@@ -1,3 +1,4 @@
+
 // Scans a YouTube channel for copyright infringements using AI.
 //
 // - scanYoutubeChannel - A function that scans a YouTube channel for copyright infringements.
@@ -7,7 +8,7 @@
 'use server';
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const ScanYoutubeChannelInputSchema = z.object({
   channelId: z.string().describe('The ID of the YouTube channel to scan.'),

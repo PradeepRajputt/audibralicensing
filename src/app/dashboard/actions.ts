@@ -3,7 +3,7 @@
 
 import type { User, UserAnalytics, Violation, DashboardData } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
-import { subDays, format } from 'date-fns';
+import { subDays } from 'date-fns';
 import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { getViolationsForUser } from '@/lib/violations-store';
@@ -110,7 +110,7 @@ export async function verifyYoutubeChannel(
   const userId = await getUserIdFromSession();
 
   if (!userId) {
-      return { success: false, message: "Authentication error. Please sign in again."};
+      return { success: false, message: "Authentication error. Please sign in again.", user: null };
   }
   
   const channelId = formData.get("channelId") as string;
@@ -119,6 +119,7 @@ export async function verifyYoutubeChannel(
     return {
       success: false,
       message: "Please enter a valid Channel ID.",
+      user: null
     };
   }
 
@@ -126,45 +127,52 @@ export async function verifyYoutubeChannel(
     const channelStats = await getChannelStats(channelId);
 
     if (!channelStats) {
-      return { success: false, message: "Could not find a YouTube channel with that ID." };
+      return { success: false, message: "Could not find a YouTube channel with that ID.", user: null };
     }
 
-    await updateUser(userId, { 
+    const updates = { 
       youtubeChannelId: channelId,
-      // You might not want to override name/avatar if they already exist from a social login
-      // but for this flow, it makes sense.
       displayName: channelStats.title || "YouTube Creator", 
       avatar: channelStats.avatar, 
       platformsConnected: ['youtube'],
-    });
-
+    };
+    await updateUser(userId, updates);
+    
+    const updatedUser = await getUserById(userId);
+    
     revalidatePath('/dashboard', 'layout');
-    return { success: true, message: "Channel connected successfully." };
+
+    return { success: true, message: "Channel connected successfully.", user: JSON.parse(JSON.stringify(updatedUser)) };
     
   } catch (error) {
     console.error("Error verifying youtube channel:", error);
     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-    return { success: false, message };
+    return { success: false, message, user: null };
   }
 }
 
 export async function disconnectYoutubeChannelAction() {
     const userId = await getUserIdFromSession();
      if (!userId) {
-        return { success: false, message: "Authentication error."};
+        return { success: false, message: "Authentication error.", user: null };
     }
     
     try {
         await updateUser(userId, {
             youtubeChannelId: undefined,
-            avatar: 'https://placehold.co/128x128.png', // Reset avatar
-            displayName: 'Sample Creator', // Reset name
+            avatar: 'https://placehold.co/128x128.png', 
+            displayName: 'Sample Creator', 
             platformsConnected: [] 
         });
+
+        const updatedUser = await getUserById(userId);
+
         revalidatePath('/dashboard', 'layout');
-        return { success: true, message: 'YouTube channel disconnected.' };
+        return { success: true, message: 'YouTube channel disconnected.', user: JSON.parse(JSON.stringify(updatedUser)) };
     } catch (error) {
         console.error("Failed to disconnect YouTube channel:", error);
-        return { success: false, message: 'Failed to disconnect channel.'};
+        return { success: false, message: 'Failed to disconnect channel.', user: null };
     }
 }
+
+    

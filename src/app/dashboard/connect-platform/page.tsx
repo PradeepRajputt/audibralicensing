@@ -22,23 +22,22 @@ function SubmitButton() {
 export default function ConnectPlatformPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { refetchUser } = useUser();
+  const { updateUserInContext } = useUser();
   const formRef = React.useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(verifyYoutubeChannel, null);
 
   React.useEffect(() => {
     if (!state) return;
     
-    if (state.success) {
+    if (state.success && state.user) {
       toast({ title: "Verification Successful", description: state.message });
-      // Refetch user data in the global context, then redirect
-      refetchUser().then(() => {
-        router.push('/dashboard/analytics');
-      });
-    } else {
+      // Directly update the user in the context
+      updateUserInContext(state.user);
+      router.push('/dashboard/analytics');
+    } else if (!state.success) {
       toast({ variant: 'destructive', title: "Verification Failed", description: state.message });
     }
-  }, [state, toast, router, refetchUser]);
+  }, [state, toast, router, updateUserInContext]);
 
   return (
     <div className="flex items-center justify-center h-full">
@@ -67,3 +66,5 @@ export default function ConnectPlatformPage() {
     </div>
   );
 }
+
+    

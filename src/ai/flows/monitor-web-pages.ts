@@ -14,7 +14,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import { fetchWebPageContent } from '@/ai/tools/web-scraper';
 
 /**

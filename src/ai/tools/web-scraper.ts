@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A tool for fetching content from a web page.
@@ -5,7 +6,7 @@
  * - fetchWebPageContent - A Genkit tool that fetches the text content of a given URL.
  */
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import axios from 'axios';
 import { JSDOM } from 'jsdom';
 
