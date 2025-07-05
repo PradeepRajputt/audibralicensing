@@ -10,13 +10,10 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, Users, Gavel, Settings, LogOut, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
+import { Shield, Users, Gavel, Settings, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { signOut } from "firebase/auth";
-import { auth } from '@/lib/firebase';
 import React from 'react';
-import { useAuth } from '@/context/auth-context';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
 
 const menuItems = [
@@ -29,7 +26,6 @@ const menuItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
   const [hasNewFeedback, setHasNewFeedback] = React.useState(false);
 
   React.useEffect(() => {
@@ -77,15 +73,6 @@ export function AdminSidebar() {
                 <Settings />
                 <span>Settings</span>
               </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Logout"
-              onClick={() => signOut(auth)}
-            >
-                <LogOut />
-                <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

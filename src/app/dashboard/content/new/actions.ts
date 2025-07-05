@@ -5,8 +5,6 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createContent } from '@/lib/content-store';
-import { auth } from '@/lib/firebase'; // Using firebase auth now
-
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -16,11 +14,9 @@ const formSchema = z.object({
   tags: z.string().optional(),
 });
 
-// This function needs the user ID passed from the client
-export async function addProtectedContentAction(userId: string, values: z.infer<typeof formSchema>) {
-  if (!userId) {
-      return { success: false, message: 'Authentication failed. Please log in again.' };
-  }
+export async function addProtectedContentAction(values: z.infer<typeof formSchema>) {
+  // Using a mock user ID since auth is removed
+  const userId = "user_creator_123";
   
   const parsed = formSchema.safeParse(values);
 

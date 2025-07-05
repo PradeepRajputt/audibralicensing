@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth-context';
 import { getDashboardData } from '../actions';
 import type { DashboardData } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,26 +10,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Eye, Video } from 'lucide-react';
 
 export default function OverviewPage() {
-    const { user, dbUser, loading: authLoading } = useAuth();
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (user) {
-            setIsLoadingData(true);
-            getDashboardData(user.uid).then(data => {
-                setDashboardData(data);
-                setIsLoadingData(false);
-            })
-        } else if (!authLoading) {
-            setIsLoadingData(false);
-        }
-    }, [user, authLoading]);
+        getDashboardData().then(data => {
+            setDashboardData(data);
+            setIsLoading(false);
+        })
+    }, []);
 
-    const isLoading = authLoading || isLoadingData;
     const analytics = dashboardData?.analytics;
-    const creatorName = dbUser?.displayName ?? 'Creator';
-    const avatar = dbUser?.avatar;
+    const creatorName = dashboardData?.user?.displayName ?? 'Creator';
+    const avatar = dashboardData?.user?.avatar;
     const avatarFallback = creatorName.charAt(0);
 
 

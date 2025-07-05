@@ -3,21 +3,18 @@
 
 import { revalidatePath } from 'next/cache';
 import { addReplyToFeedback } from '@/lib/feedback-store';
-import { auth } from '@/lib/auth';
 
 export async function replyToFeedbackAction(feedbackId: string, replyMessage: string) {
   if (!replyMessage.trim()) {
     return { success: false, message: 'Reply message cannot be empty.' };
   }
 
-  const session = await auth();
-  if (!session?.user?.name) {
-    return { success: false, message: 'Authentication required.' };
-  }
+  // Hardcoded admin name as session is removed
+  const adminName = 'Admin';
 
   try {
     await addReplyToFeedback(feedbackId, {
-      adminName: session.user.name,
+      adminName: adminName,
       message: replyMessage,
     });
     revalidatePath('/admin/feedback');

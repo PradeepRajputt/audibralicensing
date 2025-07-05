@@ -8,21 +8,19 @@ import { getAllContentForUser } from '@/lib/content-store';
 import { ContentClientPage } from './content-client';
 import type { ProtectedContent } from '@/lib/types';
 import { useEffect, useState } from "react";
-import { useAuth } from '@/context/auth-context';
 
 export default function ProtectedContentPage() {
-  const { user } = useAuth();
   const [content, setContent] = useState<ProtectedContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    if (user?.uid) {
-        getAllContentForUser(user.uid).then(data => {
-            setContent(JSON.parse(JSON.stringify(data)));
-            setIsLoading(false);
-        });
-    }
-  }, [user]);
+    // Using a mock user ID as auth has been removed
+    const userId = "user_creator_123";
+    getAllContentForUser(userId).then(data => {
+        setContent(JSON.parse(JSON.stringify(data)));
+        setIsLoading(false);
+    });
+  }, []);
 
 
   return (

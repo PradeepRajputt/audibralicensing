@@ -5,9 +5,6 @@ import * as React from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useAuth } from '@/context/auth-context';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -17,11 +14,9 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeSettings } from '@/components/settings/theme-settings';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const platformSettingsFormSchema = z.object({
   allowRegistrations: z.boolean().default(true),
@@ -35,7 +30,6 @@ const platformSettingsFormSchema = z.object({
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
-    const { user, loading } = useAuth();
     const [isLoading, setIsLoading] = React.useState(false);
     
     const platformForm = useForm<z.infer<typeof platformSettingsFormSchema>>({
@@ -74,45 +68,7 @@ export default function AdminSettingsPage() {
 
         <Separator />
         
-        <h2 className="text-xl font-semibold">My Profile</h2>
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Admin Information</CardTitle>
-                    <CardDescription>Your admin profile information.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center gap-6">
-                         {loading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
-                            <Avatar className="w-24 h-24">
-                                <AvatarImage src={user?.photoURL ?? undefined} alt="Admin Avatar" data-ai-hint="profile picture" />
-                                <AvatarFallback>{user?.displayName?.substring(0,2) || 'AD'}</AvatarFallback>
-                            </Avatar>
-                         )}
-                        <div className="space-y-2">
-                            <div className="space-y-1">
-                                <Label>Display Name</Label>
-                                {loading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.displayName || 'Admin'} disabled className="max-w-xs" />}
-                            </div>
-                            <div className="space-y-1">
-                                <Label>Email</Label>
-                                 {loading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-                 <CardFooter>
-                      <Button variant="outline" onClick={() => signOut(auth)}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                    </Button>
-                 </CardFooter>
-            </Card>
-            
-            <ThemeSettings />
-
-        </div>
-
+        <ThemeSettings />
 
         <Separator />
 

@@ -14,29 +14,26 @@ import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-serv
  * @param userId The ID of the user.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
-export async function getDashboardData(userId: string): Promise<DashboardData | null> {
+export async function getDashboardData(userId?: string): Promise<DashboardData | null> {
   noStore();
   
-  if (!userId) {
-      console.log("No user ID provided to getDashboardData.");
-      return null;
-  }
+  const effectiveUserId = userId || 'user_creator_123';
 
   try {
-    const dbUser = await getUserById(userId);
+    const dbUser = await getUserById(effectiveUserId);
 
     if (!dbUser) {
-        console.log(`User with id ${userId} not found.`);
+        console.log(`User with id ${effectiveUserId} not found.`);
         return null;
     }
     
     let userAnalytics: UserAnalytics | null = null;
     if (dbUser.youtubeChannelId) {
         try {
-            const stats = await getChannelStats(dbUser.youtubeChannelId);
+            const stats = await getChannelStats();
             
             if (stats) {
-                 const mostViewed = await getMostViewedVideo(dbUser.youtubeChannelId);
+                 const mostViewed = await getMostViewedVideo();
                 
                 userAnalytics = {
                     subscribers: stats.subscribers,
@@ -58,7 +55,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData | 
                 }
             }
         } catch (error) {
-            console.warn("Could not fetch YouTube analytics, likely due to expired token or permission issues.", error);
+            console.warn("Could not fetch YouTube analytics.", error);
             // Don't fail the whole dashboard, just show analytics as null
             userAnalytics = null;
         }
@@ -66,7 +63,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData | 
 
 
     // --- REAL ACTIVITY DATA SECTION ---
-    const violations = await getViolationsForUser(userId);
+    const violations = await getViolationsForUser(effectiveUserId);
     const activity = violations.slice(0, 5).map((violation: Violation) => {
       let status: string;
       let variant: 'destructive' | 'default' | 'secondary' | 'outline';
@@ -92,36 +89,10 @@ export async function getDashboardData(userId: string): Promise<DashboardData | 
     };
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
-    const dbUser = await getUserById(userId);
+    const dbUser = await getUserById(effectiveUserId);
      if (dbUser) {
         return { analytics: null, activity: [], user: JSON.parse(JSON.stringify(dbUser)) };
      }
     return null;
   }
-}
-
-export async function verifyYoutubeChannel(prevState: any, formData: FormData) {
-  const channelId = formData.get('channelId') as string;
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return { success: false, message: 'Not authenticated.' };
-  }
-  
-  // In a real app, you'd verify this channel ID with the YouTube Data API
-  // to confirm the user actually owns it. For now, we'll just simulate it.
-  if (channelId && (channelId.startsWith('UC') || channelId.startsWith('@'))) {
-    await updateUser(session.user.id, { 
-      youtubeChannelId: channelId,
-      platformsConnected: ['youtube']
-    });
-    
-    revalidatePath('/dashboard/settings');
-    revalidatePath('/dashboard/analytics');
-
-    const user = await getUserById(session.user.id);
-    return { success: true, message: 'Channel verified successfully!', user };
-  }
-
-  return { success: false, message: 'Invalid YouTube Channel ID format.' };
 }

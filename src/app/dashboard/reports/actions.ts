@@ -3,25 +3,20 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { createReport } from '@/lib/reports-store';
 import { getContentById } from '@/lib/content-store';
-import { auth } from '@/lib/firebase'; // Using firebase auth now
-import type { User as FirebaseUser } from 'firebase/auth';
 import { getUserById } from '@/lib/users-store';
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
-  platform: z.string({required_error: "Please select a platform."}).min(1, "Please select a platform."),
+  platform: z.string({ required_error: "Please select a platform." }).min(1, "Please select a platform."),
   suspectUrl: z.string().url({ message: 'Please enter a valid URL.' }),
   reason: z.string().min(10, { message: 'Reason must be at least 10 characters.' }),
 });
 
-export async function submitManualReportAction(userId: string, values: z.infer<typeof formSchema>) {
-  if (!userId) {
-      return { success: false, message: 'Authentication failed. Please log in again.' };
-  }
-  
+export async function submitManualReportAction(values: z.infer<typeof formSchema>) {
+    // Using a mock user ID since auth is removed
+  const userId = "user_creator_123";
   const user = await getUserById(userId);
 
   if (!user || !user.displayName) {

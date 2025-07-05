@@ -5,22 +5,16 @@ import * as React from 'react';
 import { format, subDays, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Users, Eye, Video, Palette, LogIn, Youtube, Loader2 } from 'lucide-react';
+import { Users, Eye, Video, Palette, Youtube, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useAuth } from '@/context/auth-context';
 import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
-import Link from 'next/link';
 import type { DashboardData } from '@/lib/types';
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from '@/lib/firebase';
-import { upsertUser } from '@/lib/auth-actions';
-
 
 type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
@@ -75,26 +69,6 @@ function AnalyticsLoadingSkeleton() {
 }
 
 function ConnectYoutubePlaceholder() {
-    const handleConnect = async () => {
-        const provider = new GoogleAuthProvider();
-        provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
-        try {
-            const result = await signInWithPopup(auth, provider);
-            const credential = GoogleAuthProvider.credentialFromResult(result);
-            if (credential) {
-                const user = result.user;
-                await upsertUser({ 
-                    id: user.uid, 
-                    email: user.email, 
-                    displayName: user.displayName, 
-                    avatar: user.photoURL 
-                });
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
     return (
         <Card className="text-center w-full max-w-lg mx-auto">
           <CardHeader>
@@ -105,7 +79,7 @@ function ConnectYoutubePlaceholder() {
               <CardDescription>To view your analytics, please connect your YouTube channel in settings.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button onClick={handleConnect}>
+              <Button disabled>
                   Connect YouTube
               </Button>
           </CardContent>
@@ -113,47 +87,20 @@ function ConnectYoutubePlaceholder() {
     )
 }
 
-function LoginPlaceholder() {
-     return (
-       <Card className="text-center w-full max-w-lg mx-auto">
-          <CardHeader>
-              <CardTitle>Welcome to CreatorShield</CardTitle>
-              <CardDescription>To get started, please sign in.</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <Button onClick={async () => {
-                  const provider = new GoogleAuthProvider();
-                  provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
-                  await signInWithPopup(auth, provider);
-              }}>
-                  <LogIn className="mr-2 h-5 w-5" />
-                  Sign In with Google
-              </Button>
-          </CardContent>
-      </Card>
-    )
-}
-
-
 export default function AnalyticsClientPage() {
-    const { user, dbUser, loading: authLoading } = useAuth();
     const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
 
     React.useEffect(() => {
-        if (user) {
-            setIsLoadingData(true);
-            getDashboardData(user.uid).then(data => {
-                setDashboardData(data);
-                setIsLoadingData(false);
-            })
-        } else if (!authLoading) {
+        setIsLoadingData(true);
+        getDashboardData().then(data => {
+            setDashboardData(data);
             setIsLoadingData(false);
-        }
-    }, [user, authLoading]);
+        })
+    }, []);
 
     const analytics = dashboardData?.analytics ?? null;
-    const isLoading = authLoading || isLoadingData;
+    const isLoading = isLoadingData;
 
     const [date, setDate] = React.useState<DateRange | undefined>({ from: subDays(new Date(), 29), to: new Date() });
     const [viewsChartType, setViewsChartType] = React.useState<ChartType>('area');
@@ -232,10 +179,6 @@ export default function AnalyticsClientPage() {
         return <AnalyticsLoadingSkeleton />;
     }
     
-    if (!user || !dbUser) {
-        return <LoginPlaceholder />;
-    }
-
     if (!analytics) {
         return <ConnectYoutubePlaceholder />;
     }

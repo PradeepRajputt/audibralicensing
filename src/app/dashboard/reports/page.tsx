@@ -30,9 +30,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import jsPDF from 'jspdf';
 import { getAllContentForUser } from "@/lib/content-store";
 import { getViolationsForUser } from "@/lib/violations-store";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
-import { useAuth } from '@/context/auth-context';
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -50,9 +49,6 @@ export default function SubmitReportPage() {
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const { user } = useAuth();
-
 
   const [violations, setViolations] = useState<Violation[]>([]);
   const [protectedContent, setProtectedContent] = useState<ProtectedContent[]>([]);
@@ -71,13 +67,14 @@ export default function SubmitReportPage() {
   });
 
    const loadData = useCallback(async () => {
-    if (!user?.uid) return;
+    // Using a mock user ID as auth has been removed
+    const userId = "user_creator_123";
     setIsFetching(true);
     try {
         const [reports, violationsData, contentData] = await Promise.all([
-          getReportsForUser(user.uid),
-          getViolationsForUser(user.uid),
-          getAllContentForUser(user.uid),
+          getReportsForUser(userId),
+          getViolationsForUser(userId),
+          getAllContentForUser(userId),
         ]);
         setSubmittedReports(reports);
         setViolations(violationsData);
@@ -91,13 +88,11 @@ export default function SubmitReportPage() {
         })
     }
     setIsFetching(false);
-  }, [toast, user?.uid]);
+  }, [toast]);
 
   useEffect(() => {
-    if (user) {
-        loadData();
-    }
-  }, [user, loadData]);
+    loadData();
+  }, [loadData]);
 
 
   useEffect(() => {
@@ -173,13 +168,9 @@ Sincerely,
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user?.uid) {
-        toast({ variant: "destructive", title: "Authentication Error", description: "You must be logged in to submit a report." });
-        return;
-    }
     setIsLoading(true);
     
-    const result = await submitManualReportAction(user.uid, values);
+    const result = await submitManualReportAction(values);
 
     if (result.success) {
       toast({
