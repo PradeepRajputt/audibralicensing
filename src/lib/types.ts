@@ -1,8 +1,11 @@
 
 export interface User {
   id: string; 
-  displayName: string | null;
-  email: string;
+  name?: string | null;
+  displayName?: string | null;
+  email: string | null;
+  emailVerified?: Date | null;
+  image?: string | null;
   role: 'creator' | 'admin';
   joinDate: string; 
   platformsConnected: ('youtube' | 'instagram' | 'tiktok' | 'web')[];
@@ -13,6 +16,17 @@ export interface User {
   address?: string;
   phone?: string;
   hashedPin?: string;
+
+  // OAuth fields from next-auth
+  provider?: string;
+  providerAccountId?: string;
+  access_token?: string;
+  expires_at?: number;
+  token_type?: string;
+  scope?: string;
+  id_token?: string;
+  session_state?: string;
+  refresh_token?: string;
 }
 
 /**
@@ -137,3 +151,17 @@ export type DashboardData = {
   activity: any[];
   user: User | undefined;
 } | null;
+
+// For extending JWT session object
+export interface DecodedJWT {
+    id: string;
+    name?: string;
+    email?: string;
+    picture?: string;
+    sub: string;
+    accessToken: string;
+    refreshToken?: string;
+    iat: number;
+    exp: number;
+    jti: string;
+}

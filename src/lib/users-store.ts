@@ -2,11 +2,13 @@
 'use server';
 import type { User } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
+import type { Account } from 'next-auth';
 
 // Mock in-memory database for users
 let mockUsers: User[] = [
     { 
-        id: 'user_creator_123', 
+        id: 'user_creator_123',
+        name: 'Sample Creator',
         displayName: 'Sample Creator',
         email: 'creator@example.com',
         role: 'creator',
@@ -19,7 +21,8 @@ let mockUsers: User[] = [
         phone: '555-123-4567',
     },
     { 
-        id: 'user_admin_123', 
+        id: 'user_admin_123',
+        name: 'Admin User',
         displayName: 'Admin User',
         email: 'admin@creatorshield.com',
         role: 'admin',
@@ -27,39 +30,11 @@ let mockUsers: User[] = [
         platformsConnected: [],
         status: 'active',
         avatar: 'https://placehold.co/128x128.png',
-    },
-    { 
-        id: 'user_creator_456', 
-        displayName: 'Alice Vlogs',
-        email: 'alice@example.com',
-        role: 'creator',
-        joinDate: new Date('2024-02-20T10:00:00Z').toISOString(),
-        platformsConnected: ['youtube'],
-        youtubeChannelId: 'UC-lHJZR3Gqxm24_Vd_AJ5Yw', // Google's channel for example
-        status: 'active',
-        avatar: 'https://placehold.co/128x128.png',
-    },
-    { 
-        id: 'user_creator_789', 
-        displayName: 'Bob Builds',
-        email: 'bob@example.com',
-        role: 'creator',
-        joinDate: new Date('2024-03-10T10:00:00Z').toISOString(),
-        platformsConnected: [],
-        status: 'suspended',
-        avatar: 'https://placehold.co/128x128.png',
-    },
-     { 
-        id: 'user_creator_xyz', 
-        displayName: 'Deleted User',
-        email: 'deleted@example.com',
-        role: 'creator',
-        joinDate: new Date('2024-01-01T10:00:00Z').toISOString(),
-        platformsConnected: [],
-        status: 'deactivated',
-        avatar: 'https://placehold.co/128x128.png',
     }
 ];
+
+// In-memory mock for OAuth accounts
+let mockAccounts: (Account & { userId: string })[] = [];
 
 export async function getAllUsers(): Promise<Omit<User, 'password'>[]> {
   noStore();
@@ -71,11 +46,49 @@ export async function getUserById(id: string): Promise<User | undefined> {
   return Promise.resolve(mockUsers.find(u => u.id === id));
 }
 
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  noStore();
+  return Promise.resolve(mockUsers.find(u => u.email === email));
+}
+
+
+export async function getUserByAccount({ providerAccountId, provider }: { providerAccountId: string, provider: string }): Promise<User | null> {
+    noStore();
+    const account = mockAccounts.find(a => a.provider === provider && a.providerAccountId === providerAccountId);
+    if (!account) return null;
+    const user = mockUsers.find(u => u.id === account.userId);
+    return user || null;
+}
+
+
+export async function createUser(data: Omit<User, 'id' | 'joinDate' | 'status' | 'platformsConnected'>): Promise<User> {
+    noStore();
+    const newUser: User = {
+        ...data,
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        joinDate: new Date().toISOString(),
+        status: 'active',
+        platformsConnected: [],
+    };
+    mockUsers.push(newUser);
+    return newUser;
+}
+
+
 export async function updateUser(id: string, updates: Partial<Omit<User, 'id'>>): Promise<void> {
     noStore();
     mockUsers = mockUsers.map(u => u.id === id ? { ...u, ...updates } : u);
     console.log(`MOCK: Updated user ${id}`, mockUsers.find(u=> u.id === id));
 }
+
+export async function linkAccount(account: Account & { userId: string }): Promise<void> {
+    noStore();
+    // Remove existing link for that user/provider if it exists, then add new one.
+    mockAccounts = mockAccounts.filter(a => !(a.userId === account.userId && a.provider === account.provider));
+    mockAccounts.push(account);
+    console.log(`MOCK: Linked account for user ${account.userId} with provider ${account.provider}`);
+}
+
 
 export async function updateUserStatus(id: string, status: User['status']): Promise<void> {
     noStore();
