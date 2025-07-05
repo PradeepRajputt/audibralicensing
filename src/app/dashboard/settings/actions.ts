@@ -1,3 +1,2 @@
-
-// This file is no longer used. PIN functionality has been replaced by Google OAuth.
+// This file is no longer used.
 export {};

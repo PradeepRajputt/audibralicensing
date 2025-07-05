@@ -8,11 +8,11 @@ import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
+import { auth } from '@/lib/auth';
 
-// MOCK IMPLEMENTATION: Simulates getting the logged-in user's ID.
 async function getUserIdFromSession(): Promise<string | null> {
-    // For the creator dashboard, we always assume the mock creator is logged in.
-    return 'user_creator_123';
+    const session = await auth();
+    return session?.user?.id ?? null;
 }
 
 /**
@@ -90,14 +90,13 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     return { 
       analytics: userAnalytics, 
       activity: activity, 
-      user: dbUser,
+      user: JSON.parse(JSON.stringify(dbUser)),
     };
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
-    // If the error is from the YouTube service, we can still return partial data
     const dbUser = await getUserById(userId);
      if (dbUser) {
-        return { analytics: null, activity: [], user: dbUser };
+        return { analytics: null, activity: [], user: JSON.parse(JSON.stringify(dbUser)) };
      }
     return null;
   }
@@ -142,7 +141,7 @@ export async function verifyYoutubeChannel(
     
     revalidatePath('/dashboard', 'layout');
 
-    return { success: true, message: "Channel connected successfully.", user: JSON.parse(JSON.stringify(updatedUser)) };
+    return { success: true, message: "Channel connected successfully.", user: updatedUser ? JSON.parse(JSON.stringify(updatedUser)) : null };
     
   } catch (error) {
     console.error("Error verifying youtube channel:", error);
@@ -150,29 +149,3 @@ export async function verifyYoutubeChannel(
     return { success: false, message, user: null };
   }
 }
-
-export async function disconnectYoutubeChannelAction() {
-    const userId = await getUserIdFromSession();
-     if (!userId) {
-        return { success: false, message: "Authentication error.", user: null };
-    }
-    
-    try {
-        await updateUser(userId, {
-            youtubeChannelId: undefined,
-            avatar: 'https://placehold.co/128x128.png', 
-            displayName: 'Sample Creator', 
-            platformsConnected: [] 
-        });
-
-        const updatedUser = await getUserById(userId);
-
-        revalidatePath('/dashboard', 'layout');
-        return { success: true, message: 'YouTube channel disconnected.', user: JSON.parse(JSON.stringify(updatedUser)) };
-    } catch (error) {
-        console.error("Failed to disconnect YouTube channel:", error);
-        return { success: false, message: 'Failed to disconnect channel.', user: null };
-    }
-}
-
-    

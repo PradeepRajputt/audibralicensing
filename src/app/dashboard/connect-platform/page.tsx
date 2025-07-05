@@ -11,8 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Youtube, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { verifyYoutubeChannel } from '@/app/dashboard/actions';
-import { useUser } from '@/context/user-context';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -22,7 +22,7 @@ function SubmitButton() {
 export default function ConnectPlatformPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { updateUserInContext } = useUser();
+  const { update } = useSession();
   const formRef = React.useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(verifyYoutubeChannel, null);
 
@@ -31,13 +31,13 @@ export default function ConnectPlatformPage() {
     
     if (state.success && state.user) {
       toast({ title: "Verification Successful", description: state.message });
-      // Directly update the user in the context
-      updateUserInContext(state.user);
+      // This forces a refetch of the session, updating the UI everywhere
+      update(); 
       router.push('/dashboard/analytics');
     } else if (!state.success) {
       toast({ variant: 'destructive', title: "Verification Failed", description: state.message });
     }
-  }, [state, toast, router, updateUserInContext]);
+  }, [state, toast, router, update]);
 
   return (
     <div className="flex items-center justify-center h-full">
@@ -66,5 +66,3 @@ export default function ConnectPlatformPage() {
     </div>
   );
 }
-
-    

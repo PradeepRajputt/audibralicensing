@@ -5,6 +5,7 @@ import { z } from "zod";
 import { revalidatePath } from 'next/cache';
 import { monitorWebPagesForCopyrightInfringements } from "@/ai/flows/monitor-web-pages";
 import { addScan } from '@/lib/web-scans-store';
+import { auth } from '@/lib/auth';
 
 const formSchema = z.object({
   url: z.string().url(),
@@ -13,8 +14,11 @@ const formSchema = z.object({
 });
 
 export async function scanPageAction(values: z.infer<typeof formSchema>) {
-  // In a real app, this would come from the session.
-  const userId = 'user_creator_123';
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, message: 'Authentication required. Please log in again.' };
+  }
+  const userId = session.user.id;
   
   try {
     const result = await monitorWebPagesForCopyrightInfringements({
@@ -32,7 +36,6 @@ export async function scanPageAction(values: z.infer<typeof formSchema>) {
         matchScore: result.confidenceScore,
     });
 
-    // Revalidate the monitoring page to update the history
     revalidatePath('/dashboard/monitoring');
 
     return {

@@ -5,6 +5,7 @@ import { useState, useRef } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useSession, signOut } from 'next-auth/react';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -18,14 +19,7 @@ import { Loader2, LogOut } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ThemeSettings } from '@/components/settings/theme-settings';
-import { useUser } from '@/context/user-context';
-
-
-// This form is no longer needed as admin profile is not editable
-// const profileFormSchema = z.object({
-//   displayName: z.string().min(2, { message: "Display name must be at least 2 characters." }),
-//   email: z.string().email(),
-// });
+import { Skeleton } from '@/components/ui/skeleton';
 
 const platformSettingsFormSchema = z.object({
   allowRegistrations: z.boolean().default(true),
@@ -39,10 +33,11 @@ const platformSettingsFormSchema = z.object({
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
-    const { user, logout } = useUser();
+    const { data: session, status } = useSession();
     const [isLoading, setIsLoading] = useState(false);
+    
+    const user = session?.user;
 
-    // Form for platform settings
     const platformForm = useForm<z.infer<typeof platformSettingsFormSchema>>({
         resolver: zodResolver(platformSettingsFormSchema),
         defaultValues: {
@@ -88,24 +83,26 @@ export default function AdminSettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center gap-6">
-                        <Avatar className="w-24 h-24">
-                            <AvatarImage src={user?.avatar ?? undefined} alt="Admin Avatar" data-ai-hint="profile picture" />
-                            <AvatarFallback>{user?.displayName?.substring(0,2) || 'AD'}</AvatarFallback>
-                        </Avatar>
+                         {status === 'loading' ? <Skeleton className="w-24 h-24 rounded-full" /> : (
+                            <Avatar className="w-24 h-24">
+                                <AvatarImage src={user?.image ?? undefined} alt="Admin Avatar" data-ai-hint="profile picture" />
+                                <AvatarFallback>{user?.name?.substring(0,2) || 'AD'}</AvatarFallback>
+                            </Avatar>
+                         )}
                         <div className="space-y-2">
                             <div className="space-y-1">
                                 <Label>Display Name</Label>
-                                <Input value={user?.displayName || 'Admin'} disabled className="max-w-xs" />
+                                {status === 'loading' ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.name || 'Admin'} disabled className="max-w-xs" />}
                             </div>
                             <div className="space-y-1">
                                 <Label>Email</Label>
-                                <Input value={user?.email || ''} disabled className="max-w-xs" />
+                                 {status === 'loading' ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
                             </div>
                         </div>
                     </div>
                 </CardContent>
                  <CardFooter>
-                      <Button variant="outline" onClick={logout}>
+                      <Button variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign Out
                     </Button>

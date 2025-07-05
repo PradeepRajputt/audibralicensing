@@ -29,13 +29,14 @@ export const authConfig: NextAuthConfig = {
         let dbUser = await getUserByEmail(profile.email);
         
         if (!dbUser) {
-          // If no user, create one. The role will default to 'creator'.
+          // If no user, create one.
+          const userRole = profile.email === 'admin@creatorshield.com' ? 'admin' : 'creator';
           dbUser = await createUser({
             name: profile.name,
             displayName: profile.name,
             email: profile.email,
             image: profile.picture,
-            role: 'creator', // default role
+            role: userRole,
           });
         }
         
@@ -71,6 +72,8 @@ export const authConfig: NextAuthConfig = {
             if (dbUser) {
                 token.id = dbUser.id;
                 token.role = dbUser.role;
+                // Add any other user properties you want in the token
+                token.youtubeChannelId = dbUser.youtubeChannelId;
             }
         }
         return token;
@@ -80,6 +83,8 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         session.user.role = token.role as 'creator' | 'admin';
         session.accessToken = token.accessToken as string;
+        // Add any other user properties from the token to the session
+        (session.user as any).youtubeChannelId = token.youtubeChannelId;
         return session;
     }
   },

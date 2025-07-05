@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -14,7 +15,7 @@ import { Skeleton } from '../ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Activity, MessageSquareHeart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
-import { useUser } from '@/context/user-context';
+import { useSession, signOut } from 'next-auth/react';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 import React from 'react';
 
@@ -31,11 +32,14 @@ const menuItems = [
 
 export function CreatorSidebar() {
   const pathname = usePathname();
-  const { user, isLoading, logout, channelConnected } = useUser();
+  const { data: session, status } = useSession();
   const [hasUnread, setHasUnread] = React.useState(false);
   
-  const creatorName = user?.displayName ?? 'Creator';
-  const creatorImage = user?.avatar;
+  const user = session?.user;
+  const isLoading = status === 'loading';
+  const channelConnected = !!(user && 'youtubeChannelId' in user && (user as any).youtubeChannelId);
+  const creatorName = user?.name ?? 'Creator';
+  const creatorImage = user?.image;
   
   React.useEffect(() => {
     if (user?.id) {
@@ -112,10 +116,10 @@ export function CreatorSidebar() {
            <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Logout"
-              onClick={logout}
+              onClick={() => signOut({ callbackUrl: '/' })}
             >
-              <LogOut />
-              <span>Logout</span>
+                <LogOut />
+                <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

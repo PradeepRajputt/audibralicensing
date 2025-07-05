@@ -1,38 +1,17 @@
 
 'use client';
-import * as React from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { LogIn, Shield } from 'lucide-react';
+import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
-
 
 export default function Home() {
-    const { data: session, status } = useSession();
-    const router = useRouter();
+    const { status } = useSession();
 
-    React.useEffect(() => {
-        if (status === "authenticated") {
-            const dashboardUrl = session.user.role === 'admin' ? '/admin' : '/dashboard';
-            router.push(dashboardUrl);
-        }
-    }, [status, session, router]);
-
-
-    if (status === "loading") {
+    if (status === "loading" || status === "authenticated") {
         return (
             <div className="flex h-screen w-full items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
-
-    if (status === "authenticated") {
-         return (
-            <div className="flex h-screen w-full items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                <p className="ml-4">Redirecting to your dashboard...</p>
+                <p className="ml-4">Redirecting...</p>
             </div>
         );
     }

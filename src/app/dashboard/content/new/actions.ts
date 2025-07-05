@@ -5,23 +5,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createContent } from '@/lib/content-store';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import type { DecodedJWT } from '@/lib/types';
-
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
-
-async function getUserIdFromSession(): Promise<string | null> {
-    const token = cookies().get('auth_token')?.value;
-    if (!token) return null;
-    try {
-        const { payload } = await jwtVerify(token, JWT_SECRET) as { payload: DecodedJWT };
-        return payload.id;
-    } catch (e) {
-        return null;
-    }
-}
+import { auth } from '@/lib/auth';
 
 
 const formSchema = z.object({
@@ -33,9 +17,9 @@ const formSchema = z.object({
 });
 
 export async function addProtectedContentAction(values: z.infer<typeof formSchema>) {
-  const creatorId = await getUserIdFromSession();
+  const session = await auth();
 
-  if (!creatorId) {
+  if (!session?.user?.id) {
       return { success: false, message: 'Authentication failed. Please log in again.' };
   }
   
@@ -52,7 +36,7 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
     await createContent({
         ...parsed.data,
         tags: tagsArray,
-        creatorId: creatorId,
+        creatorId: session.user.id,
     });
     
   } catch (error) {

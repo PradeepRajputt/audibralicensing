@@ -1,2 +1,1 @@
-// This file is now deprecated and can be removed.
-// All database connection logic is handled by `src/lib/mongodb.ts`.
+// This file is no longer used and can be deleted.

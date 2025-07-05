@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function SettingsClientPage() {
-    const { data: session, status } = useSession();
+    const { data: session, status, update } = useSession();
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     
@@ -38,7 +38,7 @@ export default function SettingsClientPage() {
     const handleDisconnect = async () => {
         setIsActionLoading(true);
         toast({ title: "Channel Disconnected", description: "You have been signed out to clear permissions."});
-        signOut({ callbackUrl: '/' });
+        await signOut({ callbackUrl: '/' }); // Use await to ensure sign out completes
         setIsActionLoading(false);
     }
 
@@ -61,7 +61,7 @@ export default function SettingsClientPage() {
                     {isLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                       <Avatar className="w-24 h-24">
                         <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? 'User'} data-ai-hint="profile picture" />
-                        <AvatarFallback>{user?.name?.substring(0,2) ?? 'C'}</AvatarFallback>
+                        <AvatarFallback>{user?.name?.charAt(0) ?? 'C'}</AvatarFallback>
                       </Avatar>
                     )}
                     <div className="space-y-2">
@@ -141,7 +141,9 @@ export default function SettingsClientPage() {
                             </Button>
                          </div>
                     ) : (
-                       <Button onClick={() => signIn('google')}>Connect</Button>
+                       <Button asChild>
+                          <Link href="/dashboard/connect-platform">Connect</Link>
+                       </Button>
                     )}
                 </div>
             </CardContent>
