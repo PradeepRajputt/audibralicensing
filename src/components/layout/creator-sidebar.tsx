@@ -17,12 +17,18 @@ import NextLink from 'next/link';
 import React from 'react';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 import { useYouTube } from '@/context/youtube-context';
-
+import { useDashboardData } from '@/app/dashboard/dashboard-context';
 
 export function CreatorSidebar() {
   const pathname = usePathname();
   const { isYouTubeConnected } = useYouTube();
+  const dashboardData = useDashboardData();
   const [hasUnread, setHasUnread] = React.useState(false);
+
+  const user = dashboardData?.user;
+  const creatorName = user?.displayName ?? 'Creator';
+  const avatar = user?.avatar;
+  const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
   const menuItems = [
     { href: '/dashboard/overview', label: 'Overview', icon: Home, requiresConnection: false },
@@ -46,11 +52,11 @@ export function CreatorSidebar() {
         <div className="flex items-center gap-3 p-2">
             <NextLink href="/dashboard/settings" className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={"https://placehold.co/128x128.png"} data-ai-hint="profile picture" />
-                    <AvatarFallback>C</AvatarFallback>
+                    <AvatarImage src={avatar ?? "https://placehold.co/128x128.png"} data-ai-hint="profile picture" />
+                    <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                    <span className="font-semibold text-sidebar-foreground truncate">Creator</span>
+                    <span className="font-semibold text-sidebar-foreground truncate">{creatorName}</span>
                     <span className="text-xs text-sidebar-foreground/70">Creator Dashboard</span>
                 </div>
             </NextLink>
