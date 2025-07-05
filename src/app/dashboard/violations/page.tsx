@@ -19,7 +19,6 @@ import {
 import type { Violation } from '@/lib/types';
 import { getViolationsForUser, updateViolationStatus } from '@/lib/violations-store';
 import Image from 'next/image';
-import { useAuth } from '@/context/auth-context';
 
 const statusMapping: Record<Violation['status'], { text: string; variant: "secondary" | "default" | "outline" }> = {
     pending_review: { text: "New", variant: "secondary" },
@@ -41,18 +40,17 @@ function formatStatus(status: string) {
 
 export default function ViolationsPage() {
     const { toast } = useToast();
-    const { user } = useAuth();
     const [violations, setViolations] = useState<Violation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (user?.uid) {
-            getViolationsForUser(user.uid).then(data => {
-                setViolations(JSON.parse(JSON.stringify(data)));
-                setIsLoading(false);
-            });
-        }
-    }, [user]);
+        // Using a mock user ID as auth has been removed
+        const userId = "user_creator_123";
+        getViolationsForUser(userId).then(data => {
+            setViolations(JSON.parse(JSON.stringify(data)));
+            setIsLoading(false);
+        });
+    }, []);
 
     const handleAction = async (action: 'dismiss' | 'report', violationId: string) => {
         let newStatus: Violation['status'] = 'pending_review';

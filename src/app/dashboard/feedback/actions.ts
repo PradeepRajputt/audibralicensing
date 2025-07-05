@@ -4,7 +4,6 @@
 import { revalidatePath } from 'next/cache';
 import { z } from "zod";
 import { addFeedback, markFeedbackAsRead } from '@/lib/feedback-store';
-import { auth } from '@/lib/auth';
 
 const formSchema = z.object({
   title: z.string().min(5, { message: "Title must be at least 5 characters." }),
@@ -15,18 +14,17 @@ const formSchema = z.object({
 });
 
 export async function submitFeedbackAction(values: z.infer<typeof formSchema>) {
-  const session = await auth();
-  if (!session?.user?.id || !session.user.name) {
-    return { success: false, message: 'Authentication failed. Please log in again.' };
-  }
-  const { id: creatorId, name: creatorName, image: avatar } = session.user;
-
+  // Using a mock user ID and details since auth is removed.
+  const creatorId = 'user_creator_123';
+  const creatorName = 'Sample Creator';
+  const avatar = 'https://placehold.co/128x128.png';
+  
   try {
     await addFeedback({
       ...values,
       creatorId,
       creatorName,
-      avatar: avatar || 'https://placehold.co/128x128.png',
+      avatar,
       tags: values.tags ? values.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
     });
     
