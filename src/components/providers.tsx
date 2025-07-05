@@ -4,6 +4,7 @@
 import { ThemeProvider } from 'next-themes';
 import { type ThemeProviderProps } from "next-themes/dist/types"
 import { Toaster } from "@/components/ui/toaster"
+import { YouTubeProvider } from '@/context/youtube-context';
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
@@ -12,8 +13,10 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
       defaultTheme="dark"
       {...props}
       >
-          {children}
-          <Toaster />
+        <YouTubeProvider>
+            {children}
+            <Toaster />
+        </YouTubeProvider>
       </ThemeProvider>
   );
 }

@@ -16,22 +16,24 @@ import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import React from 'react';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
+import { useYouTube } from '@/context/youtube-context';
 
-
-const menuItems = [
-  { href: '/dashboard/overview', label: 'Overview', icon: Home },
-  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
-  { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
-  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
-  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
-  { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
-  { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
-];
 
 export function CreatorSidebar() {
   const pathname = usePathname();
+  const { isYouTubeConnected } = useYouTube();
   const [hasUnread, setHasUnread] = React.useState(false);
+
+  const menuItems = [
+    { href: '/dashboard/overview', label: 'Overview', icon: Home, requiresConnection: false },
+    { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity, requiresConnection: false },
+    { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
+    { href: '/dashboard/content', label: 'My Content', icon: FileVideo, requiresConnection: false },
+    { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch, requiresConnection: true },
+    { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert, requiresConnection: true },
+    { href: '/dashboard/reports', label: 'Submit Report', icon: FileText, requiresConnection: false },
+    { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart, requiresConnection: false },
+  ];
 
   React.useEffect(() => {
     // Using a mock user ID as auth has been removed
@@ -58,6 +60,7 @@ export function CreatorSidebar() {
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/overview');
+            const isDisabled = item.requiresConnection && !isYouTubeConnected;
 
             return (
               <SidebarMenuItem 
@@ -67,9 +70,10 @@ export function CreatorSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
-                  tooltip={item.label}
+                  tooltip={item.requiresConnection && !isYouTubeConnected ? `${item.label} (Requires YouTube Connection)` : item.label}
+                  disabled={isDisabled}
                 >
-                  <NextLink href={item.href} prefetch={false}>
+                  <NextLink href={item.href} prefetch={false} className={isDisabled ? "pointer-events-none" : ""}>
                     <item.icon />
                     <span>{item.label}</span>
                   </NextLink>

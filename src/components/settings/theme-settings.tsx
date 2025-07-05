@@ -18,9 +18,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 const themes = [
+    { name: 'light', label: 'Light', colors: { primary: 'hsl(210 22% 29%)', accent: 'hsl(283 44% 47%)' } },
     { name: 'dark', label: 'Dark', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(283 44% 67%)' } },
-    { name: 'zinc', label: 'Zinc', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(240 3.7% 15.9%)' } },
-    { name: 'light-trio', label: 'Light Trio', colors: { primary: 'hsl(217 91% 60%)', accent: 'hsl(43 74% 66%)' } },
+    { name: 'monochrome', label: 'Monochrome', colors: { primary: 'hsl(0 0% 95%)', accent: 'hsl(0 0% 25%)' } },
+    { name: 'vibrant', label: 'Vibrant', colors: { primary: 'hsl(217 91% 60%)', accent: 'hsl(25 95% 53%)' } },
+    { name: 'forest', label: 'Forest', colors: { primary: 'hsl(140 70% 60%)', accent: 'hsl(140 60% 50%)' } },
 ] as const;
 
 
@@ -42,7 +44,9 @@ export function ThemeSettings() {
         </CardHeader>
         <CardContent>
           {!mounted ? (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
@@ -51,7 +55,7 @@ export function ThemeSettings() {
           <RadioGroup
             value={theme}
             onValueChange={setTheme}
-            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+            className="grid grid-cols-2 md:grid-cols-5 gap-4"
           >
             {themes.map((t) => (
               <Label
