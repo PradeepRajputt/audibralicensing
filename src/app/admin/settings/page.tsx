@@ -17,6 +17,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { ThemeSettings } from '@/components/settings/theme-settings';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 const platformSettingsFormSchema = z.object({
   allowRegistrations: z.boolean().default(true),
@@ -27,10 +30,20 @@ const platformSettingsFormSchema = z.object({
   matchThreshold: z.array(z.number()).default([85]),
 });
 
+// Since auth is removed, we'll use a mock admin user for display
+const mockAdminUser = {
+    displayName: "Admin User",
+    email: "admin@creatorshield.com",
+    avatar: "https://placehold.co/128x128.png",
+};
+
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = React.useState(false);
+    const [isSavingPlatform, setIsSavingPlatform] = React.useState(false);
+    const [isSavingProfile, setIsSavingProfile] = React.useState(false);
+    const [profilePicture, setProfilePicture] = React.useState(mockAdminUser.avatar);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
     
     const platformForm = useForm<z.infer<typeof platformSettingsFormSchema>>({
         resolver: zodResolver(platformSettingsFormSchema),
@@ -45,7 +58,7 @@ export default function AdminSettingsPage() {
     });
     
     function onPlatformSubmit(data: z.infer<typeof platformSettingsFormSchema>) {
-        setIsLoading(true);
+        setIsSavingPlatform(true);
         console.log("Simulating saving platform settings:", data);
         
         setTimeout(() => {
@@ -53,7 +66,7 @@ export default function AdminSettingsPage() {
                 title: "Platform Settings Saved",
                 description: "Your changes have been successfully saved.",
             });
-            setIsLoading(false);
+            setIsSavingPlatform(false);
         }, 1500);
     }
   
@@ -65,6 +78,78 @@ export default function AdminSettingsPage() {
                 Manage your personal account and platform-wide configurations.
             </p>
         </div>
+
+        <Separator />
+        
+        <h2 className="text-xl font-semibold">My Profile</h2>
+        
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Profile Picture</CardTitle>
+                    <CardDescription>Update your profile picture.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center gap-6">
+                        <Avatar className="w-24 h-24">
+                            <AvatarImage src={profilePicture} data-ai-hint="profile picture" />
+                            <AvatarFallback>AD</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-2">
+                           <Input id="picture" type="file" ref={fileInputRef} className="hidden" onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) setProfilePicture(URL.createObjectURL(file));
+                           }} accept="image/png, image/jpeg" />
+                           <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Picture</Button>
+                           <Button onClick={() => {
+                                setIsSavingProfile(true);
+                                setTimeout(() => {
+                                    toast({title: "Picture Updated", description: "Your new profile picture has been saved (simulated)."});
+                                    setIsSavingProfile(false);
+                                }, 1500);
+                           }} disabled={profilePicture === mockAdminUser.avatar || isSavingProfile}>
+                               {isSavingProfile ? "Uploading..." : "Update Picture"}
+                           </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
+                <CardContent>
+                    <form className="space-y-6">
+                        <div className="space-y-2">
+                            <Label>Display Name</Label>
+                            <Input defaultValue={mockAdminUser.displayName} className="max-w-xs" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Email</Label>
+                            <Input type="email" value={mockAdminUser.email} disabled className="max-w-xs" />
+                             <p className="text-sm text-muted-foreground">Your email address cannot be changed.</p>
+                        </div>
+                        <Button onClick={(e) => {
+                           e.preventDefault();
+                           toast({title: "Profile Updated", description: "Your profile information has been saved."})
+                        }}>Update Profile</Button>
+                    </form>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader><CardTitle>Security</CardTitle></CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between">
+                       <div>
+                            <h3 className="font-medium">Password</h3>
+                            <p className="text-sm text-muted-foreground">Change your account password.</p>
+                       </div>
+                        <Button variant="outline" onClick={() => {
+                            toast({title: "Forgot Password", description: "In a real app, a password reset email would be sent."})
+                        }}>Change Password</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
 
         <Separator />
         
@@ -207,8 +292,8 @@ export default function AdminSettingsPage() {
                 </Card>
 
                 <div className="flex justify-start">
-                    <Button type="submit" disabled={isLoading}>
-                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button type="submit" disabled={isSavingPlatform}>
+                         {isSavingPlatform && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Platform Changes
                     </Button>
                 </div>

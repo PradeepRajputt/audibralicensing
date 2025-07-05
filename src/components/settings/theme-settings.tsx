@@ -18,9 +18,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 const themes = [
-    { name: 'zinc', label: 'Zinc', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(217.2 32.6% 17.5%)' } },
-    { name: 'rose', label: 'Rose', colors: { primary: 'hsl(349 61% 72%)', accent: 'hsl(350 51% 32%)' } },
-    { name: 'blue', label: 'Blue', colors: { primary: 'hsl(217 91% 60%)', accent: 'hsl(217 33% 22%)' } },
+    { name: 'dark', label: 'Dark', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(217.2 32.6% 17.5%)' } },
+    { name: 'light', label: 'Light', colors: { primary: 'hsl(210 22% 29%)', accent: 'hsl(283 44% 47%)' } },
+    { name: 'zinc', label: 'Zinc', colors: { primary: 'hsl(210 22% 29%)', accent: 'hsl(283 44% 47%)' } },
 ] as const;
 
 

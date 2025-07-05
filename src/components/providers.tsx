@@ -8,10 +8,8 @@ import { Toaster } from "@/components/ui/toaster"
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
       <ThemeProvider
-      attribute="data-theme"
-      defaultTheme="zinc"
-      enableSystem={false}
-      disableTransitionOnChange
+      attribute="class"
+      defaultTheme="dark"
       {...props}
       >
           {children}
