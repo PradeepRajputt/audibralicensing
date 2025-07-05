@@ -82,3 +82,13 @@ export async function updateUserStatus(id: string, status: User['status']): Prom
     mockUsers = mockUsers.map(u => u.id === id ? { ...u, status } : u);
      console.log(`MOCK: Updated status for user ${id} to ${status}`);
 }
+
+export async function setBackupPin(userId: string, hashedPin: string): Promise<void> {
+    noStore();
+    const userIndex = mockUsers.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+        throw new Error("User not found to set PIN.");
+    }
+    mockUsers[userIndex].hashedPin = hashedPin;
+    console.log(`MOCK: Backup PIN set for user ${userId}.`);
+}

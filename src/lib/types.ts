@@ -12,6 +12,7 @@ export interface User {
   legalFullName?: string;
   address?: string;
   phone?: string;
+  hashedPin?: string;
 }
 
 /**
