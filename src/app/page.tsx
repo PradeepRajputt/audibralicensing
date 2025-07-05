@@ -8,6 +8,15 @@ import { useAuth } from '@/context/auth-context';
 import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Firebase Studio / Google OAuth Note:
+// Google OAuth pop-ups may be blocked by the browser when running inside the
+// Firebase Studio preview iframe. This is a security feature.
+// To test Google Sign-In, please use either:
+// 1. Your local development environment (http://localhost:9002)
+// 2. Your deployed Firebase Hosting URL (https://shieldview-5ns5s.web.app)
+// Make sure both `localhost` and your `web.app` domain are added as
+// authorized domains in your Firebase project's Authentication settings.
+
 export default function Home() {
     const { user, dbUser, loading } = useAuth();
     const router = useRouter();
