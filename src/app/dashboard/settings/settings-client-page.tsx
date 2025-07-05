@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from "react";
@@ -9,15 +8,34 @@ import { Youtube, Loader2, LogOut } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useYouTube } from "@/context/youtube-context";
 import { Input } from "@/components/ui/input";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogClose,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { connectYouTubeChannelAction } from './actions';
 
 export default function SettingsClientPage() {
     const { toast } = useToast();
-    const { isYouTubeConnected, setIsYouTubeConnected } = useYouTube();
+    const { isYouTubeConnected, setIsYouTubeConnected, channelId, setChannelId } = useYouTube();
     const [isLoading, setIsLoading] = React.useState(false);
-    const [channelId, setChannelId] = React.useState('');
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [inputChannelId, setInputChannelId] = React.useState('');
 
-    const handleConnect = () => {
-        if (!channelId.trim()) {
+    React.useEffect(() => {
+        if(isYouTubeConnected && channelId) {
+            setInputChannelId(channelId);
+        }
+    }, [isYouTubeConnected, channelId])
+
+    const handleConnect = async () => {
+        if (!inputChannelId.trim()) {
             toast({
                 variant: 'destructive',
                 title: 'Channel ID Required',
@@ -27,29 +45,39 @@ export default function SettingsClientPage() {
         }
 
         setIsLoading(true);
-        // Simulate API call to verify channel ID and connect
-        setTimeout(() => {
+        const result = await connectYouTubeChannelAction(inputChannelId);
+        
+        if (result.success) {
             setIsYouTubeConnected(true);
+            setChannelId(inputChannelId);
+            setIsDialogOpen(false);
             toast({
                 title: "YouTube Account Connected",
-                description: "You can now access all creator features."
+                description: result.message
             });
-            setIsLoading(false);
-        }, 1500);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Connection Failed',
+                description: result.message,
+            });
+        }
+        setIsLoading(false);
     }
 
     const handleDisconnect = () => {
         setIsLoading(true);
         setTimeout(() => {
             setIsYouTubeConnected(false);
-            setChannelId(''); // Clear the channel ID on disconnect
+            setChannelId(null);
+            setInputChannelId('');
             toast({
                 title: "YouTube Account Disconnected",
                 description: "Your account has been disconnected.",
                 variant: "destructive"
             });
             setIsLoading(false);
-        }, 1000);
+        }, 500); // Simulate a small delay
     }
     
   return (
@@ -87,18 +115,40 @@ export default function SettingsClientPage() {
                              Disconnect
                          </Button>
                      ) : (
-                        <div className="flex items-center gap-2">
-                            <Input 
-                                placeholder="Enter YouTube Channel ID" 
-                                value={channelId} 
-                                onChange={(e) => setChannelId(e.target.value)}
-                                className="w-auto"
-                            />
-                            <Button variant="outline" onClick={handleConnect} disabled={isLoading}>
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Connect
-                            </Button>
-                        </div>
+                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline">Connect</Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Connect YouTube Channel</DialogTitle>
+                                    <DialogDescription>
+                                        Enter your YouTube Channel ID to link your account.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="channelId" className="text-right">
+                                        Channel ID
+                                        </Label>
+                                        <Input
+                                        id="channelId"
+                                        value={inputChannelId}
+                                        onChange={(e) => setInputChannelId(e.target.value)}
+                                        className="col-span-3"
+                                        placeholder="UC..."
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                     <DialogClose asChild><Button variant="ghost">Cancel</Button></DialogClose>
+                                    <Button onClick={handleConnect} disabled={isLoading}>
+                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Connect Channel
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                      )}
                 </div>
             </CardContent>
