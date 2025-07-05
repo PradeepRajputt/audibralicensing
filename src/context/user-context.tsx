@@ -3,9 +3,8 @@
 
 import * as React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { User } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
 import { getUserById } from '@/lib/users-store';
 
 interface UserContextType {
@@ -21,11 +20,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
-  
+
+  // This function will only be created once and won't depend on pathname changes.
   const fetchUser = useCallback(async () => {
     setIsLoading(true);
-    const isAdminRoute = pathname.startsWith('/admin');
+    // Use window.location.pathname for a stable value on the client-side
+    const isAdminRoute = window.location.pathname.startsWith('/admin');
     const userId = isAdminRoute ? 'user_admin_123' : 'user_creator_123';
     
     try {
@@ -37,8 +37,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     } finally {
         setIsLoading(false);
     }
-  }, [pathname]);
+  }, []); // Empty dependency array means this function is created once.
 
+  // This effect runs only once when the component mounts.
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
@@ -48,6 +49,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     router.push('/'); // Redirect to landing page
   }, [router]);
   
+  // The value provided by the context. refetchUser is the same as fetchUser.
   const value = { user, isLoading, logout, refetchUser: fetchUser };
 
   return (
