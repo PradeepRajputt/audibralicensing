@@ -4,7 +4,7 @@
 import type { User, UserAnalytics, Violation, DashboardData } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import { subDays } from 'date-fns';
-import { getUserById, updateUser } from '@/lib/users-store';
+import { getUserById } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
@@ -17,6 +17,7 @@ import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-serv
 export async function getDashboardData(userId?: string): Promise<DashboardData | null> {
   noStore();
   
+  // Since auth is removed, we'll use a mock user ID but structure it to be easily adaptable.
   const effectiveUserId = userId || 'user_creator_123';
 
   try {
@@ -39,9 +40,10 @@ export async function getDashboardData(userId?: string): Promise<DashboardData |
                     subscribers: stats.subscribers,
                     views: stats.views,
                     mostViewedVideo: mostViewed,
-                     // Generate plausible daily data based on real totals
+                     // Generate plausible daily data based on real totals for chart visualization
                     dailyData: Array.from({ length: 90 }, (_, i) => {
                         const date = subDays(new Date(), 89 - i);
+                        // Simulate a growth trend
                         const dayFactor = (i + 1) / 90;
                         const randomFactor = 0.8 + Math.random() * 0.4;
                         const dailyViews = Math.max(0, Math.floor((stats.views / 90) * dayFactor * randomFactor * 1.5));
@@ -55,14 +57,13 @@ export async function getDashboardData(userId?: string): Promise<DashboardData |
                 }
             }
         } catch (error) {
-            console.warn("Could not fetch YouTube analytics.", error);
+            console.warn("Could not fetch YouTube analytics. This might be due to an invalid API key or channel ID.", error);
             // Don't fail the whole dashboard, just show analytics as null
             userAnalytics = null;
         }
     }
 
 
-    // --- REAL ACTIVITY DATA SECTION ---
     const violations = await getViolationsForUser(effectiveUserId);
     const activity = violations.slice(0, 5).map((violation: Violation) => {
       let status: string;

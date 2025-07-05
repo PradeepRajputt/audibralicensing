@@ -7,14 +7,56 @@ import type { DashboardData } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Eye, Video } from 'lucide-react';
+import { Users, Eye, Video, Youtube, LogIn } from 'lucide-react';
 import { useYouTube } from '@/context/youtube-context';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+
+function OverviewLoadingSkeleton() {
+    return (
+        <div className="space-y-6 animate-pulse">
+            <div className="flex items-center gap-4">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
+            </div>
+        </div>
+    );
+}
+
+function ConnectYoutubePlaceholder() {
+    const router = useRouter();
+    return (
+       <Card className="text-center w-full max-w-lg mx-auto">
+          <CardHeader>
+              <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit">
+                <Youtube className="w-12 h-12 text-primary" />
+              </div>
+              <CardTitle className="mt-4">Connect Your YouTube Account</CardTitle>
+              <CardDescription>To view your dashboard and see real-time data, please connect your YouTube channel.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Button onClick={() => router.push('/dashboard/settings')}>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Connect YouTube in Settings
+              </Button>
+          </CardContent>
+      </Card>
+    )
+}
+
 
 export default function OverviewPage() {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { isYouTubeConnected } = useYouTube();
-
 
     useEffect(() => {
         if (isYouTubeConnected) {
@@ -28,28 +70,17 @@ export default function OverviewPage() {
     }, [isYouTubeConnected]);
 
     const analytics = dashboardData?.analytics;
-    const creatorName = dashboardData?.user?.displayName ?? 'Creator';
-    const avatar = dashboardData?.user?.avatar;
-    const avatarFallback = creatorName.charAt(0);
-
+    const user = dashboardData?.user;
+    const creatorName = user?.displayName ?? 'Creator';
+    const avatar = user?.avatar;
+    const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
     if(isLoading) {
-        return (
-            <div className="space-y-6 animate-pulse">
-                <div className="flex items-center gap-4">
-                    <Skeleton className="h-16 w-16 rounded-full" />
-                    <div className="space-y-2">
-                        <Skeleton className="h-8 w-48" />
-                        <Skeleton className="h-4 w-64" />
-                    </div>
-                </div>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                    <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                    <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                </div>
-            </div>
-        );
+       return <OverviewLoadingSkeleton />;
+    }
+    
+    if (!isYouTubeConnected) {
+        return <ConnectYoutubePlaceholder />;
     }
     
     return (
@@ -68,8 +99,8 @@ export default function OverviewPage() {
             {!analytics ? (
                 <Card className="text-center w-full max-w-lg mx-auto">
                     <CardHeader>
-                        <CardTitle>No Analytics Data</CardTitle>
-                        <CardDescription>We couldn't fetch your YouTube analytics. Please make sure your channel is connected in settings.</CardDescription>
+                        <CardTitle>Analytics Data Unavailable</CardTitle>
+                        <CardDescription>We couldn't fetch your YouTube analytics at the moment. Please check your connection or try again later.</CardDescription>
                     </CardHeader>
                 </Card>
             ) : (
