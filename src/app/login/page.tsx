@@ -2,7 +2,6 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Shield, User, UserCog } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,11 +47,11 @@ export default function LoginPage() {
               </div>
               <CardTitle className="text-center">Admin Dashboard</CardTitle>
               <CardDescription className="text-center pt-2">
-                Simulate logging in as an admin. Manage users, review copyright strikes, and oversee the platform.
+                For platform administrators. Manage users, review copyright strikes, and oversee the platform.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="secondary" className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors">Go to Admin Dashboard</Button>
+                 <Button variant="secondary" className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors">Go to Admin Dashboard</Button>
             </CardContent>
           </Card>
         </Link>

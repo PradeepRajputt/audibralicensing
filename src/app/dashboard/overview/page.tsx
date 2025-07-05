@@ -1,8 +1,7 @@
 
-import DashboardClientPage from '../dashboard-client-page';
-import { unstable_noStore as noStore } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 export default function OverviewPage() {
-    noStore();
-    return <DashboardClientPage />;
+    // This page is deprecated and now redirects to the activity feed
+    redirect('/dashboard/activity');
 }

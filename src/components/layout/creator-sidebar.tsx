@@ -13,15 +13,14 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Activity, MessageSquareHeart } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import { useUser } from '@/context/user-context';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 import React from 'react';
 
 const menuItems = [
-  { href: '/dashboard/overview', label: 'Overview', icon: Home },
-  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity },
+  { href: '/dashboard', label: 'Activity Feed', icon: Activity },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
   { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
   { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
@@ -58,7 +57,7 @@ export function CreatorSidebar() {
                     </div>
                 </>
             ) : (
-                <>
+                <NextLink href="/dashboard/settings" className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={creatorImage ?? undefined} alt={creatorName ?? 'Creator'} data-ai-hint="profile picture" />
                         <AvatarFallback>{creatorName?.charAt(0) ?? 'C'}</AvatarFallback>
@@ -67,7 +66,7 @@ export function CreatorSidebar() {
                         <span className="font-semibold text-sidebar-foreground truncate">{creatorName || 'CreatorShield'}</span>
                         <span className="text-xs text-sidebar-foreground/70">Creator Dashboard</span>
                     </div>
-                </>
+                </NextLink>
             )}
         </div>
       </SidebarHeader>
@@ -75,7 +74,7 @@ export function CreatorSidebar() {
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const disabled = item.requiresConnection && !channelConnected;
-            const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/overview');
+            const isActive = pathname === item.href || (pathname === '/dashboard/overview' && item.href === '/dashboard');
             return (
               <SidebarMenuItem 
                 key={item.href}

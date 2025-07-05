@@ -10,10 +10,12 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, LayoutDashboard, Users, Gavel, Settings, LogOut, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
+import { Shield, Users, Gavel, Settings, LogOut, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useUser } from '@/context/user-context';
+import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
+import React from 'react';
 
 const menuItems = [
   { href: '/admin/users', label: 'Creator Management', icon: Users },
@@ -30,10 +32,10 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
+        <Link href="/admin" className="flex items-center gap-2">
           <Shield className="w-8 h-8 text-sidebar-primary" />
           <h1 className="text-xl font-semibold text-sidebar-foreground">CreatorShield</h1>
-        </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu className="gap-4">
