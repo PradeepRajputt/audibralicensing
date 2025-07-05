@@ -1,2 +1,3 @@
 
-// This file is no longer used and can be deleted.
+import { handlers } from '@/lib/auth';
+export const { GET, POST } = handlers;

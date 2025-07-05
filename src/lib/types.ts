@@ -1,4 +1,16 @@
 
+import type { DefaultSession } from 'next-auth';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      role: 'creator' | 'admin';
+    } & DefaultSession['user'];
+    accessToken?: string;
+  }
+}
+
 export interface User {
   id: string; 
   name?: string | null;
@@ -15,18 +27,6 @@ export interface User {
   legalFullName?: string;
   address?: string;
   phone?: string;
-  hashedPin?: string;
-
-  // OAuth fields from next-auth
-  provider?: string;
-  providerAccountId?: string;
-  access_token?: string;
-  expires_at?: number;
-  token_type?: string;
-  scope?: string;
-  id_token?: string;
-  session_state?: string;
-  refresh_token?: string;
 }
 
 /**

@@ -2,20 +2,19 @@
 'use client';
 
 import * as React from "react";
+import { useSession, signOut } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Youtube, Loader2, Trash2, LogOut } from "lucide-react";
+import { Youtube, Loader2, Trash2, LogOut, KeyRound } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import { disconnectYoutubeChannelAction } from '@/app/dashboard/actions';
-import { useRouter } from "next/navigation";
 import { ThemeSettings } from "@/components/settings/theme-settings";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { useUser } from "@/context/user-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,23 +28,20 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function SettingsClientPage() {
-    const router = useRouter();
-    const { user, isLoading: isUserLoading, logout, updateUserInContext } = useUser();
+    const { data: session, status, update: updateSession } = useSession();
     const [isActionLoading, setIsActionLoading] = React.useState(false);
     const { toast } = useToast();
     
+    const user = session?.user;
+    const isLoading = status === 'loading';
     const channelConnected = !!user?.youtubeChannelId;
 
     const handleDisconnect = async () => {
         setIsActionLoading(true);
-        const result = await disconnectYoutubeChannelAction();
-        if (result.success && result.user) {
-            toast({ title: "Platform Disconnected", description: result.message });
-            // Re-fetch user data to update the UI without a full page reload
-            updateUserInContext(result.user);
-        } else {
-            toast({ variant: 'destructive', title: "Action Failed", description: result.message });
-        }
+        // This part needs a server action if we want to clear it from the database.
+        // For now, it will just sign the user out which effectively disconnects.
+        toast({ title: "Channel Disconnected", description: "You have been signed out."});
+        signOut({ callbackUrl: '/' });
         setIsActionLoading(false);
     }
 
@@ -65,26 +61,26 @@ export default function SettingsClientPage() {
             </CardHeader>
              <CardContent>
                 <div className="flex items-center gap-6">
-                    {isUserLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
+                    {isLoading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                       <Avatar className="w-24 h-24">
-                        <AvatarImage src={user?.avatar ?? undefined} alt={user?.displayName ?? ''} data-ai-hint="profile picture" />
-                        <AvatarFallback>{user?.displayName?.substring(0,2) ?? 'C'}</AvatarFallback>
+                        <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? ''} data-ai-hint="profile picture" />
+                        <AvatarFallback>{user?.name?.substring(0,2) ?? 'C'}</AvatarFallback>
                       </Avatar>
                     )}
                     <div className="space-y-2">
                          <div className="space-y-1">
                             <Label>Display Name</Label>
-                            {isUserLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.displayName || ''} disabled className="max-w-xs" />}
+                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.name || ''} disabled className="max-w-xs" />}
                         </div>
                          <div className="space-y-1">
                             <Label>Email</Label>
-                            {isUserLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
+                            {isLoading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
                         </div>
                     </div>
                 </div>
             </CardContent>
              <CardFooter className="border-t pt-6 flex justify-between">
-                  <Button variant="outline" onClick={logout}>
+                  <Button variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                 </Button>
@@ -125,9 +121,9 @@ export default function SettingsClientPage() {
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>
                             <h3 className="font-semibold">YouTube</h3>
-                            {isUserLoading ? <Skeleton className="h-4 w-40 mt-1" /> : channelConnected ? (
+                            {isLoading ? <Skeleton className="h-4 w-40 mt-1" /> : user ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Connected as: {user.displayName}
+                                    Connected as: {user.name}
                                 </p>
                             ) : (
                                 <p className="text-sm text-muted-foreground">
@@ -136,11 +132,11 @@ export default function SettingsClientPage() {
                             )}
                         </div>
                     </div>
-                    {isUserLoading ? <Skeleton className="h-10 w-28" /> : channelConnected ? (
+                    {isLoading ? <Skeleton className="h-10 w-28" /> : user ? (
                          <div className="flex items-center gap-4">
                              <Avatar>
-                                 <AvatarImage src={user.avatar} data-ai-hint="channel icon" />
-                                 <AvatarFallback>{user.displayName?.charAt(0)}</AvatarFallback>
+                                 <AvatarImage src={user.image!} data-ai-hint="channel icon" />
+                                 <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
                              </Avatar>
                              <Button variant="destructive" onClick={handleDisconnect} disabled={isActionLoading}>
                                  {isActionLoading && <Loader2 className="mr-2 animate-spin" />}
@@ -148,9 +144,7 @@ export default function SettingsClientPage() {
                             </Button>
                          </div>
                     ) : (
-                       <Button asChild variant="outline">
-                           <Link href="/dashboard/connect-platform">Connect</Link>
-                        </Button>
+                       <Button onClick={() => signIn('google')}>Connect</Button>
                     )}
                 </div>
             </CardContent>
@@ -160,5 +154,3 @@ export default function SettingsClientPage() {
     </div>
   )
 }
-
-    

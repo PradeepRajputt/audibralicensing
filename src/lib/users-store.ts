@@ -61,14 +61,18 @@ export async function getUserByAccount({ providerAccountId, provider }: { provid
 }
 
 
-export async function createUser(data: Omit<User, 'id' | 'joinDate' | 'status' | 'platformsConnected'>): Promise<User> {
+export async function createUser(data: Omit<User, 'id' | 'joinDate' | 'status' | 'platformsConnected' | 'avatar'> & { image?: string | null }): Promise<User> {
     noStore();
     const newUser: User = {
-        ...data,
+        name: data.name,
+        displayName: data.displayName,
+        email: data.email,
+        role: data.role,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         joinDate: new Date().toISOString(),
         status: 'active',
         platformsConnected: [],
+        avatar: data.image ?? 'https://placehold.co/128x128.png',
     };
     mockUsers.push(newUser);
     return newUser;
@@ -94,14 +98,4 @@ export async function updateUserStatus(id: string, status: User['status']): Prom
     noStore();
     mockUsers = mockUsers.map(u => u.id === id ? { ...u, status } : u);
      console.log(`MOCK: Updated status for user ${id} to ${status}`);
-}
-
-export async function setBackupPin(userId: string, hashedPin: string): Promise<void> {
-    noStore();
-    const userIndex = mockUsers.findIndex(u => u.id === userId);
-    if (userIndex === -1) {
-        throw new Error("User not found to set PIN.");
-    }
-    mockUsers[userIndex].hashedPin = hashedPin;
-    console.log(`MOCK: Backup PIN set for user ${userId}.`);
 }

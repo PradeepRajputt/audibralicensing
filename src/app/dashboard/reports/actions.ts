@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { createReport } from '@/lib/reports-store';
 import { getContentById } from '@/lib/content-store';
-
+import { auth } from '@/lib/auth';
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -15,9 +15,12 @@ const formSchema = z.object({
 });
 
 export async function submitManualReportAction(values: z.infer<typeof formSchema>) {
-  // In a real app, you would get the authenticated user's ID
-  const creatorId = "user_creator_123";
-  const creatorName = "Sample Creator";
+  const session = await auth();
+  
+  if (!session?.user?.id || !session.user.name) {
+      return { success: false, message: 'Authentication failed. Please log in again.' };
+  }
+  const { id: creatorId, name: creatorName } = session.user;
   
   const parsed = formSchema.safeParse(values);
 
