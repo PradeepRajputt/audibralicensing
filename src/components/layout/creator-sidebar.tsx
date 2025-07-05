@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -112,14 +111,11 @@ export function CreatorSidebar() {
           </SidebarMenuItem>
            <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               tooltip="Logout"
               onClick={logout}
             >
-              <button type="button">
-                <LogOut />
-                <span>Logout</span>
-              </button>
+              <LogOut />
+              <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
