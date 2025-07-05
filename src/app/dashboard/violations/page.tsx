@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,6 +20,7 @@ import {
 import type { Violation } from '@/lib/types';
 import { getViolationsForUser, updateViolationStatus } from '@/lib/violations-store';
 import Image from 'next/image';
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 const statusMapping: Record<Violation['status'], { text: string; variant: "secondary" | "default" | "outline" }> = {
     pending_review: { text: "New", variant: "secondary" },
@@ -148,7 +150,7 @@ export default function ViolationsPage() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                        {item.timeline.map((event, i) => (
-                          <div key={i}>{new Date(event.date).toLocaleDateString()}: {formatStatus(event.status)}</div>
+                          <div key={i}><ClientFormattedDate dateString={event.date} />: {formatStatus(event.status)}</div>
                         ))}
                     </TableCell>
                     <TableCell className="text-right">

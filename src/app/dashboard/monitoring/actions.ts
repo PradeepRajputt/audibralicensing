@@ -4,8 +4,7 @@
 import { z } from "zod";
 import { revalidatePath } from 'next/cache';
 import { monitorWebPagesForCopyrightInfringements } from "@/ai/flows/monitor-web-pages";
-import { addScan } from '@/lib/web-scans-store';
-import { auth } from '@/lib/auth';
+import { addScan } from "@/lib/web-scans-store";
 
 const formSchema = z.object({
   url: z.string().url(),
@@ -14,11 +13,7 @@ const formSchema = z.object({
 });
 
 export async function scanPageAction(values: z.infer<typeof formSchema>) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { success: false, message: 'Authentication required. Please log in again.' };
-  }
-  const userId = session.user.id;
+  const userId = "user_creator_123";
   
   try {
     const result = await monitorWebPagesForCopyrightInfringements({

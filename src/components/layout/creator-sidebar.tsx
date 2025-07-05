@@ -11,41 +11,40 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '../ui/skeleton';
 import { ScanSearch, FileText, Settings, FileVideo, ShieldAlert, Home, LogOut, BarChart, Activity, MessageSquareHeart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import NextLink from 'next/link';
 import React from 'react';
-import { useAuth } from '@/context/auth-context';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 
 
 const menuItems = [
-  { href: '/dashboard/overview', label: 'Overview', icon: Home, requiresConnection: false },
-  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity, requiresConnection: false },
-  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
-  { href: '/dashboard/content', label: 'My Content', icon: FileVideo, requiresConnection: false },
-  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch, requiresConnection: true },
-  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert, requiresConnection: true },
-  { href: '/dashboard/reports', label: 'Submit Report', icon: FileText, requiresConnection: false },
-  { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart, requiresConnection: false },
+  { href: '/dashboard/overview', label: 'Overview', icon: Home },
+  { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart },
+  { href: '/dashboard/content', label: 'My Content', icon: FileVideo },
+  { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch },
+  { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert },
+  { href: '/dashboard/reports', label: 'Submit Report', icon: FileText },
+  { href: '/dashboard/feedback', label: 'Send Feedback', icon: MessageSquareHeart },
 ];
 
 export function CreatorSidebar() {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
   const [hasUnread, setHasUnread] = React.useState(false);
   
-  const creatorName = user?.displayName;
-  const creatorImage = user?.photoURL;
-  const avatarFallback = creatorName ? creatorName.substring(0,2) : 'C';
-  const youtubeConnected = !!user?.youtubeChannelId;
+  // Mock user data since auth is removed
+  const creatorName = "Creator";
+  const creatorImage = "https://placehold.co/128x128.png";
+  const avatarFallback = "C";
+  const userId = "user_creator_123"; // Mock user ID
 
   React.useEffect(() => {
-    if (user) {
-      hasUnreadCreatorFeedback(user.uid).then(setHasUnread);
+    // We can still check for feedback using a mock user ID
+    if (userId) {
+      hasUnreadCreatorFeedback(userId).then(setHasUnread);
     }
-  }, [pathname, user]);
+  }, [pathname, userId]);
   
   return (
     <Sidebar>
@@ -67,7 +66,6 @@ export function CreatorSidebar() {
         <SidebarMenu className="gap-4">
           {menuItems.map((item) => {
             const isActive = pathname === item.href || (pathname === '/dashboard' && item.href === '/dashboard/overview');
-            const isDisabled = item.requiresConnection && !youtubeConnected;
             return (
               <SidebarMenuItem 
                 key={item.href}
@@ -76,11 +74,9 @@ export function CreatorSidebar() {
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
-                  tooltip={isDisabled ? `${item.label} (requires YouTube connection)` : item.label}
-                  disabled={isDisabled}
-                  aria-disabled={isDisabled}
+                  tooltip={item.label}
                 >
-                  <NextLink href={item.href} prefetch={false} className={isDisabled ? "pointer-events-none" : ""}>
+                  <NextLink href={item.href} prefetch={false}>
                     <item.icon />
                     <span>{item.label}</span>
                   </NextLink>
@@ -103,6 +99,14 @@ export function CreatorSidebar() {
                 <span>Settings</span>
               </NextLink>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+             <SidebarMenuButton asChild tooltip="Logout">
+                <NextLink href="/" prefetch={false}>
+                    <LogOut />
+                    <span>Logout</span>
+                </NextLink>
+             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

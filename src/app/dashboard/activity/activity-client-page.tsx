@@ -4,20 +4,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { LogIn } from "lucide-react";
 import type { DashboardData } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from 'next/link';
-import { Button } from "@/components/ui/button";
-import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
-import { useAuth } from '@/context/auth-context';
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from '@/lib/firebase';
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 export default function ActivityClientPage({ initialData }: { initialData: DashboardData | null }) {
-  const { user, loading: authLoading } = useAuth();
   const { activity } = initialData || {};
-  const isLoading = authLoading && !initialData;
+  const isLoading = !initialData;
 
   if (isLoading) {
     return (
@@ -30,26 +23,6 @@ export default function ActivityClientPage({ initialData }: { initialData: Dashb
     );
   }
   
-  if (!user) {
-    return (
-       <Card className="text-center w-full max-w-lg mx-auto">
-          <CardHeader>
-              <CardTitle>Welcome to CreatorShield</CardTitle>
-              <CardDescription>To get started, please sign in.</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <Button onClick={async () => {
-                  const provider = new GoogleAuthProvider();
-                  await signInWithPopup(auth, provider);
-              }}>
-                  <LogIn className="mr-2 h-5 w-5" />
-                  Sign In with Google
-              </Button>
-          </CardContent>
-      </Card>
-    )
-  }
-
   return (
     <div className="space-y-8">
       <Card>
