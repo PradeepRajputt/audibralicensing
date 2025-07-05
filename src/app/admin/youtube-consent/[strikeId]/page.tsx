@@ -23,7 +23,8 @@ export default async function YouTubeConsentPage({ params }: { params: { strikeI
 
   const creatorData = await getUserById(report.creatorId);
   const creator = creatorData ? {
-    uid: creatorData.uid,
+    id: creatorData.id,
+    uid: creatorData.id,
     displayName: creatorData.displayName,
     email: creatorData.email,
     role: creatorData.role,

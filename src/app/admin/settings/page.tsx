@@ -1,11 +1,13 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import * as React from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/context/auth-context';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -33,11 +35,9 @@ const platformSettingsFormSchema = z.object({
 
 export default function AdminSettingsPage() {
     const { toast } = useToast();
-    const { data: session, status } = useSession();
-    const [isLoading, setIsLoading] = useState(false);
+    const { user, loading } = useAuth();
+    const [isLoading, setIsLoading] = React.useState(false);
     
-    const user = session?.user;
-
     const platformForm = useForm<z.infer<typeof platformSettingsFormSchema>>({
         resolver: zodResolver(platformSettingsFormSchema),
         defaultValues: {
@@ -83,26 +83,26 @@ export default function AdminSettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center gap-6">
-                         {status === 'loading' ? <Skeleton className="w-24 h-24 rounded-full" /> : (
+                         {loading ? <Skeleton className="w-24 h-24 rounded-full" /> : (
                             <Avatar className="w-24 h-24">
-                                <AvatarImage src={user?.image ?? undefined} alt="Admin Avatar" data-ai-hint="profile picture" />
-                                <AvatarFallback>{user?.name?.substring(0,2) || 'AD'}</AvatarFallback>
+                                <AvatarImage src={user?.photoURL ?? undefined} alt="Admin Avatar" data-ai-hint="profile picture" />
+                                <AvatarFallback>{user?.displayName?.substring(0,2) || 'AD'}</AvatarFallback>
                             </Avatar>
                          )}
                         <div className="space-y-2">
                             <div className="space-y-1">
                                 <Label>Display Name</Label>
-                                {status === 'loading' ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.name || 'Admin'} disabled className="max-w-xs" />}
+                                {loading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.displayName || 'Admin'} disabled className="max-w-xs" />}
                             </div>
                             <div className="space-y-1">
                                 <Label>Email</Label>
-                                 {status === 'loading' ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
+                                 {loading ? <Skeleton className="h-10 w-full max-w-xs" /> : <Input value={user?.email || ''} disabled className="max-w-xs" />}
                             </div>
                         </div>
                     </div>
                 </CardContent>
                  <CardFooter>
-                      <Button variant="outline" onClick={() => signOut({ callbackUrl: '/' })}>
+                      <Button variant="outline" onClick={() => signOut(auth)}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign Out
                     </Button>

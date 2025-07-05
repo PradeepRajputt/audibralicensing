@@ -41,6 +41,7 @@ import { deleteContentAction, rescanContentAction, updateContentTagsAction } fro
 import type { ProtectedContent } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
+import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 
 const platformIcons: Record<string, React.ReactNode> = {
     youtube: <Youtube className="h-5 w-5 text-red-500" />,
@@ -165,7 +166,7 @@ export function ContentClientPage({ initialContent }: { initialContent: Protecte
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                      {formatDistanceToNow(new Date(item.lastChecked), { addSuffix: true })}
+                      <ClientFormattedDate dateString={item.lastChecked} relative />
                   </TableCell>
                   <TableCell className="text-right">
                     <AlertDialog open={isDeleting === item.id} onOpenChange={(open) => !open && setIsDeleting(null)}>

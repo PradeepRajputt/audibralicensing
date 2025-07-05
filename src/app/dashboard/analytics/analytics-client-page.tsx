@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { format, subDays, startOfWeek, startOfMonth, startOfYear, endOfMonth } from 'date-fns';
+import { format, subDays, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Users, Eye, Video, Palette, LogIn, Youtube, Loader2 } from 'lucide-react';
@@ -19,6 +19,7 @@ import Link from 'next/link';
 import type { DashboardData } from '@/lib/types';
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from '@/lib/firebase';
+import { upsertUser } from '@/lib/auth-actions';
 
 
 type ChartType = 'area' | 'bar' | 'line';
@@ -74,6 +75,27 @@ function AnalyticsLoadingSkeleton() {
 }
 
 function ConnectYoutubePlaceholder() {
+    const handleConnect = async () => {
+        const provider = new GoogleAuthProvider();
+        provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            if (credential) {
+                const user = result.user;
+                await upsertUser({
+                    id: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    avatar: user.photoURL,
+                    accessToken: credential.accessToken,
+                });
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
     return (
         <Card className="text-center w-full max-w-lg mx-auto">
           <CardHeader>
@@ -84,10 +106,8 @@ function ConnectYoutubePlaceholder() {
               <CardDescription>To view your analytics, please connect your YouTube channel in settings.</CardDescription>
           </CardHeader>
           <CardContent>
-              <Button asChild>
-                  <Link href="/dashboard/settings">
-                      Go to Settings
-                  </Link>
+              <Button onClick={handleConnect}>
+                  Connect YouTube
               </Button>
           </CardContent>
       </Card>
@@ -104,6 +124,7 @@ function LoginPlaceholder() {
           <CardContent>
               <Button onClick={async () => {
                   const provider = new GoogleAuthProvider();
+                  provider.addScope('https://www.googleapis.com/auth/youtube.readonly');
                   await signInWithPopup(auth, provider);
               }}>
                   <LogIn className="mr-2 h-5 w-5" />

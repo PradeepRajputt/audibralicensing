@@ -5,7 +5,7 @@ import { z } from "zod";
 import { revalidatePath } from 'next/cache';
 import { redirect } from "next/navigation";
 import { updateReportStatus } from '@/lib/reports-store';
-import { sendTakedownConfirmationEmail } from "@/lib/services/backend-services";
+import { sendTakedownConfirmationEmail } from '@/lib/services/backend-services';
 
 const takedownSchema = z.object({
   reportId: z.string(),

@@ -3,9 +3,10 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { createReport } from '@/lib/reports-store';
 import { getContentById } from '@/lib/content-store';
-import { auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebase'; // Using firebase auth now
 import type { User as FirebaseUser } from 'firebase/auth';
 import { getUserById } from '@/lib/users-store';
 

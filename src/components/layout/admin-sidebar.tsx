@@ -19,8 +19,8 @@ import React from 'react';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
 
 const menuItems = [
+  { href: '/admin', label: 'Dashboard', icon: BarChart },
   { href: '/admin/users', label: 'Creator Management', icon: Users },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart },
   { href: '/admin/strikes', label: 'Strike Requests', icon: Gavel },
   { href: '/admin/reactivations', label: 'Reactivation Requests', icon: UserCheck },
   { href: '/admin/feedback', label: 'Creator Feedback', icon: MessageSquareQuote },
@@ -46,7 +46,7 @@ export function AdminSidebar({ hasNewFeedback }: { hasNewFeedback: boolean }) {
             >
               <SidebarMenuButton
                 asChild
-                isActive={pathname.startsWith(item.href)}
+                isActive={pathname === item.href || (pathname === '/admin' && item.href === '/admin/analytics')}
                 tooltip={item.label}
               >
                 <Link href={item.href}>

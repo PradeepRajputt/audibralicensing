@@ -31,31 +31,43 @@ export async function getDashboardData(userId: string): Promise<DashboardData | 
     }
     
     let userAnalytics: UserAnalytics | null = null;
-    if (dbUser.youtubeChannelId) {
-        const [stats, mostViewed] = await Promise.all([
-            getChannelStats(dbUser.youtubeChannelId),
-            getMostViewedVideo(dbUser.youtubeChannelId)
-        ]);
-        
-        if (stats) {
-            userAnalytics = {
-                subscribers: stats.subscribers,
-                views: stats.views,
-                mostViewedVideo: mostViewed,
-                 // Generate plausible daily data based on real totals
-                dailyData: Array.from({ length: 90 }, (_, i) => {
-                    const date = subDays(new Date(), 89 - i);
-                    const dayFactor = (i + 1) / 90;
-                    const randomFactor = 0.8 + Math.random() * 0.4;
-                    const dailyViews = Math.max(0, Math.floor((stats.views / 90) * dayFactor * randomFactor * 1.5));
-                    const dailySubscribers = Math.max(0, Math.floor((stats.subscribers / 200) * dayFactor * randomFactor + Math.random() * 5));
-                    return {
-                        date: date.toISOString().split('T')[0],
-                        views: dailyViews,
-                        subscribers: dailySubscribers,
-                    };
-                }),
+    if (dbUser.accessToken) {
+        try {
+            const stats = await getChannelStats(userId);
+            
+            if (stats && stats.id) {
+                // If channelId is not in our db, update it
+                if (stats.id !== dbUser.youtubeChannelId) {
+                    await updateUser(dbUser.id, { youtubeChannelId: stats.id, platformsConnected: ['youtube'] });
+                    dbUser.youtubeChannelId = stats.id;
+                    dbUser.platformsConnected = ['youtube'];
+                }
+                
+                const mostViewed = await getMostViewedVideo(userId, stats.id);
+                
+                userAnalytics = {
+                    subscribers: stats.subscribers,
+                    views: stats.views,
+                    mostViewedVideo: mostViewed,
+                     // Generate plausible daily data based on real totals
+                    dailyData: Array.from({ length: 90 }, (_, i) => {
+                        const date = subDays(new Date(), 89 - i);
+                        const dayFactor = (i + 1) / 90;
+                        const randomFactor = 0.8 + Math.random() * 0.4;
+                        const dailyViews = Math.max(0, Math.floor((stats.views / 90) * dayFactor * randomFactor * 1.5));
+                        const dailySubscribers = Math.max(0, Math.floor((stats.subscribers / 200) * dayFactor * randomFactor + Math.random() * 5));
+                        return {
+                            date: date.toISOString().split('T')[0],
+                            views: dailyViews,
+                            subscribers: dailySubscribers,
+                        };
+                    }),
+                }
             }
+        } catch (error) {
+            console.warn("Could not fetch YouTube analytics, likely due to expired token or permission issues.", error);
+            // Don't fail the whole dashboard, just show analytics as null
+            userAnalytics = null;
         }
     }
 
