@@ -6,25 +6,15 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { subDays, format } from 'date-fns';
 import { getUserById, updateUser } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import type { DecodedJWT } from '@/lib/types';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET!);
-
+// MOCK IMPLEMENTATION: Simulates getting the logged-in user's ID.
+// In a real app, this would come from a session provider or token.
 async function getUserIdFromSession(): Promise<string | null> {
-    const token = cookies().get('auth_token')?.value;
-    if (!token) return null;
-    try {
-        const { payload } = await jwtVerify(token, JWT_SECRET) as { payload: DecodedJWT };
-        return payload.id;
-    } catch (e) {
-        return null;
-    }
+    // For the creator dashboard, we always assume the mock creator is logged in.
+    return 'user_creator_123';
 }
 
 /**
@@ -115,10 +105,6 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   }
 }
 
-const verifyChannelFormSchema = z.object({
-  channelId: z.string().min(5, { message: "Please enter a valid Channel ID." }),
-});
-
 export async function verifyYoutubeChannel(
   prevState: any,
   formData: FormData
@@ -128,20 +114,15 @@ export async function verifyYoutubeChannel(
   if (!userId) {
       return { success: false, message: "Authentication error. Please sign in again."};
   }
+  
+  const channelId = formData.get("channelId") as string;
 
-
-  const validatedFields = verifyChannelFormSchema.safeParse({
-    channelId: formData.get("channelId"),
-  });
-
-  if (!validatedFields.success) {
+  if (!channelId || channelId.trim().length < 5) {
     return {
       success: false,
-      message: validatedFields.error.flatten().fieldErrors.channelId?.join(', '),
+      message: "Please enter a valid Channel ID.",
     };
   }
-  
-  const { channelId } = validatedFields.data;
 
   try {
     const channelStats = await getChannelStats(channelId);
