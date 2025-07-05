@@ -1,14 +1,11 @@
 
 'use server';
 
-import { google, youtube_v3 } from 'googleapis';
-import { getUserById } from '../users-store';
+import { google } from 'googleapis';
 
-const getOauth2Client = async (userId: string) => {
-    const user = await getUserById(userId);
-    if (!user || !user.accessToken) {
-        console.error("No access token found for user:", userId);
-        throw new Error("User is not authenticated with YouTube.");
+const getOauth2Client = (accessToken: string) => {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+        throw new Error("Google OAuth client credentials are not configured.");
     }
 
     const oauth2Client = new google.auth.OAuth2(
@@ -16,9 +13,7 @@ const getOauth2Client = async (userId: string) => {
         process.env.GOOGLE_CLIENT_SECRET
     );
     
-    oauth2Client.setCredentials({
-        access_token: user.accessToken,
-    });
+    oauth2Client.setCredentials({ access_token: accessToken });
 
     return oauth2Client;
 };
@@ -40,17 +35,13 @@ const mockMostViewedVideo = {
  * Fetches core statistics for the authenticated user's YouTube channel.
  * @returns An object with channel statistics or null if an error occurs.
  */
-export async function getChannelStats(accessToken: string) {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-      console.warn("MOCK MODE: Google credentials not configured. Returning mock channel stats.");
-      return mockChannelStats;
+export async function getChannelStats(accessToken?: string) {
+    if (!accessToken) {
+        console.warn("No access token provided. Returning mock channel stats.");
+        return mockChannelStats;
     }
   
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET
-    );
-    oauth2Client.setCredentials({ access_token: accessToken });
+    const oauth2Client = getOauth2Client(accessToken);
 
     const youtube = google.youtube({
       version: 'v3',
@@ -90,17 +81,13 @@ export async function getChannelStats(accessToken: string) {
  * Fetches the most viewed video for the authenticated user's YouTube channel.
  * @returns An object with the most viewed video's details.
  */
-export async function getMostViewedVideo(accessToken: string) {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        console.warn("MOCK MODE: Google credentials not configured. Returning mock video data.");
+export async function getMostViewedVideo(accessToken?: string) {
+    if (!accessToken) {
+        console.warn("No access token provided. Returning mock video data.");
         return mockMostViewedVideo;
     }
 
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET
-    );
-    oauth2Client.setCredentials({ access_token: accessToken });
+    const oauth2Client = getOauth2Client(accessToken);
 
     const youtube = google.youtube({
         version: 'v3',
