@@ -18,11 +18,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 const themes = [
-    { name: 'light', label: 'Light', colors: { primary: 'hsl(210 22% 29%)', accent: 'hsl(283 44% 47%)' } },
-    { name: 'dark', label: 'Dark', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(283 44% 67%)' } },
-    { name: 'monochrome', label: 'Monochrome', colors: { primary: 'hsl(0 0% 95%)', accent: 'hsl(0 0% 25%)' } },
-    { name: 'vibrant', label: 'Vibrant', colors: { primary: 'hsl(217 91% 60%)', accent: 'hsl(25 95% 53%)' } },
-    { name: 'forest', label: 'Forest', colors: { primary: 'hsl(140 70% 60%)', accent: 'hsl(140 60% 50%)' } },
+    { name: 'dark', label: 'Dark (Default)', colors: { primary: 'hsl(210 40% 98%)', accent: 'hsl(283 44% 67%)' } },
+    { name: 'light', label: 'Light', colors: { primary: 'hsl(217 91% 60%)', accent: 'hsl(25 95% 53%)' } },
+    { name: 'zinc', label: 'Monochrome Dark', colors: { primary: 'hsl(0 0% 95%)', accent: 'hsl(0 0% 25%)' } },
 ] as const;
 
 
@@ -44,9 +42,7 @@ export function ThemeSettings() {
         </CardHeader>
         <CardContent>
           {!mounted ? (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-24 w-full" />
@@ -55,15 +51,15 @@ export function ThemeSettings() {
           <RadioGroup
             value={theme}
             onValueChange={setTheme}
-            className="grid grid-cols-2 md:grid-cols-5 gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 gap-4"
           >
             {themes.map((t) => (
               <Label
                 key={t.name}
                 htmlFor={`theme-${t.name}`}
                 className={cn(
-                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                  theme === t.name && "border-primary"
+                  "flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all",
+                  theme === t.name && "border-primary shadow-md"
                 )}
               >
                 <RadioGroupItem value={t.name} id={`theme-${t.name}`} className="sr-only" />

@@ -30,10 +30,10 @@ export async function getDashboardData(userId?: string): Promise<DashboardData |
     let userAnalytics: UserAnalytics | null = null;
     if (dbUser.youtubeChannelId) {
         try {
-            const stats = await getChannelStats();
+            const stats = await getChannelStats(dbUser.youtubeChannelId);
             
             if (stats) {
-                 const mostViewed = await getMostViewedVideo();
+                 const mostViewed = await getMostViewedVideo(dbUser.youtubeChannelId);
                 
                 userAnalytics = {
                     subscribers: stats.subscribers,

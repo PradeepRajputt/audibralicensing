@@ -1,4 +1,5 @@
 
+'use client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, User, UserCog } from "lucide-react";
@@ -20,7 +21,7 @@ export default function Home() {
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">Protect Your Digital Content</h2>
           <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-12">CreatorShield is your all-in-one platform for content protection, analytics, and copyright management.</p>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <Link href="/dashboard" className="group">
+            <Link href="/dashboard/overview" className="group">
               <Card className="h-full text-left transition-all duration-300 group-hover:border-accent group-hover:shadow-lg group-hover:-translate-y-1">
                 <CardHeader>
                   <div className="flex justify-center mb-4">

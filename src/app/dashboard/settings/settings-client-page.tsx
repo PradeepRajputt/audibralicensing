@@ -5,18 +5,29 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ThemeSettings } from "@/components/settings/theme-settings";
-import { Youtube, Loader2 } from 'lucide-react';
+import { Youtube, Loader2, LogOut } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useYouTube } from "@/context/youtube-context";
+import { Input } from "@/components/ui/input";
 
 export default function SettingsClientPage() {
     const { toast } = useToast();
     const { isYouTubeConnected, setIsYouTubeConnected } = useYouTube();
     const [isLoading, setIsLoading] = React.useState(false);
+    const [channelId, setChannelId] = React.useState('');
 
     const handleConnect = () => {
+        if (!channelId.trim()) {
+            toast({
+                variant: 'destructive',
+                title: 'Channel ID Required',
+                description: 'Please enter a valid YouTube Channel ID.'
+            });
+            return;
+        }
+
         setIsLoading(true);
-        // Simulate API call
+        // Simulate API call to verify channel ID and connect
         setTimeout(() => {
             setIsYouTubeConnected(true);
             toast({
@@ -31,6 +42,7 @@ export default function SettingsClientPage() {
         setIsLoading(true);
         setTimeout(() => {
             setIsYouTubeConnected(false);
+            setChannelId(''); // Clear the channel ID on disconnect
             toast({
                 title: "YouTube Account Disconnected",
                 description: "Your account has been disconnected.",
@@ -75,10 +87,18 @@ export default function SettingsClientPage() {
                              Disconnect
                          </Button>
                      ) : (
-                        <Button variant="outline" onClick={handleConnect} disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Connect YouTube
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Input 
+                                placeholder="Enter YouTube Channel ID" 
+                                value={channelId} 
+                                onChange={(e) => setChannelId(e.target.value)}
+                                className="w-auto"
+                            />
+                            <Button variant="outline" onClick={handleConnect} disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Connect
+                            </Button>
+                        </div>
                      )}
                 </div>
             </CardContent>

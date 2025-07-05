@@ -3,55 +3,29 @@
 
 import { google } from 'googleapis';
 
-const getOauth2Client = (accessToken: string) => {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-        throw new Error("Google OAuth client credentials are not configured.");
+const getYouTubeClient = () => {
+    if (!process.env.YOUTUBE_API_KEY) {
+        throw new Error("YouTube API key is not configured.");
     }
-
-    const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET
-    );
-    
-    oauth2Client.setCredentials({ access_token: accessToken });
-
-    return oauth2Client;
+    return google.youtube({
+      version: 'v3',
+      auth: process.env.YOUTUBE_API_KEY
+    });
 };
 
-const mockChannelStats = {
-    id: 'UC-mock-channel-id',
-    title: 'Sample Creator',
-    avatar: 'https://placehold.co/128x128.png',
-    subscribers: 125032,
-    views: 15783981,
-};
-
-const mockMostViewedVideo = {
-    title: 'My Most Viral Video Ever',
-    views: 2354871,
-};
 
 /**
- * Fetches core statistics for the authenticated user's YouTube channel.
+ * Fetches core statistics for a given YouTube channel ID.
  * @returns An object with channel statistics or null if an error occurs.
  */
-export async function getChannelStats(accessToken?: string) {
-    if (!accessToken) {
-        console.warn("No access token provided. Returning mock channel stats.");
-        return mockChannelStats;
-    }
-  
-    const oauth2Client = getOauth2Client(accessToken);
-
-    const youtube = google.youtube({
-      version: 'v3',
-      auth: oauth2Client
-    });
+export async function getChannelStats(channelId: string) {
+    console.log(`Fetching stats for channel ID: ${channelId}`);
+    const youtube = getYouTubeClient();
 
     try {
         const response = await youtube.channels.list({
             part: ['snippet', 'statistics'],
-            mine: true
+            id: [channelId]
         });
 
         const channel = response.data.items?.[0];
@@ -69,35 +43,23 @@ export async function getChannelStats(accessToken?: string) {
             views: parseInt(channel.statistics.viewCount!, 10),
         };
     } catch (error) {
-        console.error(`Error fetching real channel stats:`, error);
-        // Fallback to mock data in case of API errors during demo
-        console.log("Falling back to mock channel stats due to API error.");
-        return mockChannelStats;
+        console.error(`Error fetching real channel stats for ${channelId}:`, error);
+        throw new Error("Failed to fetch channel statistics from YouTube. Please check the Channel ID.");
     }
 }
 
 
 /**
- * Fetches the most viewed video for the authenticated user's YouTube channel.
+ * Fetches the most viewed video for a given YouTube channel.
  * @returns An object with the most viewed video's details.
  */
-export async function getMostViewedVideo(accessToken?: string) {
-    if (!accessToken) {
-        console.warn("No access token provided. Returning mock video data.");
-        return mockMostViewedVideo;
-    }
-
-    const oauth2Client = getOauth2Client(accessToken);
-
-    const youtube = google.youtube({
-        version: 'v3',
-        auth: oauth2Client
-    });
+export async function getMostViewedVideo(channelId: string) {
+    const youtube = getYouTubeClient();
     
     try {
         const response = await youtube.search.list({
             part: ['snippet'],
-            forMine: true,
+            channelId: channelId,
             order: 'viewCount',
             type: ['video'],
             maxResults: 1
@@ -121,8 +83,7 @@ export async function getMostViewedVideo(accessToken?: string) {
         };
 
     } catch (error) {
-        console.error(`Error fetching real most viewed video:`, error);
-        console.log("Falling back to mock video data due to API error.");
-        return mockMostViewedVideo;
+        console.error(`Error fetching most viewed video for ${channelId}:`, error);
+        throw new Error("Failed to fetch most viewed video.");
     }
 }

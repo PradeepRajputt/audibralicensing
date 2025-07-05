@@ -13,8 +13,21 @@ const YouTubeContext = React.createContext<YouTubeContextType | null>(null);
 export function YouTubeProvider({ children }: { children: React.ReactNode }) {
   const [isYouTubeConnected, setIsYouTubeConnected] = React.useState(false);
 
+  // Check local storage for connection status on initial load
+  React.useEffect(() => {
+    const storedStatus = localStorage.getItem('youtube_connected');
+    if (storedStatus === 'true') {
+      setIsYouTubeConnected(true);
+    }
+  }, []);
+
+  const handleSetIsConnected = (isConnected: boolean) => {
+    localStorage.setItem('youtube_connected', String(isConnected));
+    setIsYouTubeConnected(isConnected);
+  }
+
   return (
-    <YouTubeContext.Provider value={{ isYouTubeConnected, setIsYouTubeConnected }}>
+    <YouTubeContext.Provider value={{ isYouTubeConnected, setIsYouTubeConnected: handleSetIsConnected }}>
       {children}
     </YouTubeContext.Provider>
   );

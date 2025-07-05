@@ -8,17 +8,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Eye, Video } from 'lucide-react';
+import { useYouTube } from '@/context/youtube-context';
 
 export default function OverviewPage() {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const { isYouTubeConnected } = useYouTube();
+
 
     useEffect(() => {
-        getDashboardData().then(data => {
-            setDashboardData(data);
+        if (isYouTubeConnected) {
+            getDashboardData().then(data => {
+                setDashboardData(data);
+                setIsLoading(false);
+            })
+        } else {
             setIsLoading(false);
-        })
-    }, []);
+        }
+    }, [isYouTubeConnected]);
 
     const analytics = dashboardData?.analytics;
     const creatorName = dashboardData?.user?.displayName ?? 'Creator';

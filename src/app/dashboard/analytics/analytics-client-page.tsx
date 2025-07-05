@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { format, subDays, startOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, subDays, startOfWeek, endOfMonth, startOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Users, Eye, Video, Palette, Youtube, Loader2 } from 'lucide-react';
@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { getDashboardData } from '../actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { DashboardData } from '@/lib/types';
+import { useYouTube } from '@/context/youtube-context';
 
 type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
@@ -51,19 +52,8 @@ function ColorPicker({ color, setColor }: { color: string, setColor: (color: str
 
 function AnalyticsLoadingSkeleton() {
     return (
-        <div className="space-y-6 animate-pulse">
-            <div className="flex justify-end">
-                <Skeleton className="h-10 w-[300px]" />
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-8 w-32" /><Skeleton className="h-3 w-40 mt-2" /></CardContent></Card>
-            </div>
-            <div className="grid gap-6 lg:grid-cols-2">
-                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-6 w-40" /><Skeleton className="h-4 w-full max-w-sm mt-2" /></CardHeader><CardContent><Skeleton className="h-60 w-full" /></CardContent></Card>
-            </div>
+        <div className="flex items-center justify-center h-full py-10">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
     )
 }
@@ -90,14 +80,19 @@ function ConnectYoutubePlaceholder() {
 export default function AnalyticsClientPage() {
     const [dashboardData, setDashboardData] = React.useState<DashboardData | null>(null);
     const [isLoadingData, setIsLoadingData] = React.useState(true);
+    const { isYouTubeConnected } = useYouTube();
 
     React.useEffect(() => {
-        setIsLoadingData(true);
-        getDashboardData().then(data => {
-            setDashboardData(data);
+        if (isYouTubeConnected) {
+            setIsLoadingData(true);
+            getDashboardData().then(data => {
+                setDashboardData(data);
+                setIsLoadingData(false);
+            })
+        } else {
             setIsLoadingData(false);
-        })
-    }, []);
+        }
+    }, [isYouTubeConnected]);
 
     const analytics = dashboardData?.analytics ?? null;
     const isLoading = isLoadingData;
