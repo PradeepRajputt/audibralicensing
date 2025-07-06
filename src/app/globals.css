@@ -1,11 +1,44 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  html {
+    font-size: 21px; /* UI thoda bada ho jayega */
+  }
+}
+
+@layer base {
+  button,
+  input,
+  select,
+  textarea {
+    @apply text-base px-4 py-3;
+    margin: 0px 10px;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  p,
+  span,
+  label {
+    @apply text-base;
+  }
+}
+
+span {
+  margin: 10px 0;
+}
+
+@layer base {
   :root,
-  [data-theme='dark'] {
+  [data-theme="dark"] {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     --card: 222 47% 11%;
@@ -41,8 +74,8 @@
     --sidebar-border: 222 47% 15%;
     --sidebar-ring: 283 44% 75%;
   }
-  
-  [data-theme='light'] {
+
+  [data-theme="light"] {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -62,7 +95,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 217 91% 60%;
-    
+
     --sidebar-background: 220 10% 97%;
     --sidebar-foreground: 222.2 84% 4.9%;
     --sidebar-primary: 217 91% 60%;
@@ -73,7 +106,7 @@
     --sidebar-ring: 217 91% 60%;
   }
 
-  [data-theme='zinc'] {
+  [data-theme="zinc"] {
     --background: 240 10% 3.9%;
     --foreground: 210 40% 98%;
     --card: 240 10% 3.9%;
@@ -103,6 +136,19 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 210 40% 98%;
   }
+}
+
+/* Fix calendar font size for react-day-picker */
+.rdp {
+  font-size: 1rem !important;
+}
+
+/* Make calendar dates and headers smaller for react-day-picker */
+.rdp,
+.rdp-day,
+.rdp-caption_label,
+.rdp-head_cell {
+  font-size: 0.85rem !important;
 }
 
 @layer base {
