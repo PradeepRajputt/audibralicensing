@@ -9,28 +9,66 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, X, Loader2, User, Calendar, Link as LinkIcon, FileText, Send } from "lucide-react";
 import Link from 'next/link';
 import type { Report } from '@/lib/types';
-import { approveStrikeRequest, denyStrikeRequest } from './actions';
+import { denyStrikeRequest, approveAndEmailAction } from '../actions';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const emailTemplates = {
+  standard: {
+    name: 'Standard Approval Notice',
+    body: (name: string, date: string, url: string) => `
+      <div style="font-family: sans-serif; line-height: 1.6;">
+        <p>Hi ${name},</p>
+        <p>This is to inform you that your copyright strike request for the content at <strong>${url}</strong> (submitted on ${date}) has been reviewed and approved by our team.</p>
+        <p>We will now proceed with the formal takedown process with the concerned platform. You will be notified once the platform takes action or if further information is required.</p>
+        <p>Thank you for your patience and for helping us protect your content.</p>
+        <p>Sincerely,<br/>The CreatorShield Team</p>
+      </div>
+    `,
+  },
+  urgent: {
+    name: 'Urgent - Priority Action',
+    body: (name: string, date: string, url: string) => `
+      <div style="font-family: sans-serif; line-height: 1.6;">
+        <p>Hi ${name},</p>
+        <p><strong>This is an urgent update regarding your copyright strike request for ${url} (from ${date}).</strong></p>
+        <p>Our team has reviewed and approved your request on a priority basis. We are initiating the takedown procedure immediately.</p>
+        <p>Please monitor your dashboard for further updates from the platform. We understand the importance of this matter and are treating it with the highest priority.</p>
+        <p>Thank you for your prompt action.</p>
+        <p>Sincerely,<br/>The CreatorShield Team</p>
+      </div>
+    `,
+  },
+};
 
 
 export default function StrikeDetailsClientPage({ initialStrike }: { initialStrike: Report | undefined }) {
   const { toast } = useToast();
   const [strike, setStrike] = useState<Report | undefined>(initialStrike);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [isEmailing, setIsEmailing] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState('standard');
 
   useEffect(() => {
     setStrike(initialStrike);
   }, [initialStrike]);
 
 
-  const handleAction = async (action: 'approve' | 'deny') => {
+  const handleApprove = async () => {
     if (!strike) return;
-    setLoadingAction(action);
+    setLoadingAction('approve');
     
-    const result = action === 'approve' 
-      ? await approveStrikeRequest(strike.id) 
-      : await denyStrikeRequest(strike.id);
+    const result = await approveAndEmailAction({ strikeId: strike.id, templateId: selectedTemplate });
 
     if (result.success) {
       toast({
@@ -38,7 +76,8 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
         description: result.message,
       });
       // Optimistically update status
-      setStrike(prev => prev ? { ...prev, status: action === 'approve' ? 'approved' : 'rejected' } : undefined);
+      setStrike(prev => prev ? { ...prev, status: 'approved' } : undefined);
+      setIsEmailing(false); // Close dialog
     } else {
       toast({
           variant: 'destructive',
@@ -48,6 +87,37 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
     }
     
     setLoadingAction(null);
+  };
+  
+  const handleDeny = async () => {
+    if (!strike) return;
+    setLoadingAction('deny');
+    
+    const result = await denyStrikeRequest(strike.id);
+
+    if (result.success) {
+      toast({
+        title: "Action Successful",
+        description: result.message,
+      });
+      // Optimistically update status
+      setStrike(prev => prev ? { ...prev, status: 'rejected' } : undefined);
+    } else {
+      toast({
+          variant: 'destructive',
+          title: "Action Failed",
+          description: result.message
+      });
+    }
+    
+    setLoadingAction(null);
+  };
+
+  const getPreviewHtml = () => {
+    if (!strike) return '';
+    const template = emailTemplates[selectedTemplate as keyof typeof emailTemplates];
+    const submissionDate = new Date(strike.submitted).toLocaleDateString();
+    return template.body(strike.creatorName, submissionDate, strike.suspectUrl);
   };
 
   const getStatusVariant = (status?: Report['status']) => {
@@ -91,106 +161,150 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-         <h1 className="text-2xl font-bold">Strike Request Details</h1>
-         <Button asChild variant="outline">
-            <Link href="/admin/strikes">
-              <ArrowLeft className="mr-2" />
-              Back to List
-            </Link>
-          </Button>
+    <>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Strike Request Details</h1>
+          <Button asChild variant="outline">
+              <Link href="/admin/strikes">
+                <ArrowLeft className="mr-2" />
+                Back to List
+              </Link>
+            </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>Report ID: {strike.id.substring(0, 18)}...</CardTitle>
+                <CardDescription>Review the details of the report submitted by the creator.</CardDescription>
+              </div>
+              <Badge variant={getStatusVariant(strike.status)} className="text-base">
+                  {getStatusText(strike.status)}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+              <div className="flex items-center gap-4">
+                  <Avatar>
+                    <AvatarImage src={strike.creatorAvatar} data-ai-hint="profile picture" />
+                    <AvatarFallback>{strike.creatorName?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                      <p className="text-sm text-muted-foreground">Creator Name</p>
+                      <p className="font-medium">{strike.creatorName}</p>
+                  </div>
+              </div>
+              <div className="flex items-center gap-4">
+                  <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <div>
+                      <p className="text-sm text-muted-foreground">Submission Date</p>
+                      <p className="font-medium">
+                        <ClientFormattedDate dateString={strike.submitted} options={{ year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' }} />
+                      </p>
+                  </div>
+              </div>
+              <div className="flex items-center gap-4">
+                  <LinkIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <div>
+                      <p className="text-sm text-muted-foreground">Original Content</p>
+                      <a href={strike.originalContentUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline break-all">
+                          {strike.originalContentTitle}
+                      </a>
+                  </div>
+              </div>
+              <div className="flex items-center gap-4">
+                  <LinkIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <div>
+                      <p className="text-sm text-muted-foreground">Infringing URL</p>
+                      <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline break-all">
+                          {strike.suspectUrl}
+                      </a>
+                  </div>
+              </div>
+              <div className="flex items-start gap-4">
+                  <FileText className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
+                  <div>
+                      <p className="text-sm text-muted-foreground">Reason for Submission</p>
+                      <p className="font-medium whitespace-pre-wrap">{strike.reason}</p>
+                  </div>
+              </div>
+          </CardContent>
+          {strike.status === 'in_review' && (
+              <CardFooter className="border-t pt-6 flex justify-end gap-2">
+                  <Button
+                      variant="outline"
+                      onClick={() => setIsEmailing(true)}
+                      disabled={!!loadingAction}
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeny}
+                      disabled={!!loadingAction}
+                    >
+                      {loadingAction === 'deny' ? <Loader2 className="animate-spin" /> : <X />}
+                      Deny
+                    </Button>
+              </CardFooter>
+          )}
+          {strike.status === 'approved' && strike.platform === 'youtube' && (
+              <CardFooter className="border-t pt-6 flex justify-end gap-2">
+                  <Button asChild>
+                      <Link href={`/admin/youtube-consent/${strike.id}`}>
+                          <Send className="mr-2 h-4 w-4" />
+                          Submit to YouTube
+                      </Link>
+                  </Button>
+              </CardFooter>
+          )}
+        </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle>Report ID: {strike.id.substring(0, 18)}...</CardTitle>
-              <CardDescription>Review the details of the report submitted by the creator.</CardDescription>
+      <Dialog open={isEmailing} onOpenChange={setIsEmailing}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Approve Strike Request & Notify Creator</DialogTitle>
+              <DialogDescription>
+                Choose an email template to send to {strike?.creatorName}. The request will be approved upon sending.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="template">Email Template</Label>
+                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                  <SelectTrigger id="template">
+                    <SelectValue placeholder="Select a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(emailTemplates).map(([id, { name }]) => (
+                      <SelectItem key={id} value={id}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Email Preview</Label>
+                <div
+                  className="h-64 overflow-y-auto rounded-md border bg-muted/50 p-4 text-sm"
+                  dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+                />
+              </div>
             </div>
-             <Badge variant={getStatusVariant(strike.status)} className="text-base">
-                {getStatusText(strike.status)}
-             </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6 pt-6">
-            <div className="flex items-center gap-4">
-                <Avatar>
-                  <AvatarImage src={strike.creatorAvatar} data-ai-hint="profile picture" />
-                  <AvatarFallback>{strike.creatorName?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="text-sm text-muted-foreground">Creator Name</p>
-                    <p className="font-medium">{strike.creatorName}</p>
-                </div>
-            </div>
-            <div className="flex items-center gap-4">
-                <Calendar className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <div>
-                    <p className="text-sm text-muted-foreground">Submission Date</p>
-                    <p className="font-medium">
-                      <ClientFormattedDate dateString={strike.submitted} options={{ year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' }} />
-                    </p>
-                </div>
-            </div>
-             <div className="flex items-center gap-4">
-                <LinkIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <div>
-                    <p className="text-sm text-muted-foreground">Original Content</p>
-                    <a href={strike.originalContentUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline break-all">
-                        {strike.originalContentTitle}
-                    </a>
-                </div>
-            </div>
-            <div className="flex items-center gap-4">
-                <LinkIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <div>
-                    <p className="text-sm text-muted-foreground">Infringing URL</p>
-                    <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline break-all">
-                        {strike.suspectUrl}
-                    </a>
-                </div>
-            </div>
-            <div className="flex items-start gap-4">
-                <FileText className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
-                <div>
-                    <p className="text-sm text-muted-foreground">Reason for Submission</p>
-                    <p className="font-medium whitespace-pre-wrap">{strike.reason}</p>
-                </div>
-            </div>
-        </CardContent>
-        {strike.status === 'in_review' && (
-             <CardFooter className="border-t pt-6 flex justify-end gap-2">
-                 <Button
-                    variant="outline"
-                    onClick={() => handleAction('approve')}
-                    disabled={!!loadingAction}
-                  >
-                    {loadingAction === 'approve' ? <Loader2 className="animate-spin" /> : <Check />}
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleAction('deny')}
-                    disabled={!!loadingAction}
-                  >
-                     {loadingAction === 'deny' ? <Loader2 className="animate-spin" /> : <X />}
-                    Deny
-                  </Button>
-            </CardFooter>
-        )}
-         {strike.status === 'approved' && strike.platform === 'youtube' && (
-             <CardFooter className="border-t pt-6 flex justify-end gap-2">
-                 <Button asChild>
-                    <Link href={`/admin/youtube-consent/${strike.id}`}>
-                        <Send className="mr-2 h-4 w-4" />
-                        Submit to YouTube
-                    </Link>
-                 </Button>
-            </CardFooter>
-        )}
-      </Card>
-    </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setIsEmailing(false)}>Cancel</Button>
+              <Button onClick={handleApprove} disabled={loadingAction === 'approve'}>
+                {loadingAction === 'approve' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Approve and Send Email
+              </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
