@@ -46,6 +46,7 @@ export async function submitTakedownToYouTubeAction(reportId: string, takedownDa
   } catch (error) {
     console.error("Failed to process YouTube takedown:", error);
     const message = error instanceof Error ? error.message : "An unknown error occurred.";
+    // This return is for client-side error handling if redirection doesn't happen
     return { success: false, message };
   }
   
@@ -53,6 +54,6 @@ export async function submitTakedownToYouTubeAction(reportId: string, takedownDa
   revalidatePath('/admin/strikes');
   revalidatePath(`/admin/strikes/${reportId}`);
 
-  // 4. Redirect back to the strikes list
+  // 4. Redirect back to the strikes list on success
   redirect('/admin/strikes');
 }

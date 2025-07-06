@@ -52,22 +52,29 @@ export default function ConsentFormClient({ report, creator }: { report: Report,
 
   async function onSubmit(values: z.infer<typeof takedownFormSchema>) {
     setIsLoading(true);
-    const result = await submitTakedownToYouTubeAction(report.id, { ...report, ...values });
     
-    if(result.success) {
-      toast({
-        title: "Takedown Notice Submitted",
-        description: "The request has been sent to YouTube and the report status has been updated.",
-      });
-    } else {
+    // In a real app, this data would be compiled and sent to the YouTube API.
+    // Here we will pass it to a server action that simulates this.
+    const takedownData = {
+        creatorEmail: creator.email!,
+        creatorName: creator.displayName!,
+        infringingUrl: report.suspectUrl,
+        originalUrl: report.originalContentUrl,
+        reason: report.reason,
+        adminSignature: values.legalFullName,
+    };
+
+    const result = await submitTakedownToYouTubeAction(report.id, takedownData);
+    
+    // The action now handles redirection on success. We only need to handle errors here.
+    if(result && !result.success) {
        toast({
         variant: 'destructive',
         title: "Submission Failed",
         description: result.message,
       });
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }
 
   return (
