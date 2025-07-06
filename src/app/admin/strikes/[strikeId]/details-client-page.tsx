@@ -167,7 +167,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                     onClick={() => handleAction('approve')}
                     disabled={!!loadingAction}
                   >
-                    {loadingAction === `approve` ? <Loader2 className="animate-spin" /> : <Check />}
+                    {loadingAction === 'approve' ? <Loader2 className="animate-spin" /> : <Check />}
                     Approve
                   </Button>
                   <Button
@@ -175,7 +175,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                     onClick={() => handleAction('deny')}
                     disabled={!!loadingAction}
                   >
-                     {loadingAction === `deny` ? <Loader2 className="animate-spin" /> : <X />}
+                     {loadingAction === 'deny' ? <Loader2 className="animate-spin" /> : <X />}
                     Deny
                   </Button>
             </CardFooter>

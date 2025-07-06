@@ -19,11 +19,11 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
   const userId = "user_creator_123";
   const user = await getUserById(userId);
 
-  if (!user || !user.displayName) {
-     return { success: false, message: 'Could not find user information.' };
+  if (!user) {
+     return { success: false, message: 'Could not find user information to submit report.' };
   }
 
-  const { displayName: creatorName, avatar } = user;
+  const { displayName, avatar } = user;
   
   const parsed = formSchema.safeParse(values);
 
@@ -44,7 +44,7 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
       originalContentUrl: originalContent.videoURL || 'N/A',
       originalContentTitle: originalContent.title,
       creatorId: userId,
-      creatorName: creatorName,
+      creatorName: displayName || 'Unknown Creator',
       creatorAvatar: avatar,
     });
     
