@@ -9,7 +9,7 @@ import { YouTubeProvider } from '@/context/youtube-context';
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
       <ThemeProvider
-      attribute="class"
+      attribute="data-theme"
       defaultTheme="dark"
       {...props}
       >
