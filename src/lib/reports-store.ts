@@ -6,6 +6,19 @@ import { unstable_noStore as noStore } from 'next/cache';
 
 // Mock in-memory database for reports
 let mockReports: Report[] = [
+    { 
+        id: 'report_newly_submitted_123', 
+        creatorId: 'user_creator_123', 
+        creatorName: 'Sample Creator', 
+        creatorAvatar: 'https://placehold.co/128x128.png', 
+        suspectUrl: 'https://stolen-blog.com/my-adventure-post', 
+        platform: 'web', 
+        status: 'in_review',
+        submitted: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        reason: 'This is a direct copy of my article. They have stolen the entire text and are claiming it as their own.', 
+        originalContentUrl: 'https://myblog.com/summer-in-italy', 
+        originalContentTitle: 'My Travel Blog - Summer in Italy' 
+    },
     { id: 'report_initial_1', creatorId: 'user_creator_123', creatorName: 'Sample Creator', creatorAvatar: 'https://placehold.co/128x128.png', suspectUrl: 'https://youtube.com/watch?v=fake123', platform: 'youtube', status: 'approved', submitted: new Date(Date.now() - 172800000).toISOString(), reason: 'This is a direct reupload of my video.', originalContentUrl: 'https://youtube.com/watch?v=original123', originalContentTitle: 'My Most Epic Adventure Yet!' },
     { id: 'report_initial_2', creatorId: 'user_creator_123', creatorName: 'Sample Creator', creatorAvatar: 'https://placehold.co/128x128.png', suspectUrl: 'https://instagram.com/p/reel456', platform: 'instagram', status: 'rejected', submitted: new Date(Date.now() - 6048e5).toISOString(), reason: 'They used my background music without credit.', originalContentUrl: 'https://youtube.com/watch?v=original456', originalContentTitle: 'My Travel Blog - Summer in Italy' }
 ];
