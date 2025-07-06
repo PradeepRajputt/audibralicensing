@@ -32,6 +32,8 @@ const emailTemplates = {
         <p>This is to inform you that your copyright strike request for the content at <strong>${url}</strong> (submitted on ${date}) has been reviewed and approved by our team.</p>
         <p>We will now proceed with the formal takedown process with the concerned platform. You will be notified once the platform takes action or if further information is required.</p>
         <p>Thank you for your patience and for helping us protect your content.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="font-size: 0.9em; color: #555;">If you have any questions, you can contact us at <a href="mailto:creatorSshieldcommunity@gmail.com">creatorSshieldcommunity@gmail.com</a>. You can also send personal feedback to the Creator Shield community through the 'Send Feedback' option on your dashboard.</p>
         <p>Sincerely,<br/>The CreatorShield Team</p>
       </div>
     `,
@@ -45,6 +47,8 @@ const emailTemplates = {
         <p>Our team has reviewed and approved your request on a priority basis. We are initiating the takedown procedure immediately.</p>
         <p>Please monitor your dashboard for further updates from the platform. We understand the importance of this matter and are treating it with the highest priority.</p>
         <p>Thank you for your prompt action.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="font-size: 0.9em; color: #555;">If you have any questions, you can contact us at <a href="mailto:creatorSshieldcommunity@gmail.com">creatorSshieldcommunity@gmail.com</a>. You can also send personal feedback to the Creator Shield community through the 'Send Feedback' option on your dashboard.</p>
         <p>Sincerely,<br/>The CreatorShield Team</p>
       </div>
     `,
