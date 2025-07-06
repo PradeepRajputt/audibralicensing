@@ -12,6 +12,7 @@ import Link from 'next/link';
 import type { Report } from '@/lib/types';
 import { approveStrikeRequest, denyStrikeRequest } from './actions';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export function StrikesClientPage({ initialStrikes }: { initialStrikes: Report[] }) {
   const { toast } = useToast();
@@ -64,7 +65,15 @@ export function StrikesClientPage({ initialStrikes }: { initialStrikes: Report[]
         <TableBody>
           {data.map((strike) => (
             <TableRow key={strike.id}>
-              <TableCell className="font-medium">{strike.creatorName}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={strike.creatorAvatar} data-ai-hint="profile picture" />
+                    <AvatarFallback>{strike.creatorName?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium">{strike.creatorName}</span>
+                </div>
+              </TableCell>
                <TableCell>
                 <a href={strike.suspectUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate block max-w-xs">
                     {strike.suspectUrl}

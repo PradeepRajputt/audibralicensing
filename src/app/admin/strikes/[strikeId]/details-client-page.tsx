@@ -9,8 +9,9 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, X, Loader2, User, Calendar, Link as LinkIcon, FileText, Send } from "lucide-react";
 import Link from 'next/link';
 import type { Report } from '@/lib/types';
-import { approveStrikeRequest, denyStrikeRequest } from '../actions';
+import { approveStrikeRequest, denyStrikeRequest } from './actions';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 export default function StrikeDetailsClientPage({ initialStrike }: { initialStrike: Report | undefined }) {
@@ -115,7 +116,10 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
             <div className="flex items-center gap-4">
-                <User className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <Avatar>
+                  <AvatarImage src={strike.creatorAvatar} data-ai-hint="profile picture" />
+                  <AvatarFallback>{strike.creatorName?.charAt(0)}</AvatarFallback>
+                </Avatar>
                 <div>
                     <p className="text-sm text-muted-foreground">Creator Name</p>
                     <p className="font-medium">{strike.creatorName}</p>

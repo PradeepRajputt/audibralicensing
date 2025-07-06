@@ -23,7 +23,7 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
      return { success: false, message: 'Could not find user information.' };
   }
 
-  const { displayName: creatorName } = user;
+  const { displayName: creatorName, avatar } = user;
   
   const parsed = formSchema.safeParse(values);
 
@@ -45,6 +45,7 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
       originalContentTitle: originalContent.title,
       creatorId: userId,
       creatorName: creatorName,
+      creatorAvatar: avatar,
     });
     
   } catch (error) {
