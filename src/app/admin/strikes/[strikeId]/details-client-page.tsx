@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Check, X, Loader2, User, Calendar, Link as LinkIcon, FileText, Send } from "lucide-react";
 import Link from 'next/link';
 import type { Report } from '@/lib/types';
-import { denyStrikeRequest, approveAndEmailAction } from '../actions';
+import { denyAndEmailAction, approveAndEmailAction } from '../actions';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const emailTemplates = {
   standard: {
@@ -55,13 +56,37 @@ const emailTemplates = {
   },
 };
 
+const denialEmailTemplates = {
+  standard: {
+    name: 'Standard Denial Notice',
+    body: (name: string, url: string, reason: string) => `
+      <div style="font-family: sans-serif; line-height: 1.6;">
+        <p>Hi ${name},</p>
+        <p>Thank you for submitting your copyright strike request for the content at <strong>${url}</strong>.</p>
+        <p>After a careful review, we have decided not to proceed with this takedown request at this time. Here is the reason for this decision:</p>
+        <blockquote style="border-left: 4px solid #ccc; padding-left: 1rem; margin-left: 0; font-style: italic;">
+          ${reason || 'No specific reason provided.'}
+        </blockquote>
+        <p>We understand this may not be the outcome you hoped for. If you have new information or believe this decision was made in error, you can resubmit your request with additional details.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="font-size: 0.9em; color: #555;">If you have any questions, you can contact us at <a href="mailto:creatorSshieldcommunity@gmail.com">creatorSshieldcommunity@gmail.com</a>. You can also send personal feedback to the Creator Shield community through the 'Send Feedback' option on your dashboard.</p>
+        <p>Sincerely,<br/>The CreatorShield Team</p>
+      </div>
+    `,
+  },
+};
+
 
 export default function StrikeDetailsClientPage({ initialStrike }: { initialStrike: Report | undefined }) {
   const { toast } = useToast();
   const [strike, setStrike] = useState<Report | undefined>(initialStrike);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [isEmailing, setIsEmailing] = useState(false);
+  
+  const [isApproving, setIsApproving] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState('standard');
+  
+  const [isDenying, setIsDenying] = useState(false);
+  const [denialReason, setDenialReason] = useState('');
 
   useEffect(() => {
     setStrike(initialStrike);
@@ -81,7 +106,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
       });
       // Optimistically update status
       setStrike(prev => prev ? { ...prev, status: 'approved' } : undefined);
-      setIsEmailing(false); // Close dialog
+      setIsApproving(false); // Close dialog
     } else {
       toast({
           variant: 'destructive',
@@ -97,7 +122,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
     if (!strike) return;
     setLoadingAction('deny');
     
-    const result = await denyStrikeRequest(strike.id);
+    const result = await denyAndEmailAction({ strikeId: strike.id, reason: denialReason });
 
     if (result.success) {
       toast({
@@ -106,6 +131,8 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
       });
       // Optimistically update status
       setStrike(prev => prev ? { ...prev, status: 'rejected' } : undefined);
+      setIsDenying(false);
+      setDenialReason('');
     } else {
       toast({
           variant: 'destructive',
@@ -117,12 +144,17 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
     setLoadingAction(null);
   };
 
-  const getPreviewHtml = () => {
+  const getApprovalPreviewHtml = () => {
     if (!strike) return '';
     const template = emailTemplates[selectedTemplate as keyof typeof emailTemplates];
     const submissionDate = new Date(strike.submitted).toLocaleDateString();
     return template.body(strike.creatorName, submissionDate, strike.suspectUrl);
   };
+  
+  const getDenialPreviewHtml = () => {
+    if (!strike) return '';
+    return denialEmailTemplates.standard.body(strike.creatorName, strike.suspectUrl, denialReason);
+  }
 
   const getStatusVariant = (status?: Report['status']) => {
     switch (status) {
@@ -239,7 +271,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
               <CardFooter className="border-t pt-6 flex justify-end gap-2">
                   <Button
                       variant="outline"
-                      onClick={() => setIsEmailing(true)}
+                      onClick={() => setIsApproving(true)}
                       disabled={!!loadingAction}
                     >
                       <Check className="mr-2 h-4 w-4" />
@@ -247,7 +279,7 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                     </Button>
                     <Button
                       variant="destructive"
-                      onClick={handleDeny}
+                      onClick={() => setIsDenying(true)}
                       disabled={!!loadingAction}
                     >
                       {loadingAction === 'deny' ? <Loader2 className="animate-spin" /> : <X />}
@@ -267,8 +299,9 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
           )}
         </Card>
       </div>
-
-      <Dialog open={isEmailing} onOpenChange={setIsEmailing}>
+      
+      {/* Approval Dialog */}
+      <Dialog open={isApproving} onOpenChange={setIsApproving}>
         <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Approve Strike Request & Notify Creator</DialogTitle>
@@ -296,12 +329,12 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                 <Label>Email Preview</Label>
                 <div
                   className="h-64 overflow-y-auto rounded-md border bg-muted/50 p-4 text-sm"
-                  dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+                  dangerouslySetInnerHTML={{ __html: getApprovalPreviewHtml() }}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setIsEmailing(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setIsApproving(false)}>Cancel</Button>
               <Button onClick={handleApprove} disabled={loadingAction === 'approve'}>
                 {loadingAction === 'approve' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Approve and Send Email
@@ -309,6 +342,46 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
             </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Denial Dialog */}
+       <Dialog open={isDenying} onOpenChange={setIsDenying}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Deny Strike Request & Notify Creator</DialogTitle>
+              <DialogDescription>
+                Provide a reason for denying the request and notify {strike?.creatorName}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="reason">Reason for Denial</Label>
+                <Textarea
+                  id="reason"
+                  placeholder="e.g., The provided content does not appear to be a direct copy of your work..."
+                  value={denialReason}
+                  onChange={(e) => setDenialReason(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Email Preview</Label>
+                <div
+                  className="h-64 overflow-y-auto rounded-md border bg-muted/50 p-4 text-sm"
+                  dangerouslySetInnerHTML={{ __html: getDenialPreviewHtml() }}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setIsDenying(false)}>Cancel</Button>
+              <Button onClick={handleDeny} disabled={loadingAction === 'deny' || !denialReason} variant="destructive">
+                {loadingAction === 'deny' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Deny and Send Email
+              </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
+
+    
