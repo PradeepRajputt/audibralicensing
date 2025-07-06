@@ -17,7 +17,7 @@ export async function approveAndEmailAction({ strikeId, templateId }: { strikeId
     
     // 1. Send the email
     await sendStrikeApprovalEmail({
-      to: creator.email,
+      to: 'onlinewlallah99@gmail.com', // Hardcoded for testing
       creatorName: creator.displayName || 'Creator',
       infringingUrl: report.suspectUrl,
       submissionDate: report.submitted,
