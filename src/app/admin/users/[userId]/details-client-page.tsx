@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -65,12 +64,12 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
               break;
       }
       
-      if (result.success) {
+      if (result && result.success) {
           toast({ title: "Action Successful", description: result.message });
           // Optimistically update the UI
           setUser(prev => prev ? { ...prev, status: newStatus } : undefined);
       } else {
-          toast({ variant: 'destructive', title: "Action Failed", description: result.message });
+          toast({ variant: 'destructive', title: "Action Failed", description: result?.message || 'An unknown error occurred.' });
       }
 
       setIsLoading(null);
