@@ -77,6 +77,7 @@ export interface Report {
   id: string;
   creatorId: string;
   creatorName: string; // denormalized for simplicity
+  creatorAvatar?: string;
   platform: string;
   suspectUrl: string;
   originalContentUrl: string;

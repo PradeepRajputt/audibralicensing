@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { ThemeSettings } from '@/components/settings/theme-settings';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
 
 
 const platformSettingsFormSchema = z.object({

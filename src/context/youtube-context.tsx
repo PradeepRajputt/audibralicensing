@@ -14,38 +14,14 @@ const YouTubeContext = React.createContext<YouTubeContextType | null>(null);
 
 export function YouTubeProvider({ children }: { children: React.ReactNode }) {
   const [isYouTubeConnected, setIsYouTubeConnected] = React.useState(false);
-  const [channelId, setChannelIdState] = React.useState<string | null>(null);
+  const [channelId, setChannelId] = React.useState<string | null>(null);
 
-  // Check local storage for connection status on initial load
-  React.useEffect(() => {
-    const storedStatus = localStorage.getItem('youtube_connected');
-    const storedId = localStorage.getItem('youtube_channel_id');
-    if (storedStatus === 'true' && storedId) {
-      setIsYouTubeConnected(true);
-      setChannelIdState(storedId);
-    }
-  }, []);
-
-  const handleSetIsConnected = (isConnected: boolean) => {
-    localStorage.setItem('youtube_connected', String(isConnected));
-    setIsYouTubeConnected(isConnected);
-    if (!isConnected) {
-        localStorage.removeItem('youtube_channel_id');
-        setChannelIdState(null);
-    }
-  }
-
-  const handleSetChannelId = (id: string | null) => {
-      if (id) {
-        localStorage.setItem('youtube_channel_id', id);
-      } else {
-        localStorage.removeItem('youtube_channel_id');
-      }
-      setChannelIdState(id);
-  }
+  // The connection state is now transient and will reset on page refresh.
+  // We removed the localStorage logic to address the issue of the connection
+  // persisting across sessions.
 
   return (
-    <YouTubeContext.Provider value={{ isYouTubeConnected, setIsYouTubeConnected: handleSetIsConnected, channelId, setChannelId: handleSetChannelId }}>
+    <YouTubeContext.Provider value={{ isYouTubeConnected, setIsYouTubeConnected, channelId, setChannelId }}>
       {children}
     </YouTubeContext.Provider>
   );
