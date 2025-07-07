@@ -30,13 +30,13 @@ export default function LoginPage() {
         </p>
         <Button
           onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center gap-2 py-6 text-base font-semibold bg-white text-black rounded-lg shadow hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          className="w-full flex items-center justify-center font-semibold gap-2 py-6 text-base bg-white text-black rounded-lg shadow hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
         >
           <img
             src="https://developers.google.com/identity/images/g-logo.png"
             alt="Google logo"
-            width={24}
-            height={24}
+            width={28}
+            height={28}
             className="ml-2 mr-4"
           />
           Sign in with Google

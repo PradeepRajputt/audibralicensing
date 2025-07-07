@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -21,11 +20,11 @@ type ChartType = 'area' | 'bar' | 'line';
 type AggregationType = 'day' | 'week' | 'month';
 
 const chartColors = [
-    { name: 'Chart 1', value: 'hsl(var(--chart-1))' },
-    { name: 'Chart 2', value: 'hsl(var(--chart-2))' },
-    { name: 'Chart 3', value: 'hsl(var(--chart-3))' },
-    { name: 'Chart 4', value: 'hsl(var(--chart-4))' },
-    { name: 'Chart 5', value: 'hsl(var(--chart-5))' },
+    { name: 'Chart 1', value: 'hsl(var(--chart-1))', display: 'hsl(var(--chart-1))' },
+    { name: 'Chart 2', value: 'hsl(var(--chart-2))', display: 'hsl(var(--chart-2))' },
+    { name: 'Chart 3', value: 'hsl(var(--chart-3))', display: 'hsl(var(--chart-3))' },
+    { name: 'Chart 4', value: 'hsl(var(--chart-4))', display: 'hsl(var(--chart-4))' },
+    { name: 'Chart 5', value: 'hsl(var(--chart-5))', display: 'hsl(var(--chart-5))' },
 ];
 
 function ColorPicker({ color, setColor }: { color: string, setColor: (color: string) => void }) {
@@ -37,12 +36,33 @@ function ColorPicker({ color, setColor }: { color: string, setColor: (color: str
                     <span className="sr-only">Change Color</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-2">
-                <div className="flex gap-1">
-                    {chartColors.map(c => (
-                        <Button key={c.name} size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => setColor(c.value)}>
-                            <div className="h-6 w-6 rounded-full border" style={{ backgroundColor: c.value }} />
-                        </Button>
+            <PopoverContent className="w-auto p-1">
+                <div className="flex items-center">
+                    {chartColors.map((c, i) => (
+                        <React.Fragment key={c.name}>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-full flex items-center justify-center border-0 focus:outline-none"
+                                onClick={() => setColor(c.value)}
+                                aria-label={c.name}
+                                style={{ padding: 0, boxShadow: 'none' }}
+                            >
+                                <span
+                                    className="block h-5 w-5 rounded-full"
+                                    style={{
+                                        background: c.display,
+                                        backgroundColor: c.display,
+                                        border: color === c.value ? '2px solid #fff' : '1.5px solid #444',
+                                        boxSizing: 'border-box',
+                                        display: 'block',
+                                    }}
+                                />
+                            </Button>
+                            {i < chartColors.length - 1 && (
+                                <span className="mx-1 text-lg text-muted-foreground select-none">|</span>
+                            )}
+                        </React.Fragment>
                     ))}
                 </div>
             </PopoverContent>
@@ -207,7 +227,7 @@ export default function AnalyticsClientPage() {
                 </div>
                  <div className="flex flex-col sm:flex-row items-center gap-2">
                     <Select value={aggregation} onValueChange={(value: AggregationType) => setAggregation(value)}>
-                        <SelectTrigger className="w-full sm:w-[120px]">
+                        <SelectTrigger className="w-full sm:w-[140px] px-4 py-2 min-w-[120px]">
                             <SelectValue placeholder="Group by" />
                         </SelectTrigger>
                         <SelectContent>
@@ -263,7 +283,7 @@ export default function AnalyticsClientPage() {
                         <div className="flex items-center gap-2">
                             <ColorPicker color={viewsColor} setColor={setViewsColor} />
                             <Select value={viewsChartType} onValueChange={(value: ChartType) => setViewsChartType(value)}>
-                                <SelectTrigger className="w-[120px] flex-shrink-0">
+                                <SelectTrigger className="w-[160px] flex-shrink-0 px-4 py-2 min-w-[140px]">
                                     <SelectValue placeholder="Chart Type" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -289,7 +309,7 @@ export default function AnalyticsClientPage() {
                          <div className="flex items-center gap-2">
                             <ColorPicker color={subscribersColor} setColor={setSubscribersColor} />
                             <Select value={subscribersChartType} onValueChange={(value: ChartType) => setSubscribersChartType(value)}>
-                                <SelectTrigger className="w-[120px] flex-shrink-0">
+                                <SelectTrigger className="w-[160px] flex-shrink-0 px-4 py-2 min-w-[140px]">
                                     <SelectValue placeholder="Chart Type" />
                                 </SelectTrigger>
                                 <SelectContent>
