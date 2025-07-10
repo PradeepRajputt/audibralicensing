@@ -1,9 +1,9 @@
-import mongoose from 'mongoose';
+import connectToDatabase from './mongodb';
 import Creator from '@/models/Creator';
 // Import other models as needed (e.g., Strike, Reactivation, Scan, Report)
 
 export async function getAdminOverviewStats(from?: Date, to?: Date) {
-  await mongoose.connect(process.env.MONGODB_URI!);
+  await connectToDatabase();
 
   // Total creators
   const totalCreators = await Creator.countDocuments({});

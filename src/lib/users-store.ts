@@ -1,9 +1,10 @@
 import connectToDatabase from './mongodb';
-import Creator from '../models/Creator';
+import Creator from '../models/Creator.js';
 import type { User } from './types';
 
 export async function getAllUsers(): Promise<User[]> {
   await connectToDatabase();
+  // @ts-ignore
   const creators = await Creator.find({}).lean();
   return creators.map((creator: any) => ({
     id: creator._id.toString(),

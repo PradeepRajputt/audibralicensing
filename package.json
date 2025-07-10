@@ -33,6 +33,7 @@
     "@radix-ui/react-toast": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.1.8",
     "axios": "^1.7.2",
+    "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -41,6 +42,7 @@
     "express-session": "^1.18.1",
     "googleapis": "^140.0.1",
     "jsdom": "^24.1.0",
+    "jsonwebtoken": "^9.0.2",
     "jspdf": "^2.5.1",
     "lucide-react": "^0.475.0",
     "mongoose": "^8.16.1",
@@ -61,6 +63,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@swc/core": "^1.12.11",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
