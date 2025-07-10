@@ -1,5 +1,4 @@
 import connectToDatabase from "@/lib/mongodb";
-import User from "@/models/User";
 
 export async function POST(req) {
   try {
@@ -11,25 +10,11 @@ export async function POST(req) {
 
     await connectToDatabase();
 
-    const updatedUser = await User.findOneAndUpdate(
-      { email },
-      {
-        $set: {
-          name,
-          ...(channel && {
-            youtubeChannel: {
-              id: channel.id,
-              title: channel.title,
-              thumbnail: channel.thumbnails?.default?.url || "",
-            },
-          }),
-          ...(location && { location }),
-        },
-      },
-      { new: true, upsert: true }
-    );
+    // The User model is removed, so this part of the logic needs to be re-evaluated
+    // or the function needs to be updated to use Creator or Admin models.
+    // For now, we'll return an error as the User model is no longer imported.
+    return Response.json({ error: "User model is no longer available" }, { status: 500 });
 
-    return Response.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error("Error saving user:", err);
     return Response.json({ error: "Failed to save user" }, { status: 500 });

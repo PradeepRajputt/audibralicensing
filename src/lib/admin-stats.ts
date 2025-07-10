@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
-import UserModel from '@/models/User';
+import Creator from '@/models/Creator';
 // Import other models as needed (e.g., Strike, Reactivation, Scan, Report)
 
 export async function getAdminOverviewStats(from?: Date, to?: Date) {
   await mongoose.connect(process.env.MONGODB_URI!);
 
   // Total creators
-  const totalCreators = await UserModel.countDocuments({ role: 'creator' });
+  const totalCreators = await Creator.countDocuments({});
 
   // Pending strikes (replace with your actual Strike model and query)
   const pendingStrikes = 0; // TODO: Replace with real query

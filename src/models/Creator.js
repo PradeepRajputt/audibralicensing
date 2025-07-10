@@ -10,6 +10,10 @@ const creatorSchema = new mongoose.Schema({
     thumbnail: String,
   }, // optional
   avatar: { type: String }, // Add avatar field for profile picture
-});
+}, { collection: 'creators' });
 
-export default mongoose.models.Creator || mongoose.model('Creator', creatorSchema); 
+const Creator = (mongoose.models && mongoose.models.Creator)
+  ? mongoose.models.Creator
+  : mongoose.model('Creator', creatorSchema);
+
+export default Creator; 
