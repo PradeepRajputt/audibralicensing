@@ -1,7 +1,13 @@
 import { google } from "googleapis";
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
-import User from "@/models/User";
+import Admin from "@/models/Admin";
+import Creator from "@/models/Creator";
+
+const ADMIN_EMAILS = [
+  "guddumisra003@gmail.com",
+  "contactpradeeprajput@gmail.com"
+];
 
 export async function GET(req) {
   const url = new URL(req.url);
@@ -33,23 +39,64 @@ export async function GET(req) {
 
   await connectToDatabase();
 
-  let user = await User.findOne({ googleId: userInfo.id });
+  const userLocation = userInfo.locale && userInfo.locale.trim() ? userInfo.locale : "Unknown";
 
-  if (!user) {
-    user = await User.create({
-      googleId: userInfo.id,
-      name: userInfo.name,
-      email: userInfo.email,
-      image: userInfo.picture,
-      youtubeChannelId: channel?.id || null,
-      youtubeChannelTitle: channel?.snippet?.title || null,
-    });
+  if (ADMIN_EMAILS.includes(userInfo.email)) {
+    // Save as admin
+    let admin = await Admin.findOne({ email: userInfo.email });
+    if (!admin) {
+      admin = await Admin.create({
+        name: userInfo.name,
+        email: userInfo.email,
+        location: userLocation,
+        youtubeChannel: channel
+          ? {
+              id: channel.id || '',
+              title: channel.snippet?.title || '',
+              thumbnail: channel.snippet?.thumbnails?.default?.url || '',
+            }
+          : undefined,
+      });
+    } else {
+      admin.name = userInfo.name;
+      admin.location = admin.location || userLocation;
+      if (channel) {
+        admin.youtubeChannel = {
+          id: channel.id || '',
+          title: channel.snippet?.title || '',
+          thumbnail: channel.snippet?.thumbnails?.default?.url || '',
+        };
+      }
+      await admin.save();
+    }
   } else {
-    // 📝 Update user with YouTube info if not already saved
-    user.youtubeChannelId = user.youtubeChannelId || channel?.id || null;
-    user.youtubeChannelTitle =
-      user.youtubeChannelTitle || channel?.snippet?.title || null;
-    await user.save();
+    // Save as creator
+    let creator = await Creator.findOne({ email: userInfo.email });
+    if (!creator) {
+      creator = await Creator.create({
+        name: userInfo.name,
+        email: userInfo.email,
+        location: userLocation,
+        youtubeChannel: channel
+          ? {
+              id: channel.id || '',
+              title: channel.snippet?.title || '',
+              thumbnail: channel.snippet?.thumbnails?.default?.url || '',
+            }
+          : undefined,
+      });
+    } else {
+      creator.name = userInfo.name;
+      creator.location = creator.location || userLocation;
+      if (channel) {
+        creator.youtubeChannel = {
+          id: channel.id || '',
+          title: channel.snippet?.title || '',
+          thumbnail: channel.snippet?.thumbnails?.default?.url || '',
+        };
+      }
+      await creator.save();
+    }
   }
 
   return NextResponse.redirect(`${process.env.NEXTAUTH_URL}${redirectPath}`); // ✅ absolute URL

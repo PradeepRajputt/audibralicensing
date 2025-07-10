@@ -43,7 +43,7 @@ export async function getChannelStats(channelId: string) {
         return {
             id: channel.id!,
             title: channel.snippet.title!,
-            avatar: channel.snippet.thumbnails?.default?.url,
+            avatar: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.medium?.url || channel.snippet.thumbnails?.default?.url,
             subscribers: parseInt(channel.statistics.subscriberCount!, 10),
             views: parseInt(channel.statistics.viewCount!, 10),
         };
@@ -90,5 +90,31 @@ export async function getMostViewedVideo(channelId: string) {
     } catch (error) {
         console.error(`Error fetching most viewed video for ${channelId}:`, error);
         throw new Error("Failed to fetch most viewed video.");
+    }
+}
+
+/**
+ * Fetches the 10 latest uploaded videos for a given YouTube channel.
+ * @returns An array of video objects with id, title, publishedAt, and url.
+ */
+export async function getLatestUploads(channelId: string) {
+    const youtube = getYouTubeClient();
+    try {
+        const response = await youtube.search.list({
+            part: ['snippet'],
+            channelId: channelId,
+            order: 'date',
+            type: ['video'],
+            maxResults: 10
+        });
+        return (response.data.items || []).map((item: any) => ({
+            id: item.id?.videoId || '',
+            title: item.snippet?.title || '',
+            publishedAt: item.snippet?.publishedAt || '',
+            url: item.id?.videoId ? `https://youtube.com/watch?v=${item.id.videoId}` : ''
+        }));
+    } catch (error) {
+        console.error(`Error fetching latest uploads for ${channelId}:`, error);
+        throw new Error('Failed to fetch latest uploads.');
     }
 }

@@ -1,0 +1,25 @@
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import connectToDatabase from '@/lib/mongodb';
+import Creator from '@/models/Creator';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+
+export async function POST(req: Request) {
+  const { email, password } = await req.json();
+  if (!email || !password) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  }
+  await connectToDatabase();
+  const user = await Creator.findOne({ email });
+  if (!user) {
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  }
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  }
+  const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
+  return NextResponse.json({ token, user: { id: user._id, email: user.email, name: user.name } });
+} 

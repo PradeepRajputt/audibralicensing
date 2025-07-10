@@ -55,7 +55,7 @@ const fileToDataUri = (file: File): Promise<string> => {
   });
 };
 
-export function MonitoringClient({ initialHistory }: { initialHistory: WebScan[]}) {
+export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle = '', defaultPublishedAt = '' }: { initialHistory: WebScan[], defaultUrl?: string, defaultTitle?: string, defaultPublishedAt?: string }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [report, setReport] = React.useState<MonitorWebPagesOutput | null>(null);
   const [file, setFile] = React.useState<File | null>(null);
@@ -68,12 +68,12 @@ export function MonitoringClient({ initialHistory }: { initialHistory: WebScan[]
 
   const textForm = useForm<z.infer<typeof textFormSchema>>({
     resolver: zodResolver(textFormSchema),
-    defaultValues: { url: "", creatorContent: "" },
+    defaultValues: { url: defaultUrl, creatorContent: defaultTitle ? `${defaultTitle} (Uploaded: ${defaultPublishedAt})` : '' },
   });
 
   const mediaForm = useForm<z.infer<typeof mediaFormSchema>>({
     resolver: zodResolver(mediaFormSchema),
-    defaultValues: { url: "" },
+    defaultValues: { url: defaultUrl },
   });
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

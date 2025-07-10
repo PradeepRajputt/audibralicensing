@@ -12,49 +12,36 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-
-// Mock data generation
-const generateMockData = () => {
-  const data = [];
-  // Generate data for the last 90 days
-  for (let i = 89; i >= 0; i--) {
-    const date = subDays(new Date(), i);
-    data.push({
-      date: format(date, 'yyyy-MM-dd'),
-      signups: Math.floor(Math.random() * 15) + 5,
-      scans: Math.floor(Math.random() * 100) + 50,
-      reports: Math.floor(Math.random() * 5) + 1,
-    });
-  }
-  return data;
-};
-
-const allData = generateMockData();
-
-type ChartType = 'bar' | 'line' | 'area';
+import { getAdminOverviewStats } from '@/lib/admin-stats';
 
 export default function AdminOverviewPage() {
     const [date, setDate] = React.useState<DateRange | undefined>({
         from: subDays(new Date(), 29),
         to: new Date(),
     });
-
     const [userGrowthChartType, setUserGrowthChartType] = React.useState<ChartType>('area');
+    const [stats, setStats] = React.useState<any>(null);
+    const [loading, setLoading] = React.useState(true);
 
-    const filteredData = React.useMemo(() => {
-        if (!date?.from) return [];
-        // Set end of day for 'to' date to include all data on that day
-        const toDate = date.to ? new Date(date.to.setHours(23, 59, 59, 999)) : new Date(date.from.setHours(23, 59, 59, 999));
-        
-        return allData.filter(d => {
-            const dDate = new Date(d.date);
-            return dDate >= date.from! && dDate <= toDate;
-        })
+    React.useEffect(() => {
+        setLoading(true);
+        getAdminOverviewStats(date?.from, date?.to).then((data) => {
+            setStats(data);
+            setLoading(false);
+        });
     }, [date]);
 
-    const totalSignups = filteredData.reduce((acc, curr) => acc + curr.signups, 0);
-    const totalScans = filteredData.reduce((acc, curr) => acc + curr.scans, 0);
-    const totalReports = filteredData.reduce((acc, curr) => acc + curr.reports, 0);
+    if (loading || !stats) {
+        return <div className="p-8 text-center text-lg">Loading real admin stats...</div>;
+    }
+
+    const filteredData = stats.chartData;
+    const totalSignups = stats.totalSignups;
+    const totalScans = stats.totalScans;
+    const totalReports = stats.totalReports;
+    const totalCreators = stats.totalCreators;
+    const pendingStrikes = stats.pendingStrikes;
+    const pendingReactivations = stats.pendingReactivations;
 
     const chartConfig = {
         signups: { label: 'Sign-ups', color: 'hsl(var(--chart-1))' },
@@ -81,7 +68,7 @@ export default function AdminOverviewPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">4,821</div>
+                        <div className="text-2xl font-bold">{totalCreators}</div>
                         <p className="text-xs text-muted-foreground">
                             All-time registered creators
                         </p>
@@ -93,7 +80,7 @@ export default function AdminOverviewPage() {
                         <Gavel className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1</div>
+                        <div className="text-2xl font-bold">{pendingStrikes}</div>
                         <p className="text-xs text-muted-foreground">
                             <Link href="/admin/strikes" className="hover:underline">Needs review</Link>
                         </p>
@@ -105,7 +92,7 @@ export default function AdminOverviewPage() {
                         <UserCheck className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">1</div>
+                        <div className="text-2xl font-bold">{pendingReactivations}</div>
                         <p className="text-xs text-muted-foreground">
                              <Link href="/admin/reactivations" className="hover:underline">Needs approval</Link>
                         </p>
@@ -117,7 +104,7 @@ export default function AdminOverviewPage() {
                         <ScanSearch className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{totalScans.toLocaleString()}</div>
+                        <div className="text-2xl font-bold">{totalScans}</div>
                         <p className="text-xs text-muted-foreground">
                             In the selected period
                         </p>
@@ -127,13 +114,13 @@ export default function AdminOverviewPage() {
 
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
-                    <CardHeader className="flex flex-row items-start justify-between gap-4">
+                    <CardHeader className="flex flex-row items-start justify-between gap-4 max-w-xs">
                         <div>
                             <CardTitle>User Growth</CardTitle>
                             <CardDescription>New creator sign-ups over the selected period: +{totalSignups}</CardDescription>
                         </div>
                         <Select value={userGrowthChartType} onValueChange={(value: ChartType) => setUserGrowthChartType(value)}>
-                            <SelectTrigger className="w-[120px] flex-shrink-0">
+                            <SelectTrigger className="w-[120px] min-w-[120px] truncate flex-shrink-0">
                                 <SelectValue placeholder="Chart Type" />
                             </SelectTrigger>
                             <SelectContent>

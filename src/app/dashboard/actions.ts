@@ -4,7 +4,7 @@
 import type { User, UserAnalytics, Violation, DashboardData } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 import { subDays, format } from 'date-fns';
-import { getUserById } from '@/lib/users-store';
+import { getUserById, getUserByEmail } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { getViolationsForUser } from '@/lib/violations-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
@@ -13,28 +13,31 @@ import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-serv
  * Fetches dashboard data for a given user ID.
  * @returns An object containing analytics and activity data, or null if an error occurs.
  */
-export async function getDashboardData(): Promise<DashboardData | null> {
+export async function getDashboardData(userEmail?: string): Promise<DashboardData | null> {
   noStore();
   
-  // Since auth is removed, we'll use a mock user ID but structure it to be easily adaptable.
-  const effectiveUserId = 'user_creator_123';
+  // Use email if provided, otherwise fallback to mock user ID (for dev/testing)
+  let dbUser;
+  if (userEmail) {
+    dbUser = await getUserByEmail(userEmail);
+  } else {
+    const effectiveUserId = 'user_creator_123';
+    dbUser = await getUserById(effectiveUserId);
+  }
 
   try {
-    const dbUser = await getUserById(effectiveUserId);
-
     if (!dbUser) {
-        console.log(`User with id ${effectiveUserId} not found.`);
+        console.log(`User not found.`);
         return null;
     }
     
     let userAnalytics: UserAnalytics | null = null;
-    if (dbUser.youtubeChannelId) {
+    const channelId = dbUser.youtubeChannel?.id || dbUser.youtubeChannelId;
+    if (channelId) {
         try {
-            const stats = await getChannelStats(dbUser.youtubeChannelId);
-            
+            const stats = await getChannelStats(channelId);
             if (stats) {
-                 const mostViewed = await getMostViewedVideo(dbUser.youtubeChannelId);
-                
+                 const mostViewed = await getMostViewedVideo(channelId);
                 userAnalytics = {
                     subscribers: stats.subscribers,
                     views: stats.views,
@@ -62,7 +65,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         }
     }
 
-    const violations = await getViolationsForUser(effectiveUserId);
+    const violations = await getViolationsForUser(dbUser.id);
     const activity = violations.slice(0, 5).map((violation: Violation) => {
       let status: string;
       let variant: 'destructive' | 'default' | 'secondary' | 'outline';
@@ -88,10 +91,9 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     };
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
-    const dbUser = await getUserById(effectiveUserId);
-     if (dbUser) {
+    if (dbUser) {
         return { analytics: null, activity: [], user: JSON.parse(JSON.stringify(dbUser)) };
-     }
+    }
     return null;
   }
 }

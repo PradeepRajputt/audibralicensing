@@ -31,7 +31,7 @@ export async function POST(req) {
 
     return Response.json({ success: true, user: updatedUser });
   } catch (err) {
-    console.error("❌ Error saving user:", err);
+    console.error("Error saving user:", err);
     return Response.json({ error: "Failed to save user" }, { status: 500 });
   }
 }

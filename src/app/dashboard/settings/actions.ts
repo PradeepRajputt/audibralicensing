@@ -3,26 +3,27 @@
 
 import { revalidatePath } from 'next/cache';
 import { getChannelStats } from '@/lib/services/youtube-service';
-import { getUserById, updateUser } from '@/lib/users-store';
+import { getUserByEmail, updateUser } from '@/lib/users-store';
 
-export async function connectYouTubeChannelAction(channelId: string) {
-  // Mock user since auth is removed
-  const userId = 'user_creator_123';
-  
+export async function connectYouTubeChannelAction(channelId: string, userEmail: string) {
   try {
     const stats = await getChannelStats(channelId);
     if (!stats) {
       return { success: false, message: "Could not find a YouTube channel with that ID. Please check and try again." };
     }
 
-    const user = await getUserById(userId);
+    const user = await getUserByEmail(userEmail);
     if (!user) {
        return { success: false, message: "Could not find user to update." };
     }
     
-    // Update the user's record with the new channel ID and name
-    await updateUser(userId, { 
-      youtubeChannelId: channelId,
+    // Update the user's record with the new channel info
+    await updateUser(user.id, { 
+      youtubeChannel: {
+        id: channelId,
+        title: stats.title || user.displayName,
+        thumbnail: stats.avatar || user.avatar
+      },
       displayName: stats.title || user.displayName, // Update user display name from YouTube
       avatar: stats.avatar || user.avatar // Update avatar from YouTube
     });

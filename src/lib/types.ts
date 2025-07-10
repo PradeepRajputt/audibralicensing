@@ -16,6 +16,11 @@ export interface User {
   address?: string;
   phone?: string;
   accessToken?: string; // To store OAuth access token
+  youtubeChannel?: {
+    id: string;
+    title: string;
+    thumbnail: string;
+  };
 }
 
 /**

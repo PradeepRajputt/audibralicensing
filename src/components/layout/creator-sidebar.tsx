@@ -35,6 +35,7 @@ export function CreatorSidebar() {
     { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity, requiresConnection: false },
     { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
     { href: '/dashboard/content', label: 'My Content', icon: FileVideo, requiresConnection: false },
+    { href: '/dashboard/latest-uploads', label: 'Latest Uploads', icon: FileVideo, requiresConnection: true },
     { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch, requiresConnection: true },
     { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert, requiresConnection: true },
     { href: '/dashboard/reports', label: 'Submit Report', icon: FileText, requiresConnection: false },
