@@ -21,9 +21,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { connectYouTubeChannelAction } from './actions';
-import { getUserByEmail, updateUser } from '@/lib/users-store';
 import { useSession } from 'next-auth/react';
 import jwt from 'jsonwebtoken';
+import { useDashboardRefresh } from '@/app/dashboard/dashboard-context';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 function getEmailFromJWT() {
   if (typeof window === 'undefined') return null;
@@ -49,12 +50,27 @@ export default function SettingsClientPage() {
     const [inputChannelId, setInputChannelId] = React.useState('');
     const [connectResult, setConnectResult] = React.useState<{success: boolean, message: string} | null>(null);
     const closeTimeout = React.useRef<NodeJS.Timeout | null>(null);
+    const dashboardRefresh = useDashboardRefresh();
+    const [showFirstConnectModal, setShowFirstConnectModal] = React.useState(false);
+    const [hasConnectedOnce, setHasConnectedOnce] = React.useState(false);
 
     React.useEffect(() => {
         if(isYouTubeConnected && channelId) {
             setInputChannelId(channelId);
         }
         return () => { if (closeTimeout.current) clearTimeout(closeTimeout.current); };
+    }, [isYouTubeConnected, channelId]);
+
+    React.useEffect(() => {
+        // Check localStorage if user has ever connected a channel
+        const connected = localStorage.getItem('hasConnectedYouTube');
+        setHasConnectedOnce(!!connected);
+        if (!connected && !isYouTubeConnected) {
+            setShowFirstConnectModal(true);
+        }
+        if (isYouTubeConnected) {
+            localStorage.setItem('hasConnectedYouTube', 'true');
+        }
     }, [isYouTubeConnected, channelId]);
 
     const handleConnect = async () => {
@@ -72,10 +88,10 @@ export default function SettingsClientPage() {
         const result = await connectYouTubeChannelAction(inputChannelId, email);
         setIsLoading(false);
         setConnectResult(result);
-        if (result.success) {
+        if (result && result.success) {
             setIsYouTubeConnected(true);
             setChannelId(inputChannelId);
-            closeTimeout.current = setTimeout(() => {
+            closeTimeout.current = setTimeout(async () => {
                 setIsDialogOpen(false);
                 setConnectResult(null);
                 toast({
@@ -83,13 +99,15 @@ export default function SettingsClientPage() {
                   description: result.message,
                   variant: 'default',
                 });
+                if (dashboardRefresh) await dashboardRefresh();
+                localStorage.setItem('hasConnectedYouTube', 'true');
             }, 1500);
         }
     }
 
-    const handleDisconnect = () => {
+    const handleDisconnect = async () => {
         setIsLoading(true);
-        setTimeout(() => {
+        setTimeout(async () => {
             setIsYouTubeConnected(false);
             setChannelId(null);
             setInputChannelId('');
@@ -99,11 +117,31 @@ export default function SettingsClientPage() {
                 variant: "destructive"
             });
             setIsLoading(false);
+            // Refresh dashboard context instead of full reload
+            if (dashboardRefresh) await dashboardRefresh();
         }, 500); // Simulate a small delay
     }
     
   return (
     <div className="space-y-6">
+        {/* First-Time Connect Modal */}
+        {showFirstConnectModal && !hasConnectedOnce && (
+          <Dialog open={showFirstConnectModal} onOpenChange={setShowFirstConnectModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Important: One-Time Channel Connection</DialogTitle>
+                <DialogDescription>
+                  You can only connect your YouTube channel <b>once</b>.<br/>
+                  Please provide the correct Channel ID.<br/>
+                  <span className="text-destructive font-semibold">If you connect the wrong channel, you cannot disconnect it yourself. You must submit a request to the admin via the feedback form.</span>
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button onClick={() => setShowFirstConnectModal(false)}>I Understand</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
         <div className="space-y-2">
             <h1 className="text-2xl font-bold">Settings</h1>
             <p className="text-muted-foreground">
@@ -132,10 +170,20 @@ export default function SettingsClientPage() {
                         </div>
                     </div>
                      {isYouTubeConnected ? (
-                         <Button variant="destructive" onClick={handleDisconnect} disabled={isLoading}>
-                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                             Disconnect
-                         </Button>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button variant="destructive" disabled>
+                                  Disconnect
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              You cannot disconnect your channel yourself. Please contact admin via feedback form.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                      ) : (
                         <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); setConnectResult(null); }}>
                             <DialogTrigger asChild>

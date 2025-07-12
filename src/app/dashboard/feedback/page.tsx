@@ -47,6 +47,7 @@ export default function FeedbackPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [history, setHistory] = React.useState<Feedback[]>([]);
   const { toast } = useToast();
+  const [disconnectRequest, setDisconnectRequest] = React.useState(false);
 
   const form = useForm<z.infer<typeof feedbackFormSchema>>({
     resolver: zodResolver(feedbackFormSchema),
@@ -58,6 +59,18 @@ export default function FeedbackPage() {
       message: '',
     },
   });
+
+  React.useEffect(() => {
+    if (disconnectRequest) {
+      form.setValue('title', 'Request to disconnect/change my YouTube channel');
+      form.setValue('description', 'I have connected the wrong YouTube channel and need admin approval to disconnect or change it. Please review my request.');
+      form.setValue('tags', 'disconnect, youtube, admin');
+      form.setValue('rating', 5);
+    } else {
+      form.reset();
+    }
+    // eslint-disable-next-line
+  }, [disconnectRequest]);
 
   const loadHistory = React.useCallback(async () => {
     // In a real app, this would be from the session
@@ -109,6 +122,20 @@ export default function FeedbackPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex flex-col md:flex-row gap-2">
+            <Button
+              variant={disconnectRequest ? 'default' : 'outline'}
+              onClick={() => setDisconnectRequest(true)}
+            >
+              Request to disconnect/change my YouTube channel
+            </Button>
+            <Button
+              variant={!disconnectRequest ? 'default' : 'outline'}
+              onClick={() => setDisconnectRequest(false)}
+            >
+              General Feedback
+            </Button>
+          </div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField

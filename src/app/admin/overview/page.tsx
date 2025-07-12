@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getAdminOverviewStats } from '@/lib/admin-stats';
 
+type ChartType = 'area' | 'bar' | 'line';
+
 export default function AdminOverviewPage() {
     const [date, setDate] = React.useState<DateRange | undefined>({
         from: subDays(new Date(), 29),

@@ -46,6 +46,7 @@ export async function getChannelStats(channelId: string) {
             avatar: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.medium?.url || channel.snippet.thumbnails?.default?.url,
             subscribers: parseInt(channel.statistics.subscriberCount!, 10),
             views: parseInt(channel.statistics.viewCount!, 10),
+            url: `https://www.youtube.com/channel/${channel.id!}`
         };
     } catch (error) {
         console.error(`Error fetching real channel stats for ${channelId}:`, error);

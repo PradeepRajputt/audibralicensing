@@ -123,8 +123,35 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
             <Separator />
             <div className="flex justify-between">
               <span className="text-muted-foreground">Join Date</span>
-              <span><ClientFormattedDate dateString={user.joinDate} /></span>
+              <span>
+                {user.joinDate ? (
+                  <ClientFormattedDate dateString={user.joinDate} />
+                ) : (
+                  <span className="text-muted-foreground">Not available</span>
+                )}
+              </span>
             </div>
+            {user.youtubeChannelId && (
+              <>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">YouTube Channel ID</span>
+                  <span className="font-mono text-sm">{user.youtubeChannelId}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">YouTube Channel</span>
+                  <Link 
+                    href={`https://youtube.com/channel/${user.youtubeChannelId}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline font-mono text-sm"
+                  >
+                    View Channel
+                  </Link>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -133,7 +160,7 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
             <CardTitle>Connected Platforms</CardTitle>
           </CardHeader>
           <CardContent className="flex gap-4">
-            {user.platformsConnected.length > 0 ? user.platformsConnected.map(platform => (
+            {user.platformsConnected && user.platformsConnected.length > 0 ? user.platformsConnected.map(platform => (
               <div key={platform} className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
                 {platformIcons[platform as keyof typeof platformIcons]}
                 <span className="capitalize">{platform}</span>

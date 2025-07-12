@@ -7,7 +7,10 @@ import { getDashboardData } from './actions';
 import { useYouTube } from '@/context/youtube-context';
 import jwt from 'jsonwebtoken';
 
-const DashboardContext = createContext<DashboardData | null>(null);
+const DashboardContext = createContext<{
+  data: DashboardData | null;
+  refresh: () => Promise<void>;
+} | null>(null);
 
 function getEmailFromJWT() {
   if (typeof window === 'undefined') return null;
@@ -15,7 +18,10 @@ function getEmailFromJWT() {
   if (!token) return null;
   try {
     const decoded = jwt.decode(token);
-    return decoded?.email || null;
+    if (decoded && typeof decoded === 'object' && 'email' in decoded) {
+      return (decoded as { email?: string }).email || null;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -23,19 +29,19 @@ function getEmailFromJWT() {
 
 export function DashboardDataProvider({ children }: { children: ReactNode; }) {
   const [data, setData] = useState<DashboardData | null>(null);
-  const { isYouTubeConnected } = useYouTube();
-  
+
+  const refresh = async () => {
+    const email = getEmailFromJWT();
+    const freshData = await getDashboardData(email ?? undefined);
+    setData(freshData);
+  };
+
   useEffect(() => {
-    if (isYouTubeConnected) {
-      const email = getEmailFromJWT();
-      getDashboardData(email ?? undefined).then(setData);
-    } else {
-      setData(null);
-    }
-  }, [isYouTubeConnected]);
+    refresh();
+  }, []);
 
   return (
-    <DashboardContext.Provider value={data}>
+    <DashboardContext.Provider value={{ data, refresh }}>
       {children}
     </DashboardContext.Provider>
   );
@@ -44,5 +50,10 @@ export function DashboardDataProvider({ children }: { children: ReactNode; }) {
 export function useDashboardData() {
   const context = useContext(DashboardContext);
   // It's okay for the context to be null initially or if not connected
-  return context;
+  return context?.data;
+}
+
+export function useDashboardRefresh() {
+  const context = useContext(DashboardContext);
+  return context?.refresh;
 }

@@ -33,7 +33,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Send } from 'lucide-react';
 import type { Feedback, FeedbackReply } from '@/lib/types';
-import { getAllFeedback } from '@/lib/feedback-store';
+import { getAllFeedback, approveDisconnectForCreator, isDisconnectApproved } from '@/lib/feedback-store';
 import { replyToFeedbackAction } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -89,6 +89,13 @@ export default function AdminFeedbackPage() {
     setIsReplying(false);
   };
   
+  const handleApproveDisconnect = async (creatorId: string) => {
+    approveDisconnectForCreator(creatorId);
+    toast({ title: 'Disconnect Approved', description: 'The creator can now disconnect their channel.' });
+    setSelectedFeedback(null);
+    loadFeedback();
+  };
+
   const getStatus = (item: Feedback) => {
     if (item.response.length > 0 && !item.isReadByCreator) {
         return <Badge variant="outline">Replied</Badge>;
@@ -125,6 +132,7 @@ export default function AdminFeedbackPage() {
                   <TableHead>Title</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead className="text-right">Date</TableHead>
                 </TableRow>
               </TableHeader>
@@ -132,7 +140,7 @@ export default function AdminFeedbackPage() {
                 {feedbackList.map((item) => (
                   <TableRow
                     key={item.feedbackId}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className={`cursor-pointer hover:bg-muted/50 ${item.tags.includes('disconnect') ? 'bg-yellow-50' : ''}`}
                     onClick={() => setSelectedFeedback(item)}
                   >
                     <TableCell>
@@ -152,6 +160,9 @@ export default function AdminFeedbackPage() {
                     </TableCell>
                     <TableCell>
                       {getStatus(item)}
+                    </TableCell>
+                    <TableCell>
+                      {item.tags.includes('disconnect') ? <Badge variant="destructive">Disconnect Request</Badge> : <Badge variant="secondary">General</Badge>}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       <ClientFormattedDate dateString={item.timestamp} />
@@ -184,7 +195,7 @@ export default function AdminFeedbackPage() {
              <div className="flex items-center gap-2">
                 <span className="font-semibold">Tags:</span>
                 <div className="flex flex-wrap gap-1">
-                {selectedFeedback?.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                {selectedFeedback?.tags.map(tag => <Badge key={tag} variant={tag === 'disconnect' ? 'destructive' : 'secondary'}>{tag}</Badge>)}
                 </div>
             </div>
             <div>
@@ -201,6 +212,20 @@ export default function AdminFeedbackPage() {
                 <Label htmlFor="reply">Your Reply</Label>
                 <Textarea id="reply" placeholder="Type your response here..." value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} />
             </div>
+            {selectedFeedback?.tags.includes('disconnect') && (
+              <div className="mt-4">
+                <Badge variant="destructive">Disconnect Request</Badge>
+                <div className="mt-2">
+                  {isDisconnectApproved(selectedFeedback.creatorId) ? (
+                    <span className="text-green-600 font-semibold">Disconnect Approved</span>
+                  ) : (
+                    <Button variant="destructive" onClick={() => handleApproveDisconnect(selectedFeedback.creatorId)}>
+                      Approve Disconnect
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
             {selectedFeedback?.response && selectedFeedback.response.length > 0 && (
               <div>
                 <h4 className="font-semibold mb-2">Reply History</h4>

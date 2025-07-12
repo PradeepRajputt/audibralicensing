@@ -18,17 +18,28 @@ import React from 'react';
 import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 import { useYouTube } from '@/context/youtube-context';
 import { useDashboardData } from '@/app/dashboard/dashboard-context';
+import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 
 export function CreatorSidebar() {
   const pathname = usePathname();
   const { isYouTubeConnected } = useYouTube();
   const dashboardData = useDashboardData();
   const [hasUnread, setHasUnread] = React.useState(false);
+  const router = useRouter();
 
   const user = dashboardData?.user;
-  const creatorName = user?.displayName ?? 'Creator';
+  const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
   const avatar = user?.avatar;
   const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
+
+  const handleSignOut = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('creator_jwt');
+    }
+    signOut({ redirect: false });
+    router.push('/auth/login');
+  };
 
   const menuItems = [
     { href: '/dashboard/overview', label: 'Overview', icon: Home, requiresConnection: false },
@@ -80,7 +91,7 @@ export function CreatorSidebar() {
                   tooltip={item.requiresConnection && !isYouTubeConnected ? `${item.label} (Requires YouTube Connection)` : item.label}
                   disabled={isDisabled}
                 >
-                  <NextLink href={item.href} prefetch={false} className={isDisabled ? "pointer-events-none" : ""}>
+                  <NextLink href={item.href} prefetch={false} className={isDisabled ? "pointer-events-none pl-4 flex items-center gap-3" : "pl-4 flex items-center gap-3"}>
                     <item.icon />
                     <span>{item.label}</span>
                   </NextLink>
@@ -98,19 +109,22 @@ export function CreatorSidebar() {
               isActive={pathname === '/dashboard/settings'}
               tooltip="Settings"
             >
-              <NextLink href="/dashboard/settings" prefetch={false}>
+              <NextLink href="/dashboard/settings" prefetch={false} className="flex items-center gap-3">
                 <Settings />
                 <span>Settings</span>
               </NextLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-             <SidebarMenuButton asChild tooltip="Home">
-                <NextLink href="/" prefetch={false}>
-                    <LogOut />
-                    <span>Back to Home</span>
-                </NextLink>
-             </SidebarMenuButton>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-3 px-2 py-2 rounded-md text-destructive hover:text-red-400 transition text-sm font-medium focus:outline-none focus:ring-2 focus:ring-destructive/50"
+              title="Sign out"
+              style={{ minWidth: 0, background: 'none' }}
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Sign out</span>
+            </button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

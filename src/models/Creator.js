@@ -9,7 +9,12 @@ const creatorSchema = new mongoose.Schema({
     title: String,
     thumbnail: String,
   }, // optional
+  youtubeChannelId: { type: String }, // Separate field for easy querying
   avatar: { type: String }, // Add avatar field for profile picture
+  status: { type: String, enum: ['active', 'suspended', 'deactivated'], default: 'active' },
+  createdAt: { type: Date, default: Date.now },
+  twoFactorSecret: { type: String },
+  twoFactorEnabled: { type: Boolean, default: false },
 }, { collection: 'creators' });
 
 const Creator = (mongoose.models && mongoose.models.Creator)

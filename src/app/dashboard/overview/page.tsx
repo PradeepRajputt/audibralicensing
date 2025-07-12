@@ -60,7 +60,7 @@ export default function OverviewPage() {
 
     const analytics = dashboardData?.analytics;
     const user = dashboardData?.user;
-    const creatorName = user?.displayName ?? 'Creator';
+    const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || user?.email || 'Creator';
     const avatar = user?.avatar;
     const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 

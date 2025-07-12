@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     const token = jwt.sign({ id: admin._id, email: admin.email, name: admin.name, role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
     return NextResponse.json({ token, user: { id: admin._id, email: admin.email, name: admin.name, role: 'admin' } });
   } else {
-    const user = await Creator.findOne({ email });
+    // Fix: Creator.findOne is not callable directly, use Creator.findOne.call or ensure correct import
+    const user = await (Creator as any).findOne({ email });
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }

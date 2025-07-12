@@ -21,6 +21,8 @@ export interface User {
     title: string;
     thumbnail: string;
   };
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
 }
 
 /**

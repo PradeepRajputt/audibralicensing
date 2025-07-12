@@ -39,6 +39,17 @@ let mockFeedback: Feedback[] = [
     }
 ];
 
+// Store disconnect approvals by creatorId
+let disconnectApprovals: Record<string, boolean> = {};
+
+export async function approveDisconnectForCreator(creatorId: string) {
+    disconnectApprovals[creatorId] = true;
+}
+
+export async function isDisconnectApproved(creatorId: string): Promise<boolean> {
+    return !!disconnectApprovals[creatorId];
+}
+
 export async function getAllFeedback(): Promise<Feedback[]> {
     noStore();
     return Promise.resolve(mockFeedback.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
@@ -52,10 +63,15 @@ export async function getFeedbackForUser(creatorId: string): Promise<Feedback[]>
     );
 }
 
-export async function addFeedback(data: Omit<Feedback, 'feedbackId' | 'timestamp' | 'response' | 'isReadByCreator'>): Promise<Feedback> {
+export async function addFeedback(data: Omit<Feedback, 'feedbackId' | 'timestamp' | 'response' | 'isReadByCreator'> & { tags?: string[] | string }): Promise<Feedback> {
     noStore();
+    // Ensure tags is always an array of strings
+    const tags = Array.isArray(data.tags)
+      ? data.tags.flatMap((tag: string) => (tag || '').split(',').map((t: string) => t.trim()))
+      : ((typeof data.tags === 'string' ? data.tags : '').split(',').map((t: string) => t.trim()));
     const newFeedback: Feedback = {
         ...data,
+        tags,
         feedbackId: `feedback_${Date.now()}`,
         timestamp: new Date().toISOString(),
         response: [],

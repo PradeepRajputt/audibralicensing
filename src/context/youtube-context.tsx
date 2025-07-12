@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import { useDashboardData } from '@/app/dashboard/dashboard-context';
 
 type YouTubeContextType = {
   isYouTubeConnected: boolean;
@@ -13,12 +14,17 @@ type YouTubeContextType = {
 const YouTubeContext = React.createContext<YouTubeContextType | null>(null);
 
 export function YouTubeProvider({ children }: { children: React.ReactNode }) {
-  const [isYouTubeConnected, setIsYouTubeConnected] = React.useState(false);
-  const [channelId, setChannelId] = React.useState<string | null>(null);
+  const dashboardData = useDashboardData();
+  const user = dashboardData?.user;
+  const isYouTubeConnected = !!(user?.youtubeChannelId || user?.youtubeChannel?.id);
+  const [channelId, setChannelId] = React.useState<string | null>(user?.youtubeChannelId || user?.youtubeChannel?.id || null);
 
-  // The connection state is now transient and will reset on page refresh.
-  // We removed the localStorage logic to address the issue of the connection
-  // persisting across sessions.
+  // setIsYouTubeConnected is now a no-op for compatibility
+  const setIsYouTubeConnected = () => {};
+
+  React.useEffect(() => {
+    setChannelId(user?.youtubeChannelId || user?.youtubeChannel?.id || null);
+  }, [user?.youtubeChannelId, user?.youtubeChannel?.id]);
 
   return (
     <YouTubeContext.Provider value={{ isYouTubeConnected, setIsYouTubeConnected, channelId, setChannelId }}>

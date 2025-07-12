@@ -64,8 +64,7 @@ export async function processViolationFromFastApi(violationData: Omit<Violation,
       status: violationData.status,
       originalContentUrl: "http://example.com/original", 
       originalContentTitle: "Sample Original Work", 
-      infringingContentSnippet: "A snippet of the infringing content...",
-      timeline: [], 
+      infringingContentSnippet: "A snippet of the infringing content..."
     });
     console.log(`Stored violation with ID: ${newViolation.id}`);
 
