@@ -3,119 +3,72 @@
 import type { Feedback, FeedbackReply } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
 
-// Mock in-memory database for feedback
-let mockFeedback: Feedback[] = [
-    {
-        feedbackId: 'fb_1',
-        creatorId: 'user_creator_123',
-        creatorName: 'Sample Creator',
-        avatar: 'https://placehold.co/128x128.png',
-        rating: 5,
-        title: 'Love the new dashboard!',
-        tags: ['ui', 'ux', 'feature'],
-        description: 'The new analytics dashboard is amazing. So much easier to see my stats.',
-        message: 'Keep up the great work!',
-        response: [{
-            replyId: 'reply_1',
-            adminName: 'Admin',
-            message: 'Thanks for the feedback! We are glad you like it.',
-            timestamp: new Date(Date.now() - 86400000).toISOString(),
-        }],
-        isReadByCreator: false,
-        timestamp: new Date(Date.now() - 172800000).toISOString(),
-    },
-    {
-        feedbackId: 'fb_admin_1',
-        creatorId: 'user_admin_123',
-        creatorName: 'Admin User',
-        avatar: 'https://placehold.co/128x128.png',
-        rating: 4,
-        title: 'Suggestion for strike reviews',
-        tags: ['admin', 'workflow'],
-        description: 'It would be helpful to see a side-by-side comparison of the content during strike reviews.',
-        response: [],
-        isReadByCreator: true,
-        timestamp: new Date(Date.now() - 259200000).toISOString(),
-    }
-];
-
-// Store disconnect approvals by creatorId
-let disconnectApprovals: Record<string, boolean> = {};
+// Remove mockFeedback and all in-memory logic
 
 export async function approveDisconnectForCreator(creatorId: string) {
-    disconnectApprovals[creatorId] = true;
+  // TODO: Implement this with real DB if needed
+  return;
 }
 
 export async function isDisconnectApproved(creatorId: string): Promise<boolean> {
-    return !!disconnectApprovals[creatorId];
+  // TODO: Implement this with real DB if needed
+  return false;
 }
 
-export async function getAllFeedback(): Promise<Feedback[]> {
-    noStore();
-    return Promise.resolve(mockFeedback.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+function getApiBaseUrl() {
+  if (typeof window === 'undefined') {
+    return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  }
+  return '';
 }
 
-export async function getFeedbackForUser(creatorId: string): Promise<Feedback[]> {
-    noStore();
-    return Promise.resolve(
-        mockFeedback.filter(f => f.creatorId === creatorId)
-                    .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    );
+export async function getAllFeedback(): Promise<any[]> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/feedback/list`);
+  if (!res.ok) throw new Error('Failed to fetch feedback');
+  return await res.json();
 }
 
-export async function addFeedback(data: Omit<Feedback, 'feedbackId' | 'timestamp' | 'response' | 'isReadByCreator'> & { tags?: string[] | string }): Promise<Feedback> {
-    noStore();
-    // Ensure tags is always an array of strings
-    const tags = Array.isArray(data.tags)
-      ? data.tags.flatMap((tag: string) => (tag || '').split(',').map((t: string) => t.trim()))
-      : ((typeof data.tags === 'string' ? data.tags : '').split(',').map((t: string) => t.trim()));
-    const newFeedback: Feedback = {
-        ...data,
-        tags,
-        feedbackId: `feedback_${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        response: [],
-        isReadByCreator: true,
-    };
-    mockFeedback.unshift(newFeedback);
-    return Promise.resolve(newFeedback);
+export async function getFeedbackForUser(creatorEmail: string): Promise<any[]> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/feedback/list?email=${encodeURIComponent(creatorEmail)}`);
+  if (!res.ok) throw new Error('Failed to fetch feedback for user');
+  return await res.json();
+}
+
+export async function addFeedback(data: any): Promise<any> {
+  const baseUrl = getApiBaseUrl();
+  const res = await fetch(`${baseUrl}/api/feedback/submit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to submit feedback');
+  return await res.json();
 }
 
 export async function addReplyToFeedback(feedbackId: string, reply: Omit<FeedbackReply, 'replyId' | 'timestamp'>): Promise<void> {
-    noStore();
-    const feedback = mockFeedback.find(f => f.feedbackId === feedbackId);
-    if (!feedback) {
-        throw new Error('Feedback not found');
-    }
-    const newReply: FeedbackReply = {
-        ...reply,
-        replyId: `reply_${Date.now()}`,
-        timestamp: new Date().toISOString()
-    };
-    feedback.response.push(newReply);
-    feedback.isReadByCreator = false;
+  // TODO: Implement this with real DB if needed
+  return;
 }
 
 export async function markFeedbackAsRead(feedbackId: string): Promise<void> {
-    noStore();
-    const feedback = mockFeedback.find(f => f.feedbackId === feedbackId);
-    if (feedback) {
-        feedback.isReadByCreator = true;
-    }
+  // TODO: Implement this with real DB if needed
+  return;
 }
 
-export async function hasUnreadCreatorFeedback(creatorId: string): Promise<boolean> {
-    noStore();
-    const hasUnread = mockFeedback.some(f => 
-        f.creatorId === creatorId &&
-        f.response.length > 0 &&
-        !f.isReadByCreator
-    );
-    return Promise.resolve(hasUnread);
+export async function hasUnreadCreatorFeedback(creatorEmail: string): Promise<boolean> {
+  const docs = await getFeedbackForUser(creatorEmail);
+  if (!Array.isArray(docs) || docs.length === 0) return false;
+  const feedbacks = docs[0].feedbacks || [];
+  // Update this logic as per your feedback object structure
+  // If you want to check for unread, you can add a field like isRead in feedback object
+  // For now, just check if there is at least one feedback
+  return feedbacks.length > 0;
 }
 
 export async function hasUnrepliedAdminFeedback(): Promise<boolean> {
-    noStore();
-    const hasUnreplied = mockFeedback.some(f => f.response.length === 0);
-    return Promise.resolve(hasUnreplied);
+  const feedbacks = await getAllFeedback();
+  const hasUnreplied = feedbacks.some(f => f.response && f.response.length === 0);
+  return hasUnreplied;
 }

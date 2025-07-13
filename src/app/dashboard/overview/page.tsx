@@ -61,7 +61,8 @@ export default function OverviewPage() {
     const analytics = dashboardData?.analytics;
     const user = dashboardData?.user;
     const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || user?.email || 'Creator';
-    const avatar = user?.avatar;
+    // Prefer YouTube channel thumbnail, then avatar
+    const avatar = user?.youtubeChannel?.thumbnail || user?.avatar || undefined;
     const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
     if(isLoading) {
@@ -76,7 +77,7 @@ export default function OverviewPage() {
         <div className="space-y-6">
             <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                    <AvatarImage src={avatar ?? undefined} alt={creatorName} data-ai-hint="profile picture" />
+                    <AvatarImage src={avatar} alt={creatorName} data-ai-hint="profile picture" />
                     <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
                 <div>

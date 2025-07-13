@@ -30,7 +30,8 @@ export function CreatorSidebar() {
 
   const user = dashboardData?.user;
   const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
-  const avatar = user?.avatar;
+  // Prefer YouTube channel thumbnail, then avatar, then default
+  const avatar = user?.youtubeChannel?.thumbnail || user?.avatar || "https://placehold.co/128x128.png";
   const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
   const handleSignOut = () => {
@@ -64,7 +65,7 @@ export function CreatorSidebar() {
         <div className="flex items-center gap-3 p-2">
             <NextLink href="/dashboard/settings" className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={avatar ?? "https://placehold.co/128x128.png"} data-ai-hint="profile picture" />
+                    <AvatarImage src={avatar} data-ai-hint="profile picture" />
                     <AvatarFallback>{avatarFallback}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">

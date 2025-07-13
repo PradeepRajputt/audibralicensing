@@ -96,11 +96,14 @@ export default function SettingsClientPage() {
                 setConnectResult(null);
                 toast({
                   title: 'YouTube Channel Connected',
-                  description: result.message,
+                  description: result.message + ' Please login again to see your updated dashboard.',
                   variant: 'default',
                 });
                 if (dashboardRefresh) await dashboardRefresh();
                 localStorage.setItem('hasConnectedYouTube', 'true');
+                // Force logout and redirect to login for a guaranteed fresh dashboard
+                localStorage.removeItem('creator_jwt');
+                window.location.href = '/auth/login';
             }, 1500);
         }
     }

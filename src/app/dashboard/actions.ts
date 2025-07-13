@@ -41,7 +41,10 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
                 userAnalytics = {
                     subscribers: stats.subscribers,
                     views: stats.views,
-                    mostViewedVideo: mostViewed,
+                    mostViewedVideo: {
+                        title: mostViewed.title || undefined,
+                        views: mostViewed.views
+                    },
                      // Generate plausible daily data based on real totals for chart visualization
                     dailyData: Array.from({ length: 90 }, (_, i) => {
                         const date = subDays(new Date(), 89 - i);

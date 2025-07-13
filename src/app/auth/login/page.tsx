@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useDashboardRefresh } from '@/app/dashboard/dashboard-context';
 
 export default function LoginPage() {
   const router = useRouter();
+  const dashboardRefresh = useDashboardRefresh();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,6 +31,7 @@ export default function LoginPage() {
     if (data.token) {
       // Store JWT in localStorage or cookie
       localStorage.setItem("creator_jwt", data.token);
+      if (dashboardRefresh) await dashboardRefresh();
       if (data.user && data.user.role === 'admin') {
         router.push("/admin");
       } else {

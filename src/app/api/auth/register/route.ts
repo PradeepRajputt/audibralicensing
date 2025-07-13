@@ -10,7 +10,7 @@ const ADMIN_EMAILS = [
 ];
 
 export async function POST(req: Request) {
-  const { name, email, password, location } = await req.json();
+  const { name, email, password, location, avatar } = await req.json();
   if (!name || !email || !password) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User already exists' }, { status: 409 });
     }
     const hashed = await bcrypt.hash(password, 10);
-    await Creator.create({ name, email, password: hashed });
+    await Creator.create({ name, email, password: hashed, avatar });
     return NextResponse.json({ success: true, role: 'creator' });
   }
 } 

@@ -46,6 +46,7 @@ export default function AdminFeedbackPage() {
   const [replyMessage, setReplyMessage] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(true);
   const { toast } = useToast();
+  const [filterType, setFilterType] = React.useState<'all' | 'general' | 'disconnect-request'>('all');
 
   const loadFeedback = React.useCallback(async () => {
     try {
@@ -114,6 +115,12 @@ export default function AdminFeedbackPage() {
     )
   }
 
+  // Filter feedbacks by type
+  const filteredFeedbackList = feedbackList.filter(item => {
+    if (filterType === 'all') return true;
+    return item.type === filterType;
+  });
+
   return (
     <>
       <Card>
@@ -124,6 +131,11 @@ export default function AdminFeedbackPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+         <div className="mb-4 flex gap-2">
+           <Button variant={filterType === 'all' ? 'default' : 'outline'} onClick={() => setFilterType('all')}>All</Button>
+           <Button variant={filterType === 'general' ? 'default' : 'outline'} onClick={() => setFilterType('general')}>General</Button>
+           <Button variant={filterType === 'disconnect-request' ? 'default' : 'outline'} onClick={() => setFilterType('disconnect-request')}>Disconnect/Change Requests</Button>
+         </div>
           {feedbackList.length > 0 ? (
             <Table>
               <TableHeader>
@@ -137,7 +149,7 @@ export default function AdminFeedbackPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {feedbackList.map((item) => (
+                {filteredFeedbackList.map((item) => (
                   <TableRow
                     key={item.feedbackId}
                     className={`cursor-pointer hover:bg-muted/50 ${item.tags.includes('disconnect') ? 'bg-yellow-50' : ''}`}
@@ -162,7 +174,7 @@ export default function AdminFeedbackPage() {
                       {getStatus(item)}
                     </TableCell>
                     <TableCell>
-                      {item.tags.includes('disconnect') ? <Badge variant="destructive">Disconnect Request</Badge> : <Badge variant="secondary">General</Badge>}
+                      {item.type === 'disconnect-request' ? <Badge variant="destructive">Disconnect Request</Badge> : <Badge variant="secondary">General</Badge>}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
                       <ClientFormattedDate dateString={item.timestamp} />

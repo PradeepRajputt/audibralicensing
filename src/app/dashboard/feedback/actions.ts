@@ -11,21 +11,21 @@ const formSchema = z.object({
   tags: z.string().optional(),
   description: z.string().min(20, { message: "Description must be at least 20 characters." }),
   message: z.string().optional(),
+  type: z.enum(['general', 'disconnect-request']),
 });
 
 export async function submitFeedbackAction(values: z.infer<typeof formSchema>) {
   // Using a mock user ID and details since auth is removed.
-  const creatorId = 'user_creator_123';
   const creatorName = 'Sample Creator';
-  const avatar = 'https://placehold.co/128x128.png';
+  const creatorEmail = 'creator@example.com'; // Dummy email for now
   
   try {
     await addFeedback({
-      ...values,
-      creatorId,
+      creatorEmail,
       creatorName,
-      avatar,
-      tags: values.tags ? values.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+      type: values.type,
+      message: values.message || '',
+      status: 'pending',
     });
     
     revalidatePath('/dashboard/feedback');

@@ -15,7 +15,8 @@ export function DashboardHeader() {
   const dashboardData = useDashboardData();
   const user = dashboardData?.user;
   const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
-  const avatar = user?.avatar;
+  // Prefer YouTube channel thumbnail, then avatar
+  const avatar = user?.youtubeChannel?.thumbnail || user?.avatar || undefined;
   const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
   let sidebarCollapsed = false;
@@ -50,7 +51,7 @@ export function DashboardHeader() {
       {(sidebarCollapsed && pathname !== '/dashboard/overview') ? (
         <div className="flex items-center gap-3 transition-all duration-300">
           <Avatar className={`h-8 w-8 transition-all duration-300 ${showGlow ? 'profile-glow' : ''}`}> 
-            <AvatarImage src={avatar ?? undefined} alt={creatorName} loading="eager" />
+            <AvatarImage src={avatar} alt={creatorName} loading="eager" />
             <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
           <span className="text-lg font-semibold">{creatorName}</span>

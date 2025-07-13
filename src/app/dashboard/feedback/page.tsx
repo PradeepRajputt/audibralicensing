@@ -41,6 +41,7 @@ const feedbackFormSchema = z.object({
     .string()
     .min(20, { message: 'Description must be at least 20 characters.' }),
   message: z.string().optional(),
+  type: z.enum(['general', 'disconnect-request']),
 });
 
 export default function FeedbackPage() {
@@ -48,6 +49,7 @@ export default function FeedbackPage() {
   const [history, setHistory] = React.useState<Feedback[]>([]);
   const { toast } = useToast();
   const [disconnectRequest, setDisconnectRequest] = React.useState(false);
+  const feedbackType = disconnectRequest ? 'disconnect-request' : 'general';
 
   const form = useForm<z.infer<typeof feedbackFormSchema>>({
     resolver: zodResolver(feedbackFormSchema),
@@ -85,7 +87,7 @@ export default function FeedbackPage() {
   
   async function onSubmit(values: z.infer<typeof feedbackFormSchema>) {
     setIsLoading(true);
-    const result = await submitFeedbackAction(values);
+    const result = await submitFeedbackAction({ ...values, type: feedbackType });
     if (result.success) {
       toast({
         title: 'Feedback Submitted!',

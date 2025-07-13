@@ -129,9 +129,16 @@ export interface FeedbackReply {
 
 export interface Feedback {
   feedbackId: string;
-  creatorId: string;
-  creatorName: string; // Denormalized for easy display
-  avatar: string;
+  creator: {
+    email: string;
+    name?: string;
+    youtubeChannel?: {
+      id?: string;
+      title?: string;
+      thumbnail?: string;
+    };
+    youtubeChannelId?: string;
+  };
   rating: number;
   title: string;
   tags: string[];
@@ -140,6 +147,7 @@ export interface Feedback {
   response: FeedbackReply[];
   isReadByCreator: boolean;
   timestamp: string;
+  type: 'general' | 'disconnect-request';
 }
 
 
