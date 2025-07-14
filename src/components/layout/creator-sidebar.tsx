@@ -20,6 +20,7 @@ import { useYouTube } from '@/context/youtube-context';
 import { useDashboardData } from '@/app/dashboard/dashboard-context';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { useSession } from "next-auth/react";
 
 export function CreatorSidebar() {
   const pathname = usePathname();
@@ -27,6 +28,7 @@ export function CreatorSidebar() {
   const dashboardData = useDashboardData();
   const [hasUnread, setHasUnread] = React.useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
 
   const user = dashboardData?.user;
   const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
@@ -47,7 +49,6 @@ export function CreatorSidebar() {
     { href: '/dashboard/activity', label: 'Activity Feed', icon: Activity, requiresConnection: false },
     { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart, requiresConnection: true },
     { href: '/dashboard/content', label: 'My Content', icon: FileVideo, requiresConnection: false },
-    { href: '/dashboard/latest-uploads', label: 'Latest Uploads', icon: FileVideo, requiresConnection: true },
     { href: '/dashboard/monitoring', label: 'Web Monitoring', icon: ScanSearch, requiresConnection: true },
     { href: '/dashboard/violations', label: 'Violations', icon: ShieldAlert, requiresConnection: true },
     { href: '/dashboard/reports', label: 'Submit Report', icon: FileText, requiresConnection: false },
@@ -55,9 +56,10 @@ export function CreatorSidebar() {
   ];
 
   React.useEffect(() => {
-    // Using a mock user ID as auth has been removed
-    hasUnreadCreatorFeedback("user_creator_123").then(setHasUnread);
-  }, [pathname]);
+    if (session?.user?.email) {
+      hasUnreadCreatorFeedback(session.user.email).then(setHasUnread);
+    }
+  }, [pathname, session]);
   
   return (
     <Sidebar>

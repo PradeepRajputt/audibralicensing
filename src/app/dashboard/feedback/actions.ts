@@ -14,14 +14,13 @@ const formSchema = z.object({
   type: z.enum(['general', 'disconnect-request']),
 });
 
-export async function submitFeedbackAction(values: z.infer<typeof formSchema>) {
-  // Using a mock user ID and details since auth is removed.
+export async function submitFeedbackAction(values: z.infer<typeof formSchema>, userEmail: string) {
+  // Use userEmail for all feedback logic
   const creatorName = 'Sample Creator';
-  const creatorEmail = 'creator@example.com'; // Dummy email for now
   
   try {
     await addFeedback({
-      creatorEmail,
+      creatorEmail: userEmail,
       creatorName,
       type: values.type,
       message: values.message || '',

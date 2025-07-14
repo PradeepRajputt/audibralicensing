@@ -117,6 +117,14 @@ function ConnectYoutubePlaceholder() {
     )
 }
 
+// Add a helper function to format Y-axis numbers with K/M/B
+function formatYAxisNumber(num: number): string {
+  if (num >= 1_000_000_000) return (Math.floor(num / 100_000_000) / 10) + 'B';
+  if (num >= 1_000_000) return (Math.floor(num / 100_000) / 10) + 'M';
+  if (num >= 1_000) return (Math.floor(num / 100) / 10) + 'K';
+  return num.toString();
+}
+
 export default function AnalyticsClientPage() {
     const dashboardData = useDashboardData();
     const { isYouTubeConnected } = useYouTube();
@@ -188,12 +196,31 @@ export default function AnalyticsClientPage() {
 
         switch (type) {
             case 'bar':
-                return <BarChart accessibilityLayer data={filteredAndAggregatedData}><CartesianGrid vertical={false} /><XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={8} /><YAxis tickMargin={10} /><ChartTooltip content={<ChartTooltipContent />} /><Bar dataKey={dataKey} fill={colorVar} radius={4} /></BarChart>;
+                return <BarChart accessibilityLayer data={filteredAndAggregatedData} margin={{ left: 20, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={8} />
+                    <YAxis tickMargin={20} width={40} tickFormatter={formatYAxisNumber} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey={dataKey} fill={colorVar} radius={4} />
+                </BarChart>;
             case 'line':
-                return <LineChart accessibilityLayer data={filteredAndAggregatedData}><CartesianGrid vertical={false} /><XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={10} /><YAxis tickMargin={10} /><ChartTooltip content={<ChartTooltipContent />} /><Line type="monotone" dataKey={dataKey} stroke={colorVar} strokeWidth={2} dot={false} /></LineChart>;
+                return <LineChart accessibilityLayer data={filteredAndAggregatedData} margin={{ left: 20, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={10} />
+                    <YAxis tickMargin={20} width={40} tickFormatter={formatYAxisNumber} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line type="monotone" dataKey={dataKey} stroke={colorVar} strokeWidth={2} dot={false} />
+                </LineChart>;
             case 'area':
             default:
-                return <AreaChart accessibilityLayer data={filteredAndAggregatedData} margin={{ left: 12, right: 12 }}><defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={colorVar} stopOpacity={0.8} /><stop offset="95%" stopColor={colorVar} stopOpacity={0.1} /></linearGradient></defs><CartesianGrid vertical={false} /><XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={10} /><YAxis tickMargin={10}/><ChartTooltip content={<ChartTooltipContent />} /><Area type="monotone" dataKey={dataKey} stroke={colorVar} fill={`url(#${fillId})`} strokeWidth={2} dot={false} /></AreaChart>;
+                return <AreaChart accessibilityLayer data={filteredAndAggregatedData} margin={{ left: 20, right: 12 }}>
+                    <defs><linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={colorVar} stopOpacity={0.8} /><stop offset="95%" stopColor={colorVar} stopOpacity={0.1} /></linearGradient></defs>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="date" tickFormatter={tickFormatter} tickLine={false} axisLine={false} tickMargin={10} />
+                    <YAxis tickMargin={20} width={40} tickFormatter={formatYAxisNumber} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area type="monotone" dataKey={dataKey} stroke={colorVar} fill={`url(#${fillId})`} strokeWidth={2} dot={false} />
+                </AreaChart>;
         }
     }
 

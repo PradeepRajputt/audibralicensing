@@ -32,6 +32,7 @@ import type { MonitorWebPagesOutput } from "@/ai/flows/monitor-web-pages";
 import type { WebScan } from "@/lib/types";
 import { scanPageAction } from "./actions";
 import { getScansForUser } from "@/lib/web-scans-store";
+import { useSession } from "next-auth/react";
 
 // Schema for the text-based scan
 const textFormSchema = z.object({
@@ -60,27 +61,37 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
   const [report, setReport] = React.useState<MonitorWebPagesOutput | null>(null);
   const [file, setFile] = React.useState<File | null>(null);
   const [preview, setPreview] = React.useState<string | null>(null);
-  const [creatorContent, setCreatorContent] = React.useState<string | { url: string; type: 'image' | 'video' } | null>(null);
+  const [creatorContent, setCreatorContent] = React.useState<string | { url: string; type: 'audio' | 'video' } | null>(null);
   const [scanHistory, setScanHistory] = React.useState<WebScan[]>(initialHistory);
   const [historyFilter, setHistoryFilter] = React.useState<{ type: string, status: string }>({ type: 'all', status: 'all' });
+  // Add state for audioUrl and videoUrl
+  const [audioUrl, setAudioUrl] = React.useState('');
+  const [videoUrl, setVideoUrl] = React.useState('');
+  const { data: session } = useSession();
+
 
   const { toast } = useToast();
 
-  const textForm = useForm<z.infer<typeof textFormSchema>>({
-    resolver: zodResolver(textFormSchema),
-    defaultValues: { url: defaultUrl, creatorContent: defaultTitle ? `${defaultTitle} (Uploaded: ${defaultPublishedAt})` : '' },
-  });
+  // 1. Remove TabsTrigger and TabsContent for 'text' and 'media' (image)
+  // 2. Remove textForm, mediaForm, onTextSubmit, onMediaSubmit, and related state/logic
+  // 3. Only keep audio and video tabs, forms, and logic
+  // 4. Update scan history filter to only show audio and video types
 
-  const mediaForm = useForm<z.infer<typeof mediaFormSchema>>({
+  const audioForm = useForm<z.infer<typeof mediaFormSchema>>({
     resolver: zodResolver(mediaFormSchema),
     defaultValues: { url: defaultUrl },
   });
   
+  // Update handleFileChange to preview audio and video
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
         setFile(selectedFile);
         if (selectedFile.type.startsWith('image/')) {
+            setPreview(URL.createObjectURL(selectedFile));
+        } else if (selectedFile.type.startsWith('audio/')) {
+            setPreview(URL.createObjectURL(selectedFile));
+        } else if (selectedFile.type.startsWith('video/')) {
             setPreview(URL.createObjectURL(selectedFile));
         } else {
             setPreview(null);
@@ -89,33 +100,66 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
   };
 
   const refreshHistory = React.useCallback(async () => {
-    const userId = "user_creator_123";
-    const history = await getScansForUser(userId);
-    setScanHistory(history);
-  }, []);
+    if (session?.user?.email) {
+      const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+      const user = await res.json();
+      if (user?.id) {
+        const history = await getScansForUser(user.id);
+        setScanHistory(history);
+      }
+    }
+  }, [session]);
 
 
-  async function onTextSubmit(values: z.infer<typeof textFormSchema>) {
-    setIsLoading(true);
-    setReport(null);
-    setCreatorContent(values.creatorContent);
-    const result = await scanPageAction(values);
-    handleActionResult(result);
-  }
-
-  async function onMediaSubmit(values: z.infer<typeof mediaFormSchema>) {
+  async function onAudioSubmit(values: z.infer<typeof mediaFormSchema>) {
     if (!file) {
-        toast({ variant: "destructive", title: "No file selected" });
-        return;
+      toast({ variant: "destructive", title: "No file selected" });
+      return;
     }
     setIsLoading(true);
     setReport(null);
-
+    if (!session?.user?.email) {
+      toast({ variant: "destructive", title: "Not logged in" });
+      setIsLoading(false);
+      return;
+    }
+    const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+    const user = await res.json();
+    if (!user?.id) {
+      toast({ variant: "destructive", title: "User not found" });
+      setIsLoading(false);
+      return;
+    }
     const dataUri = await fileToDataUri(file);
-    setCreatorContent({ url: dataUri, type: file.type.startsWith('image') ? 'image' : 'video'});
-
+    setCreatorContent({ url: dataUri, type: file.type.startsWith('audio') ? 'audio' : 'video'});
     const result = await scanPageAction({ url: values.url, photoDataUri: dataUri });
     handleActionResult(result);
+    setIsLoading(false);
+  }
+  async function onVideoSubmit(values: z.infer<typeof mediaFormSchema>) {
+    if (!file) {
+      toast({ variant: "destructive", title: "No file selected" });
+      return;
+    }
+    setIsLoading(true);
+    setReport(null);
+    if (!session?.user?.email) {
+      toast({ variant: "destructive", title: "Not logged in" });
+      setIsLoading(false);
+      return;
+    }
+    const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+    const user = await res.json();
+    if (!user?.id) {
+      toast({ variant: "destructive", title: "User not found" });
+      setIsLoading(false);
+      return;
+    }
+    const dataUri = await fileToDataUri(file);
+    setCreatorContent({ url: dataUri, type: 'video' });
+    const result = await scanPageAction({ url: values.url, videoDataUri: dataUri });
+    handleActionResult(result);
+    setIsLoading(false);
   }
   
   const handleActionResult = (result: { success: boolean; data?: MonitorWebPagesOutput; message?: string }) => {
@@ -150,39 +194,29 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
           </CardDescription>
         </CardHeader>
         <CardContent>
-           <Tabs defaultValue="text" className="w-full">
+           <Tabs defaultValue="audio" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="text">Scan with Text</TabsTrigger>
-                <TabsTrigger value="media">Scan with Image/Video</TabsTrigger>
+                <TabsTrigger value="audio">Scan with Audio</TabsTrigger>
+                <TabsTrigger value="video">Scan with Video</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="text" className="mt-6">
-                 <Form {...textForm}>
-                    <form onSubmit={textForm.handleSubmit(onTextSubmit)} className="space-y-8">
-                        <FormField control={textForm.control} name="url" render={({ field }) => (<FormItem><FormLabel>Web Page URL</FormLabel><FormControl><Input placeholder="https://example.com/page" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={textForm.control} name="creatorContent" render={({ field }) => (<FormItem><FormLabel>Your Content</FormLabel><FormControl><Textarea placeholder="Paste a sample of your original text content here..." className="resize-y min-h-[150px]" {...field} /></FormControl><FormDescription>Provide a representative sample of your work for comparison.</FormDescription><FormMessage /></FormItem>)} />
-                        <Button type="submit" disabled={isLoading}>{isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Scan Page</Button>
-                    </form>
-                </Form>
-            </TabsContent>
-
-            <TabsContent value="media" className="mt-6">
-                 <Form {...mediaForm}>
-                    <form onSubmit={mediaForm.handleSubmit(onMediaSubmit)} className="space-y-8">
-                        <FormField control={mediaForm.control} name="url" render={({ field }) => (<FormItem><FormLabel>Web Page URL</FormLabel><FormControl><Input placeholder="https://example.com/page-with-media" {...field} /></FormControl><FormDescription>The URL of the page where you suspect your media is being used.</FormDescription><FormMessage /></FormItem>)} />
+            <TabsContent value="audio" className="mt-6">
+                 <Form {...audioForm}>
+                    <form onSubmit={audioForm.handleSubmit(onAudioSubmit)} className="space-y-8">
+                        <FormField control={audioForm.control} name="url" render={({ field }) => (<FormItem><FormLabel>Web Page URL</FormLabel><FormControl><Input placeholder="https://example.com/page-with-audio" {...field} /></FormControl><FormDescription>The URL of the page where you suspect your audio is being used.</FormDescription><FormMessage /></FormItem>)} />
                         <FormItem>
-                            <FormLabel>Your Image or Video File</FormLabel>
+                            <FormLabel>Your Audio File</FormLabel>
                             <FormControl>
                                 <div className="flex items-center justify-center w-full">
-                                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
+                                    <label htmlFor="audio-dropzone-file" className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
                                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                             <FileUp className="w-8 h-8 mb-4 text-muted-foreground" />
                                             <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
-                                            <p className="text-xs text-muted-foreground">PNG, JPG, MP4, MOV, etc.</p>
+                                            <p className="text-xs text-muted-foreground">MP3, WAV, etc.</p>
                                         </div>
-                                        <Input id="dropzone-file" type="file" className="hidden" onChange={handleFileChange} accept="image/*,video/*"/>
+                                        <Input id="audio-dropzone-file" type="file" className="hidden" onChange={handleFileChange} accept="audio/*" />
                                     </label>
-                                </div> 
+                                </div>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -191,13 +225,42 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
                         <div className="p-4 border rounded-md bg-muted/50">
                             <h4 className="font-medium mb-2">Selected File:</h4>
                             <div className="flex items-center gap-4">
-                                {preview ? (
-                                    <Image src={preview} alt="Image preview" width={100} height={100} className="rounded-md object-cover h-24 w-24" data-ai-hint="file preview" />
-                                ) : (
-                                    <div className="h-24 w-24 bg-muted rounded-md flex items-center justify-center">
-                                        <VideoIcon className="w-10 h-10 text-muted-foreground" />
-                                    </div>
-                                )}
+                                <audio controls src={preview || undefined} className="h-10" />
+                                <div><p className="text-sm font-semibold break-all">{file.name}</p><p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p></div>
+                            </div>
+                        </div>)}
+
+                        <Button type="submit" disabled={isLoading}>{isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Scan Page</Button>
+                    </form>
+                </Form>
+            </TabsContent>
+
+            <TabsContent value="video" className="mt-6">
+                 <Form {...audioForm}>
+                    <form onSubmit={audioForm.handleSubmit(onVideoSubmit)} className="space-y-8">
+                        <FormField control={audioForm.control} name="url" render={({ field }) => (<FormItem><FormLabel>Web Page URL</FormLabel><FormControl><Input placeholder="https://example.com/page-with-video" {...field} /></FormControl><FormDescription>The URL of the page where you suspect your video is being used.</FormDescription><FormMessage /></FormItem>)} />
+                        <FormItem>
+                            <FormLabel>Your Video File</FormLabel>
+                            <FormControl>
+                                <div className="flex items-center justify-center w-full">
+                                    <label htmlFor="video-dropzone-file" className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted">
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <FileUp className="w-8 h-8 mb-4 text-muted-foreground" />
+                                            <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                            <p className="text-xs text-muted-foreground">MP4, MOV, etc.</p>
+                                        </div>
+                                        <Input id="video-dropzone-file" type="file" className="hidden" onChange={handleFileChange} accept="video/*" />
+                                    </label>
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+
+                        {file && (
+                        <div className="p-4 border rounded-md bg-muted/50">
+                            <h4 className="font-medium mb-2">Selected File:</h4>
+                            <div className="flex items-center gap-4">
+                                <video controls src={preview || undefined} className="h-24 w-24 rounded-md object-cover" />
                                 <div><p className="text-sm font-semibold break-all">{file.name}</p><p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p></div>
                             </div>
                         </div>)}
@@ -222,12 +285,14 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
                             <Card>
                                 <CardHeader><CardTitle>Your Content</CardTitle></CardHeader>
                                 <CardContent>
-                                    {typeof creatorContent === 'string' ? (
-                                        <p className="text-sm text-muted-foreground italic">&quot;{creatorContent.slice(0, 200)}...&quot;</p>
-                                    ) : creatorContent?.type === 'image' ? (
-                                        <Image src={creatorContent.url} alt="Creator content" width={300} height={200} className="rounded-md" data-ai-hint="uploaded photo" />
+                                    {creatorContent && typeof creatorContent === 'object' && creatorContent.type === 'audio' ? (
+                                        <audio controls src={creatorContent.url} />
+                                    ) : creatorContent && typeof creatorContent === 'object' && creatorContent.type === 'video' ? (
+                                        <video controls src={creatorContent?.url} />
+                                    ) : creatorContent ? (
+                                        <p className="text-sm text-muted-foreground italic">&quot;{typeof creatorContent === 'object' ? creatorContent.url : creatorContent}&quot;</p>
                                     ) : (
-                                        <div className="h-48 w-full bg-muted rounded-md flex items-center justify-center"><VideoIcon className="w-16 h-16 text-muted-foreground" /></div>
+                                        <p className="text-sm text-muted-foreground italic">No content available.</p>
                                     )}
                                 </CardContent>
                             </Card>
@@ -273,7 +338,7 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
               <div className="flex items-center gap-2 pt-2">
                   <Select value={historyFilter.type} onValueChange={(value) => setHistoryFilter(f => ({ ...f, type: value }))}>
                       <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by type..." /></SelectTrigger>
-                      <SelectContent><SelectItem value="all">All Types</SelectItem><SelectItem value="text">Text</SelectItem><SelectItem value="image">Image/Video</SelectItem></SelectContent>
+                      <SelectContent><SelectItem value="all">All Types</SelectItem><SelectItem value="audio">Audio</SelectItem><SelectItem value="video">Video</SelectItem></SelectContent>
                   </Select>
                   <Select value={historyFilter.status} onValueChange={(value) => setHistoryFilter(f => ({ ...f, status: value }))}>
                       <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by status..." /></SelectTrigger>

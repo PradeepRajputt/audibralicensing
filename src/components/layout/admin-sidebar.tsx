@@ -15,6 +15,8 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAdminProfile } from '@/app/admin/profile-context';
 
 const menuItems = [
   { href: '/admin/overview', label: 'Overview', icon: BarChart },
@@ -35,10 +37,7 @@ export function AdminSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link href="/admin" className="flex items-center gap-2">
-          <Shield className="w-8 h-8 text-sidebar-primary" />
-          <h1 className="text-xl font-semibold text-sidebar-foreground">CreatorShield</h1>
-        </Link>
+        <SidebarProfileHeader />
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu className="gap-4">
@@ -52,7 +51,7 @@ export function AdminSidebar() {
                 isActive={pathname === item.href || (pathname === '/admin' && item.href === '/admin/overview')}
                 tooltip={item.label}
               >
-                <Link href={item.href}>
+                <Link href={item.href} className="pl-4 flex items-center gap-3">
                   <item.icon />
                   <span>{item.label}</span>
                 </Link>
@@ -69,7 +68,7 @@ export function AdminSidebar() {
               isActive={pathname === '/admin/settings'}
               tooltip="Settings"
             >
-              <Link href="/admin/settings">
+              <Link href="/admin/settings" className="flex items-center gap-3">
                 <Settings />
                 <span>Settings</span>
               </Link>
@@ -78,5 +77,22 @@ export function AdminSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function SidebarProfileHeader() {
+  const { profile } = useAdminProfile();
+  return (
+    <div className="flex items-center gap-3 p-2">
+      <Link href="/admin" className="flex items-center gap-3">
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={profile.avatar} data-ai-hint="profile picture" />
+          <AvatarFallback>{profile.displayName.charAt(0)}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col">
+          <span className="font-semibold text-sidebar-foreground truncate">{profile.displayName}</span>
+        </div>
+      </Link>
+    </div>
   );
 }

@@ -15,11 +15,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
+import { UserPlus, Bell, ShieldAlert, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { ThemeSettings } from '@/components/settings/theme-settings';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
+import { useAdminProfile } from '../profile-context';
+// Remove: import { getAdminProfile } from '@/lib/admin-stats';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 
 const platformSettingsFormSchema = z.object({
@@ -40,12 +44,32 @@ const mockAdminUser = {
 
 
 export default function AdminSettingsPage() {
+    const { profile, setProfile } = useAdminProfile();
     const { toast } = useToast();
     const [isSavingPlatform, setIsSavingPlatform] = React.useState(false);
     const [isSavingProfile, setIsSavingProfile] = React.useState(false);
-    const [profilePicture, setProfilePicture] = React.useState(mockAdminUser.avatar);
+    const [profilePicture, setProfilePicture] = React.useState(profile.avatar);
+    const [adminEmail, setAdminEmail] = React.useState('');
     const fileInputRef = React.useRef<HTMLInputElement>(null);
-    
+    const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
+    const [newPassword, setNewPassword] = React.useState('');
+    const [isChangingPassword, setIsChangingPassword] = React.useState(false);
+
+    React.useEffect(() => {
+        async function fetchAdminProfile() {
+            try {
+                const res = await fetch('/api/settings/admin-profile');
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+                setAdminEmail(data.email || '');
+                if (data.avatar) setProfilePicture(data.avatar);
+            } catch (err) {
+                setAdminEmail('');
+            }
+        }
+        fetchAdminProfile();
+    }, []);
+
     const platformForm = useForm<z.infer<typeof platformSettingsFormSchema>>({
         resolver: zodResolver(platformSettingsFormSchema),
         defaultValues: {
@@ -94,7 +118,7 @@ export default function AdminSettingsPage() {
                     <div className="flex items-center gap-6">
                         <Avatar className="w-24 h-24">
                             <AvatarImage src={profilePicture} data-ai-hint="profile picture" />
-                            <AvatarFallback>AD</AvatarFallback>
+                            <AvatarFallback>{profile.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-2">
                            <Input id="picture" type="file" ref={fileInputRef} className="hidden" onChange={(e) => {
@@ -102,13 +126,34 @@ export default function AdminSettingsPage() {
                                 if (file) setProfilePicture(URL.createObjectURL(file));
                            }} accept="image/png, image/jpeg" />
                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>Choose Picture</Button>
-                           <Button onClick={() => {
+                           <Button onClick={async () => {
                                 setIsSavingProfile(true);
-                                setTimeout(() => {
-                                    toast({title: "Picture Updated", description: "Your new profile picture has been saved (simulated)."});
-                                    setIsSavingProfile(false);
-                                }, 1500);
-                           }} disabled={profilePicture === mockAdminUser.avatar || isSavingProfile}>
+                                try {
+                                    // Convert file to base64
+                                    const file = fileInputRef.current?.files?.[0];
+                                    let avatarDataUrl = profilePicture;
+                                    if (file) {
+                                        avatarDataUrl = await new Promise<string>((resolve, reject) => {
+                                            const reader = new FileReader();
+                                            reader.onload = () => resolve(reader.result as string);
+                                            reader.onerror = reject;
+                                            reader.readAsDataURL(file);
+                                        });
+                                    }
+                                    const res = await fetch('/api/settings/admin-profile', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ avatar: avatarDataUrl, email: adminEmail }),
+                                    });
+                                    if (!res.ok) throw new Error('Failed to update');
+                                    setProfile({ ...profile, avatar: avatarDataUrl });
+                                    setProfilePicture(avatarDataUrl);
+                                    toast({title: "Picture Updated", description: "Your new profile picture has been saved."});
+                                } catch (err) {
+                                    toast({title: "Error", description: "Failed to update profile picture."});
+                                }
+                                setIsSavingProfile(false);
+                           }} disabled={profilePicture === profile.avatar || isSavingProfile}>
                                {isSavingProfile ? "Uploading..." : "Update Picture"}
                            </Button>
                         </div>
@@ -121,11 +166,11 @@ export default function AdminSettingsPage() {
                     <form className="space-y-6">
                         <div className="space-y-2">
                             <Label>Display Name</Label>
-                            <Input defaultValue={mockAdminUser.displayName} className="max-w-xs" />
+                            <Input value={profile.displayName} onChange={e => setProfile({ ...profile, displayName: e.target.value })} className="max-w-xs" />
                         </div>
                         <div className="space-y-2">
                             <Label>Email</Label>
-                            <Input type="email" value={mockAdminUser.email} disabled className="max-w-xs" />
+                            <Input type="email" value={adminEmail} disabled className="max-w-xs" />
                              <p className="text-sm text-muted-foreground">Your email address cannot be changed.</p>
                         </div>
                         <Button onClick={(e) => {
@@ -143,9 +188,9 @@ export default function AdminSettingsPage() {
                             <h3 className="font-medium">Password</h3>
                             <p className="text-sm text-muted-foreground">Change your account password.</p>
                        </div>
-                        <Button variant="outline" onClick={() => {
-                            toast({title: "Forgot Password", description: "In a real app, a password reset email would be sent."})
-                        }}>Change Password</Button>
+                        <Button variant="outline" onClick={() => setShowPasswordDialog(true)}>
+                            Change Password
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -172,19 +217,37 @@ export default function AdminSettingsPage() {
                             control={platformForm.control}
                             name="allowRegistrations"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                <div className="space-y-0.5">
-                                    <FormLabel className="text-base">Allow New User Registrations</FormLabel>
-                                    <FormDescription>
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-muted/40">
+                                  <div className="flex items-center gap-3">
+                                    <UserPlus className="w-6 h-6 text-primary" />
+                                    <div>
+                                      <FormLabel className="text-base font-semibold">Allow New User Registrations</FormLabel>
+                                      <FormDescription>
                                         Enable or disable the ability for new creators to sign up.
-                                    </FormDescription>
-                                </div>
-                                <FormControl>
-                                    <Switch
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
+                                      </FormDescription>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-1 rounded text-xs font-medium ${field.value ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{field.value ? 'Enabled' : 'Disabled'}</span>
+                                    <FormControl>
+                                      <div className="relative">
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={async (checked) => {
+                                            field.onChange(checked);
+                                            setIsSavingPlatform(true);
+                                            await onPlatformSubmit({ ...platformForm.getValues(), allowRegistrations: checked });
+                                            setIsSavingPlatform(false);
+                                            toast({ title: "Setting Updated", description: `Registrations are now ${checked ? "enabled" : "disabled"}.` });
+                                          }}
+                                          disabled={isSavingPlatform}
+                                        />
+                                        {isSavingPlatform && (
+                                          <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+                                        )}
+                                      </div>
+                                    </FormControl>
+                                  </div>
                                 </FormItem>
                             )}
                         />
@@ -230,40 +293,42 @@ export default function AdminSettingsPage() {
                             )}
                         />
                         <div>
-                            <FormLabel>Receive alerts for:</FormLabel>
-                            <div className="space-y-2 mt-2">
-                                <FormField
-                                    control={platformForm.control}
-                                    name="notifyOnStrikes"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                            <FormControl>
-                                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">New Strike Requests</FormLabel>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={platformForm.control}
-                                    name="notifyOnReactivations"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                            <FormControl>
-                                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">Reactivation Requests</FormLabel>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                          <FormLabel className="font-semibold flex items-center gap-2 mb-1"><Bell className="w-5 h-5 text-primary" /> Receive Alerts For</FormLabel>
+                          <div className="space-y-2 mt-2 bg-muted/40 rounded-lg p-3">
+                            <FormField
+                              control={platformForm.control}
+                              name="notifyOnStrikes"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center gap-3 p-2 rounded-lg border border-gray-200 transition-colors">
+                                  <FormControl>
+                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                  </FormControl>
+                                  <ShieldAlert className="w-5 h-5 text-yellow-600" />
+                                  <FormLabel className="font-normal">New Strike Requests</FormLabel>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={platformForm.control}
+                              name="notifyOnReactivations"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center gap-3 p-2 rounded-lg border border-gray-200 transition-colors">
+                                  <FormControl>
+                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                  </FormControl>
+                                  <RefreshCw className="w-5 h-5 text-blue-600" />
+                                  <FormLabel className="font-normal">Reactivation Requests</FormLabel>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Content Monitoring</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><SlidersHorizontal className="w-5 h-5 text-primary" /> Content Monitoring System</CardTitle>
                         <CardDescription>Adjust the sensitivity of the AI-powered content analysis.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -272,21 +337,25 @@ export default function AdminSettingsPage() {
                             name="matchThreshold"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Match Score Threshold: {field.value?.[0]}%</FormLabel>
-                                <FormControl>
+                                <div className="flex items-center gap-3 mb-2">
+                                  <FormLabel className="font-semibold">Match Score Threshold</FormLabel>
+                                  <span className="inline-block bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded">{field.value?.[0]}%</span>
+                                </div>
+                                 <FormControl>
                                     <Slider
-                                        min={50}
-                                        max={100}
-                                        step={1}
-                                        defaultValue={field.value}
-                                        onValueChange={field.onChange}
+                                      min={50}
+                                      max={100}
+                                      step={1}
+                                      defaultValue={field.value}
+                                      onValueChange={field.onChange}
+                                      className="[&>.range-slider__track]:bg-blue-200 [&>.range-slider__thumb]:bg-blue-600"
                                     />
-                                </FormControl>
-                                <FormDescription>
-                                    Content will be flagged as a potential violation if the match score is above this value.
-                                </FormDescription>
-                                <FormMessage />
-                                </FormItem>
+                                 </FormControl>
+                                 <FormDescription>
+                                     Content will be flagged as a potential violation if the match score is above this value.
+                                 </FormDescription>
+                                 <FormMessage />
+                                 </FormItem>
                             )}
                         />
                     </CardContent>
@@ -300,6 +369,50 @@ export default function AdminSettingsPage() {
                 </div>
             </form>
         </Form>
+
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Change Password</DialogTitle>
+    </DialogHeader>
+    <div className="space-y-4">
+      <Input
+        type="password"
+        placeholder="Enter new password"
+        value={newPassword}
+        onChange={e => setNewPassword(e.target.value)}
+        disabled={isChangingPassword}
+      />
+    </div>
+    <DialogFooter>
+      <Button
+        onClick={async () => {
+          setIsChangingPassword(true);
+          try {
+            const res = await fetch('/api/settings/admin-profile/password', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: adminEmail, password: newPassword }),
+            });
+            if (!res.ok) throw new Error('Failed to update password');
+            toast({ title: 'Password Changed', description: 'Your password has been updated.' });
+            setShowPasswordDialog(false);
+            setNewPassword('');
+          } catch (err) {
+            toast({ title: 'Error', description: 'Failed to update password.' });
+          }
+          setIsChangingPassword(false);
+        }}
+        disabled={!newPassword || isChangingPassword}
+      >
+        {isChangingPassword ? 'Saving...' : 'Save Password'}
+      </Button>
+      <DialogClose asChild>
+        <Button variant="outline">Cancel</Button>
+      </DialogClose>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </div>
   )
 }

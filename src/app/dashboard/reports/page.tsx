@@ -25,6 +25,7 @@ import { Loader2, Download, Clipboard, Link as LinkIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Report, ProtectedContent, Violation } from "@/lib/types";
 import { getReportsForUser } from "@/lib/reports-store";
+import { getUserById } from "@/lib/users-store";
 import { submitManualReportAction } from './actions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import jsPDF from 'jspdf';
@@ -32,6 +33,7 @@ import { getAllContentForUser } from "@/lib/content-store";
 import { getViolationsForUser } from "@/lib/violations-store";
 import { useSearchParams } from "next/navigation";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
+import { useSession } from "next-auth/react";
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -44,6 +46,7 @@ const formSchema = z.object({
 
 
 export default function SubmitReportPage() {
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
@@ -60,35 +63,50 @@ export default function SubmitReportPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
         originalContentId: "",
-        platform: searchParams.get('platform') || "",
-        suspectUrl: searchParams.get('url') || "",
+        platform: searchParams ? searchParams.get('platform') || "" : "",
+        suspectUrl: searchParams ? searchParams.get('url') || "" : "",
         reason: "",
     },
   });
 
    const loadData = useCallback(async () => {
-    // Using a mock user ID as auth has been removed
-    const userId = "user_creator_123";
     setIsFetching(true);
     try {
-        const [reports, violationsData, contentData] = await Promise.all([
-          getReportsForUser(userId),
-          getViolationsForUser(userId),
-          getAllContentForUser(userId),
-        ]);
-        setSubmittedReports(reports);
-        setViolations(violationsData);
-        setProtectedContent(contentData);
+      let creatorId = null;
+      if (session?.user?.email) {
+        const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+        const user = await res.json();
+        creatorId = user?.id;
+      }
+      if (!creatorId) throw new Error('Could not determine creator ID');
+      const [reports, violationsData, contentData] = await Promise.all([
+        getReportsForUser(creatorId),
+        getViolationsForUser(creatorId),
+        getAllContentForUser(creatorId),
+      ]);
+      // Map reports to ensure all required fields are present
+      setSubmittedReports(reports.map((r: any) => ({
+        id: r._id ? r._id.toString() : r.id,
+        creatorName: r.creatorName || '',
+        platform: r.platform || '',
+        suspectUrl: r.suspectUrl || '',
+        status: r.status || 'in_review',
+        submitted: r.submitted || '',
+        originalContentTitle: r.originalContentTitle || '',
+        ...r,
+      })));
+      setViolations(violationsData);
+      setProtectedContent(contentData);
     } catch (error) {
-        console.error("Failed to load dashboard data:", error)
-        toast({
-            variant: "destructive",
-            title: "Failed to load data",
-            description: "Could not fetch necessary data. Please try again later."
-        })
+      console.error("Failed to load dashboard data:", error)
+      toast({
+        variant: "destructive",
+        title: "Failed to load data",
+        description: "Could not fetch necessary data. Please try again later."
+      })
     }
     setIsFetching(false);
-  }, [toast]);
+  }, [toast, session]);
 
   useEffect(() => {
     loadData();
@@ -96,8 +114,8 @@ export default function SubmitReportPage() {
 
 
   useEffect(() => {
-    const url = searchParams.get('url');
-    const platform = searchParams.get('platform');
+    const url = searchParams ? searchParams.get('url') : null;
+    const platform = searchParams ? searchParams.get('platform') : null;
     if (url) {
       form.setValue('suspectUrl', url);
     }
@@ -243,9 +261,11 @@ Sincerely,
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {protectedContent.map(content => (
+                        {protectedContent
+                          .filter(content => content.contentType === 'audio' || content.contentType === 'video')
+                          .map(content => (
                             <SelectItem key={content.id} value={content.id}>{content.title}</SelectItem>
-                        ))}
+                          ))}
                       </SelectContent>
                     </Select>
                     <FormDescription>This helps us accurately file claims on your behalf.</FormDescription>

@@ -4,6 +4,7 @@ import Strike from '@/models/Strike';
 import Report from '@/models/Report';
 import Reactivation from '@/models/Reactivation';
 import Scan from '@/models/Scan';
+import Admin from '@/models/Admin';
 
 export async function getAdminOverviewStats(from?: Date, to?: Date) {
   await connectToDatabase();
@@ -55,4 +56,11 @@ export async function getAdminOverviewStats(from?: Date, to?: Date) {
     totalReports,
     chartData,
   };
+}
+
+export async function getAdminProfile() {
+  await connectToDatabase();
+  // For now, just return the first admin found
+  const admin = await Admin.findOne({}).lean();
+  return admin;
 } 

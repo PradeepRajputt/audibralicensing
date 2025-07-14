@@ -175,3 +175,30 @@ span {
   animation: profile-glow 1.2s cubic-bezier(0.4,0,0.2,1) 1;
   border-radius: 9999px;
 }
+
+@keyframes rise-up {
+  0% { transform: translateY(1.5rem); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.animate-rise-up {
+  animation: rise-up 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-8deg); }
+  20% { transform: rotate(8deg); }
+  40% { transform: rotate(-6deg); }
+  60% { transform: rotate(6deg); }
+  80% { transform: rotate(0deg); }
+}
+.animate-wiggle {
+  animation: wiggle 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes zoom-in {
+  0% { transform: scale(0.7); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-zoom-in {
+  animation: zoom-in 0.3s cubic-bezier(0.4,0,0.2,1);
+}

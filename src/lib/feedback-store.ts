@@ -57,8 +57,8 @@ export async function markFeedbackAsRead(feedbackId: string): Promise<void> {
   return;
 }
 
-export async function hasUnreadCreatorFeedback(creatorEmail: string): Promise<boolean> {
-  const docs = await getFeedbackForUser(creatorEmail);
+export async function hasUnreadCreatorFeedback(email: string): Promise<boolean> {
+  const docs = await getFeedbackForUser(email);
   if (!Array.isArray(docs) || docs.length === 0) return false;
   const feedbacks = docs[0].feedbacks || [];
   // Update this logic as per your feedback object structure
@@ -69,6 +69,7 @@ export async function hasUnreadCreatorFeedback(creatorEmail: string): Promise<bo
 
 export async function hasUnrepliedAdminFeedback(): Promise<boolean> {
   const feedbacks = await getAllFeedback();
+  if (!Array.isArray(feedbacks)) return false;
   const hasUnreplied = feedbacks.some(f => f.response && f.response.length === 0);
   return hasUnreplied;
 }

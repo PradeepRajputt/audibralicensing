@@ -1,27 +1,42 @@
 
 'use client';
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { getAllContentForUser } from '@/lib/content-store';
 import { ContentClientPage } from './content-client';
 import type { ProtectedContent } from '@/lib/types';
-import { useEffect, useState } from "react";
 
 export default function ProtectedContentPage() {
+  const { data: session } = useSession();
   const [content, setContent] = useState<ProtectedContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    // Using a mock user ID as auth has been removed
-    const userId = "user_creator_123";
-    getAllContentForUser(userId).then(data => {
-        setContent(JSON.parse(JSON.stringify(data)));
-        setIsLoading(false);
-    });
-  }, []);
+  const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        if (session?.user?.email) {
+          const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+          if (!res.ok) throw new Error('Failed to fetch user info');
+          const user = await res.json();
+          if (user?.id) {
+            const contentRes = await fetch(`/api/content?creatorId=${user.id}`);
+            if (!contentRes.ok) throw new Error('Failed to fetch content');
+            const contentList = await contentRes.json();
+            setContent(contentList);
+          }
+        }
+      } catch (err: any) {
+        setError(err.message || 'Something went wrong');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchContent();
+  }, [session]);
 
   return (
     <div className="space-y-6">
@@ -39,10 +54,13 @@ export default function ProtectedContentPage() {
             </Link>
         </Button>
       </div>
-        
         {isLoading ? (
             <div className="flex justify-center items-center h-48">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        ) : error ? (
+            <div className="flex justify-center items-center h-48 text-red-500">
+              {error}
             </div>
         ) : (
             <ContentClientPage initialContent={content} />

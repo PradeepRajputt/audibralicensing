@@ -32,6 +32,7 @@ import { getFeedbackForUser } from '@/lib/feedback-store';
 import type { Feedback } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
+import { useSession } from "next-auth/react";
 
 const feedbackFormSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -45,6 +46,7 @@ const feedbackFormSchema = z.object({
 });
 
 export default function FeedbackPage() {
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = React.useState(false);
   const [history, setHistory] = React.useState<Feedback[]>([]);
   const { toast } = useToast();
@@ -76,10 +78,18 @@ export default function FeedbackPage() {
 
   const loadHistory = React.useCallback(async () => {
     // In a real app, this would be from the session
-    const userId = "user_creator_123";
+    const userId = session?.user?.email;
+    if (!userId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User not logged in.',
+      });
+      return;
+    }
     const userFeedback = await getFeedbackForUser(userId);
     setHistory(userFeedback);
-  }, []);
+  }, [session?.user?.email, toast]);
 
   React.useEffect(() => {
     loadHistory();
@@ -87,7 +97,17 @@ export default function FeedbackPage() {
   
   async function onSubmit(values: z.infer<typeof feedbackFormSchema>) {
     setIsLoading(true);
-    const result = await submitFeedbackAction({ ...values, type: feedbackType });
+    const userId = session?.user?.email;
+    if (!userId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User not logged in.',
+      });
+      setIsLoading(false);
+      return;
+    }
+    const result = await submitFeedbackAction({ ...values, type: feedbackType, userId });
     if (result.success) {
       toast({
         title: 'Feedback Submitted!',
@@ -106,7 +126,16 @@ export default function FeedbackPage() {
   }
 
   const handleMarkAsRead = async (feedbackId: string) => {
-    const result = await markAsReadAction(feedbackId);
+    const userId = session?.user?.email;
+    if (!userId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'User not logged in.',
+      });
+      return;
+    }
+    const result = await markAsReadAction(feedbackId, userId);
     if(result.success) {
         loadHistory();
     } else {

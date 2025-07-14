@@ -1,15 +1,17 @@
 import mongoose from 'mongoose';
 
-const StrikeSchema = new mongoose.Schema({
-  creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true },
+const singleStrikeSchema = new mongoose.Schema({
   status: { type: String, enum: ['pending', 'resolved'], default: 'pending' },
   reason: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
-  resolvedAt: { type: Date }
+  resolvedAt: { type: Date },
 });
 
-const Strike = (mongoose.models && mongoose.models.Strike)
-  ? mongoose.models.Strike
-  : mongoose.model('Strike', StrikeSchema);
+const strikeSchema = new mongoose.Schema({
+  creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true, unique: true },
+  strikes: [singleStrikeSchema],
+});
+
+const Strike = (mongoose.models && mongoose.models.Strike) || mongoose.model('Strike', strikeSchema);
 
 export default Strike; 

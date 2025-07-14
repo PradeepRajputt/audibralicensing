@@ -23,6 +23,7 @@ import { Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
 import { addProtectedContentAction } from './actions';
+import { useSession } from "next-auth/react";
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -33,6 +34,15 @@ const formSchema = z.object({
 });
 
 export default function AddContentPage() {
+  const { data: session, status } = useSession();
+  // Show loading spinner until session is loaded
+  if (status === 'loading') {
+    return <div className="flex justify-center items-center h-48">Loading session...</div>;
+  }
+  if (!session || !session.user || !session.user.email) {
+    return <div className="flex justify-center items-center h-48 text-red-500">You must be logged in to add content.</div>;
+  }
+  console.log("Session in AddContentPage:", session);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -49,18 +59,32 @@ export default function AddContentPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    
-    const result = await addProtectedContentAction(values);
-
-    // If successful, the action redirects. If not, it returns an error.
-    if (result && !result.success) {
-        toast({
-            variant: "destructive",
-            title: "Submission Failed",
-            description: result.message,
-        });
+    const userEmail = session?.user?.email;
+    if (!userEmail) {
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "Could not determine your user account. Please log in again.",
+      });
+      setIsLoading(false);
+      return;
     }
-    
+    const res = await fetch('/api/add-content', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values, userEmail }),
+    });
+    const result = await res.json();
+    if (!result.success) {
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: result.message,
+      });
+    } else {
+      // Optionally redirect or show success
+      window.location.href = '/dashboard/content';
+    }
     setIsLoading(false);
   }
 
@@ -80,9 +104,9 @@ export default function AddContentPage() {
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Content Title</FormLabel>
+                <FormLabel htmlFor="title">Content Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="My Epic New Video" {...field} />
+                  <Input id="title" placeholder="My Epic New Video" {...field} />
                 </FormControl>
                 <FormDescription>The official title of your content.</FormDescription>
                 <FormMessage />
@@ -96,10 +120,10 @@ export default function AddContentPage() {
               name="contentType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Content Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel htmlFor="contentType">Content Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} name="contentType">
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger id="contentType" name="contentType">
                         <SelectValue placeholder="Select the content type" />
                       </SelectTrigger>
                     </FormControl>
@@ -119,10 +143,10 @@ export default function AddContentPage() {
               name="platform"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Platform</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel htmlFor="platform">Platform</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} name="platform">
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger id="platform" name="platform">
                         <SelectValue placeholder="Select the original platform" />
                       </SelectTrigger>
                     </FormControl>
@@ -143,9 +167,9 @@ export default function AddContentPage() {
             name="videoURL"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Content URL</FormLabel>
+                <FormLabel htmlFor="videoURL">Content URL</FormLabel>
                 <FormControl>
-                  <Input placeholder="https://youtube.com/watch?v=your_video_id" {...field} />
+                  <Input id="videoURL" placeholder="https://youtube.com/watch?v=your_video_id" {...field} />
                 </FormControl>
                  <FormDescription>The direct link to your original content.</FormDescription>
                 <FormMessage />
@@ -158,9 +182,9 @@ export default function AddContentPage() {
             name="tags"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tags</FormLabel>
+                <FormLabel htmlFor="tags">Tags</FormLabel>
                 <FormControl>
-                  <Input placeholder="adventure, travel, vlog" {...field} />
+                  <Input id="tags" placeholder="adventure, travel, vlog" {...field} />
                 </FormControl>
                  <FormDescription>Comma-separated tags to help identify your content.</FormDescription>
                 <FormMessage />

@@ -15,15 +15,9 @@ import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-serv
  */
 export async function getDashboardData(userEmail?: string): Promise<DashboardData | null> {
   noStore();
-  
-  // Use email if provided, otherwise fallback to mock user ID (for dev/testing)
-  let dbUser;
-  if (userEmail) {
-    dbUser = await getUserByEmail(userEmail);
-  } else {
-    const effectiveUserId = 'user_creator_123';
-    dbUser = await getUserById(effectiveUserId);
-  }
+  if (!userEmail) return null;
+  const dbUser = await getUserByEmail(userEmail);
+  if (!dbUser) return null;
 
   try {
     if (!dbUser) {
@@ -45,18 +39,19 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
                         title: mostViewed.title || undefined,
                         views: mostViewed.views
                     },
-                     // Generate plausible daily data based on real totals for chart visualization
+                    // Generate a realistic, monotonic daily time series
                     dailyData: Array.from({ length: 90 }, (_, i) => {
                         const date = subDays(new Date(), 89 - i);
-                        // Simulate a growth trend
-                        const dayFactor = (i + 1) / 90;
-                        const randomFactor = 0.8 + Math.random() * 0.4;
-                        const dailyViews = Math.max(0, Math.floor((stats.views / 90) * dayFactor * randomFactor * 1.5));
-                        const dailySubscribers = Math.max(0, Math.floor((stats.subscribers / 200) * dayFactor * randomFactor + Math.random() * 5));
+                        // Distribute views and subscribers linearly with a slight curve
+                        const progress = (i + 1) / 90;
+                        // Use a quadratic curve for a more natural growth
+                        const curve = Math.pow(progress, 1.2);
+                        const dailyViews = Math.round((stats.views * curve - stats.views * Math.pow((i) / 90, 1.2)));
+                        const dailySubscribers = Math.round((stats.subscribers * curve - stats.subscribers * Math.pow((i) / 90, 1.2)));
                         return {
                             date: format(date, 'yyyy-MM-dd'),
-                            views: dailyViews,
-                            subscribers: dailySubscribers,
+                            views: Math.max(0, dailyViews),
+                            subscribers: Math.max(0, dailySubscribers),
                         };
                     }),
                 }

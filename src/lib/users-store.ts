@@ -50,6 +50,11 @@ export async function updateUser(userId: string, update: Partial<any>) {
 
 export async function getUserById(userId: string) {
   await connectToDatabase();
+  // Check if userId is a valid ObjectId
+  const mongoose = require('mongoose');
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return undefined;
+  }
   // @ts-ignore
   const creator = await Creator.findById(userId).lean();
   

@@ -7,11 +7,18 @@ import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+// Temporary: import mock admin user for header
+const mockAdminUser = {
+  displayName: "Admin User",
+  avatar: "https://placehold.co/128x128.png",
+};
 
 const ADMIN_EMAILS = [
   'guddumisra003@gmail.com',
   'contactpradeeprajput@gmail.com',
 ];
+
+import { AdminProfileProvider } from './profile-context';
 
 export default function AdminDashboardLayout({
   children,
@@ -33,22 +40,24 @@ export default function AdminDashboardLayout({
     }, [session, router]);
 
     return (
-      <SidebarProvider>
-        <AdminSidebar />
-        <SidebarInset>
-          <DashboardHeader title="Admin Dashboard" />
-          <main className="p-4 md:p-6">
-              {showPopup && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                  <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-                    <h2 className="text-xl font-bold mb-2">Access Denied</h2>
-                    <p className="mb-4">You do not have access to become an admin.<br/>We are redirecting you to the creator dashboard in 3 seconds.</p>
+      <AdminProfileProvider>
+        <SidebarProvider>
+          <AdminSidebar />
+          <SidebarInset>
+            <DashboardHeader title="Admin Dashboard" admin={true} />
+            <main className="p-4 md:p-6">
+                {showPopup && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+                      <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+                      <p className="mb-4">You do not have access to become an admin.<br/>We are redirecting you to the creator dashboard in 3 seconds.</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {children}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
+                )}
+                {children}
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </AdminProfileProvider>
     );
 }

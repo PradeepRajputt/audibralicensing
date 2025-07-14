@@ -8,8 +8,7 @@ const singleFeedbackSchema = new mongoose.Schema({
 });
 
 const feedbackSchema = new mongoose.Schema({
-  creatorEmail: { type: String, required: true, unique: true },
-  creatorName: { type: String },
+  creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true, unique: true },
   feedbacks: [singleFeedbackSchema],
 }, { collection: 'feedbacks' });
 

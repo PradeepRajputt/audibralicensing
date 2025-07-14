@@ -8,16 +8,26 @@ import { LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useDashboardData } from '@/app/dashboard/dashboard-context';
+import { useAdminProfile } from '@/app/admin/profile-context';
 
-export function DashboardHeader() {
+export function DashboardHeader({ title, admin = false }: { title?: string, admin?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const dashboardData = useDashboardData();
   const user = dashboardData?.user;
-  const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
-  // Prefer YouTube channel thumbnail, then avatar
-  const avatar = user?.youtubeChannel?.thumbnail || user?.avatar || undefined;
-  const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
+  let displayName = '';
+  let avatar = '';
+  let avatarFallback = '';
+  if (admin) {
+    const { profile } = useAdminProfile();
+    displayName = profile.displayName;
+    avatar = profile.avatar;
+    avatarFallback = displayName ? displayName.charAt(0) : 'A';
+  } else {
+    displayName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
+    avatar = user?.youtubeChannel?.thumbnail || user?.avatar || '';
+    avatarFallback = displayName ? displayName.charAt(0) : 'C';
+  }
 
   let sidebarCollapsed = false;
   try {
@@ -48,16 +58,16 @@ export function DashboardHeader() {
   return (
     <header className="p-4 md:p-6 border-b flex items-center gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 transition-all duration-300">
       <SidebarTrigger />
-      {(sidebarCollapsed && pathname !== '/dashboard/overview') ? (
+      {sidebarCollapsed ? (
         <div className="flex items-center gap-3 transition-all duration-300">
           <Avatar className={`h-8 w-8 transition-all duration-300 ${showGlow ? 'profile-glow' : ''}`}> 
-            <AvatarImage src={avatar} alt={creatorName} loading="eager" />
+            <AvatarImage src={avatar} alt={displayName} loading="eager" />
             <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
-          <span className="text-lg font-semibold">{creatorName}</span>
+          <span className="text-lg font-semibold">{displayName}</span>
         </div>
       ) : (
-        <h1 className="text-xl font-semibold transition-all duration-300">Creator Dashboard</h1>
+        <h1 className="text-xl font-semibold transition-all duration-300">{title || (admin ? 'Admin Dashboard' : 'Creator Dashboard')}</h1>
       )}
       <div className="flex-1" />
     </header>

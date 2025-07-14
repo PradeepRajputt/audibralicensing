@@ -1,65 +1,121 @@
-
 'use server';
 
-import type { Report } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
+import mongoose from 'mongoose';
+import ReportModel from '../models/Report';
 
-// Mock in-memory database for reports
-let mockReports: Report[] = [
-    { 
-        id: 'report_newly_submitted_123', 
-        creatorId: 'user_creator_123', 
-        creatorName: 'Sample Creator', 
-        creatorAvatar: 'https://placehold.co/128x128.png', 
-        suspectUrl: 'https://stolen-blog.com/my-adventure-post', 
-        platform: 'web', 
-        status: 'in_review',
-        submitted: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-        reason: 'This is a direct copy of my article. They have stolen the entire text and are claiming it as their own.', 
-        originalContentUrl: 'https://myblog.com/summer-in-italy', 
-        originalContentTitle: 'My Travel Blog - Summer in Italy' 
-    },
-    { id: 'report_initial_1', creatorId: 'user_creator_123', creatorName: 'Sample Creator', creatorAvatar: 'https://placehold.co/128x128.png', suspectUrl: 'https://youtube.com/watch?v=fake123', platform: 'youtube', status: 'approved', submitted: new Date(Date.now() - 172800000).toISOString(), reason: 'This is a direct reupload of my video.', originalContentUrl: 'https://youtube.com/watch?v=original123', originalContentTitle: 'My Most Epic Adventure Yet!' },
-    { id: 'report_initial_2', creatorId: 'user_creator_123', creatorName: 'Sample Creator', creatorAvatar: 'https://placehold.co/128x128.png', suspectUrl: 'https://instagram.com/p/reel456', platform: 'instagram', status: 'rejected', submitted: new Date(Date.now() - 6048e5).toISOString(), reason: 'They used my background music without credit.', originalContentUrl: 'https://youtube.com/watch?v=original456', originalContentTitle: 'My Travel Blog - Summer in Italy' }
-];
+// Define the Report interface (you can extend this if needed)
+export interface Report {
+  _id: mongoose.Types.ObjectId;
+  creatorId: mongoose.Types.ObjectId;
+  submitted: string;
+  status: 'in_review' | 'approved' | 'rejected' | 'action_taken';
+  [key: string]: any;
+}
 
+// Utility: Ensure DB is connected (optional - if you don’t use persistent connection)
+async function connectDB() {
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(process.env.MONGO_URI as string);
+  }
+}
+
+// ✅ Get all reports
 export async function getAllReports(): Promise<Report[]> {
-    noStore();
-    // In a real app: await db.collection('reports').find().sort({ submitted: -1 }).toArray();
-    return Promise.resolve(mockReports.sort((a,b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime()));
+  noStore();
+  try {
+    await connectDB();
+    const reports = await ReportModel.find({}).sort({ submitted: -1 }).lean().exec();
+    return reports.map((r: any) => ({
+      ...r,
+      id: r._id?.toString?.() ?? r.id,
+      creatorId: r.creatorId,
+      submitted: r.submitted,
+      status: r.status,
+      // ...add any other required fields with fallback/defaults if needed
+    })) as Report[];
+  } catch (err) {
+    console.error('Error fetching all reports:', err);
+    return [];
+  }
 }
 
+// ✅ Get reports by creatorId
 export async function getReportsForUser(creatorId: string): Promise<Report[]> {
-    noStore();
-     // In a real app: await db.collection('reports').find({ creatorId }).sort({ submitted: -1 }).toArray();
-    return Promise.resolve(mockReports.filter(r => r.creatorId === creatorId).sort((a,b) => new Date(b.submitted).getTime() - new Date(a.submitted).getTime()));
+  noStore();
+  if (!mongoose.Types.ObjectId.isValid(creatorId)) {
+    return [];
+  }
+  try {
+    await connectDB();
+    const reports = await ReportModel.find({ creatorId: new mongoose.Types.ObjectId(creatorId) })
+      .sort({ submitted: -1 })
+      .lean()
+      .exec();
+    return reports.map((r: any) => ({
+      ...r,
+      id: r._id?.toString?.() ?? r.id,
+      creatorId: r.creatorId,
+      submitted: r.submitted,
+      status: r.status,
+    })) as Report[];
+  } catch (err) {
+    console.error('Error fetching reports for user:', err);
+    return [];
+  }
 }
 
+// ✅ Get single report by ID
 export async function getReportById(id: string): Promise<Report | undefined> {
-    noStore();
-    // In a real app: await db.collection('reports').findOne({ id });
-    return Promise.resolve(mockReports.find(r => r.id === id));
+  noStore();
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return undefined;
+  }
+  try {
+    await connectDB();
+    const report = await ReportModel.findById(id).lean().exec();
+    if (!report) return undefined;
+    return {
+      ...report,
+      id: (report as any)._id?.toString?.() ?? (report as any).id,
+      creatorId: (report as any).creatorId,
+      submitted: (report as any).submitted,
+      status: (report as any).status,
+    } as Report;
+  } catch (err) {
+    console.error('Error fetching report by id:', err);
+    return undefined;
+  }
 }
 
-export async function createReport(data: Omit<Report, 'id' | 'submitted' | 'status'>): Promise<void> {
-    noStore();
-    const newReport: Report = {
-        ...data,
-        id: `report_${Date.now()}_${Math.random().toString(36).substring(2,9)}`,
-        submitted: new Date().toISOString(),
-        status: 'in_review',
-    };
-    // In a real app: await db.collection('reports').insertOne(newReport);
-    mockReports.unshift(newReport);
-    console.log("MOCK: Creating new report", newReport);
+// ✅ Create a new report
+export async function createReport(data: Partial<Report>): Promise<void> {
+  noStore();
+  try {
+    await connectDB();
+    await ReportModel.create({
+      ...data,
+      submitted: new Date().toISOString(),
+      status: 'in_review',
+    });
+  } catch (err) {
+    console.error('Error creating report:', err);
+  }
 }
 
-export async function updateReportStatus(reportId: string, status: 'approved' | 'rejected' | 'action_taken'): Promise<void> {
-    noStore();
-     // In a real app: await db.collection('reports').updateOne({ id: reportId }, { $set: { status } });
-    console.log(`MOCK: Updating report ${reportId} to status ${status}`);
-    const report = mockReports.find(r => r.id === reportId);
-    if (report) {
-        report.status = status;
-    }
+// ✅ Update report status
+export async function updateReportStatus(
+  reportId: string,
+  status: 'approved' | 'rejected' | 'action_taken'
+): Promise<void> {
+  noStore();
+  if (!mongoose.Types.ObjectId.isValid(reportId)) {
+    return;
+  }
+  try {
+    await connectDB();
+    await ReportModel.updateOne({ _id: reportId }, { $set: { status } }).exec();
+  } catch (err) {
+    console.error('Error updating report status:', err);
+  }
 }
