@@ -33,6 +33,7 @@ import type { Feedback } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
 import { useSession } from "next-auth/react";
+import { jwtDecode } from "jwt-decode";
 
 const feedbackFormSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -76,9 +77,24 @@ export default function FeedbackPage() {
     // eslint-disable-next-line
   }, [disconnectRequest]);
 
+  // Helper to get user email from session or JWT
+  const getUserEmail = () => {
+    if (session?.user?.email) return session.user.email;
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("creator_jwt");
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          // @ts-ignore
+          return decoded.email;
+        } catch {}
+      }
+    }
+    return undefined;
+  };
+
   const loadHistory = React.useCallback(async () => {
-    // In a real app, this would be from the session
-    const userId = session?.user?.email;
+    const userId = getUserEmail();
     if (!userId) {
       toast({
         variant: 'destructive',
@@ -97,7 +113,7 @@ export default function FeedbackPage() {
   
   async function onSubmit(values: z.infer<typeof feedbackFormSchema>) {
     setIsLoading(true);
-    const userId = session?.user?.email;
+    const userId = getUserEmail();
     if (!userId) {
       toast({
         variant: 'destructive',
@@ -107,7 +123,7 @@ export default function FeedbackPage() {
       setIsLoading(false);
       return;
     }
-    const result = await submitFeedbackAction({ ...values, type: feedbackType, userId });
+    const result = await submitFeedbackAction({ ...values, type: feedbackType }, userId);
     if (result.success) {
       toast({
         title: 'Feedback Submitted!',
@@ -126,7 +142,7 @@ export default function FeedbackPage() {
   }
 
   const handleMarkAsRead = async (feedbackId: string) => {
-    const userId = session?.user?.email;
+    const userId = getUserEmail();
     if (!userId) {
       toast({
         variant: 'destructive',

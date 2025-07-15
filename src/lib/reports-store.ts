@@ -3,6 +3,8 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import mongoose from 'mongoose';
 import ReportModel from '../models/Report';
+import Strike from '../models/Strike';
+import Creator from '../models/Creator';
 
 // Define the Report interface (you can extend this if needed)
 export interface Report {
@@ -113,6 +115,27 @@ export async function createReport(data: Partial<Report>): Promise<void> {
       },
       { upsert: true, new: true }
     );
+    // --- Add a strike for this creator as well ---
+    await Strike.findOneAndUpdate(
+      { creatorId: data.creatorId },
+      {
+        $push: {
+          strikes: {
+            status: 'pending',
+            reason: data.reason,
+            createdAt: new Date(),
+            platform: data.platform,
+            suspectUrl: data.suspectUrl,
+            originalContentUrl: data.originalContentUrl,
+            originalContentTitle: data.originalContentTitle,
+            creatorName: data.creatorName,
+            creatorAvatar: data.creatorAvatar,
+          }
+        }
+      },
+      { upsert: true, new: true }
+    );
+    // --- End strike logic ---
   } catch (err) {
     console.error('Error creating report:', err);
   }
@@ -132,5 +155,64 @@ export async function updateReportStatus(
     await ReportModel.updateOne({ _id: reportId }, { $set: { status } }).exec();
   } catch (err) {
     console.error('Error updating report status:', err);
+  }
+}
+
+// ✅ Get all strikes (flattened for admin rendering)
+export async function getAllStrikesForAdmin() {
+  noStore();
+  try {
+    await connectDB();
+    const strikeDocs = await Strike.find({}).lean().exec();
+    // Get all unique creatorIds
+    const creatorIds = strikeDocs.map(doc => doc.creatorId?.toString()).filter(Boolean);
+    const creators = await Creator.find({ _id: { $in: creatorIds } }).lean().exec();
+    const creatorMap = {};
+    creators.forEach(c => {
+      creatorMap[c._id.toString()] = {
+        name: c.displayName || c.name || 'Unknown Creator',
+        avatar: c.avatar || '',
+      };
+    });
+    // Flatten all strikes for admin table
+    const allStrikes = strikeDocs.flatMap((doc: any) =>
+      (doc.strikes || []).map((strike: any) => {
+        const { _id, ...rest } = strike;
+        const creatorInfo = creatorMap[doc.creatorId?.toString()] || {};
+        return {
+          ...rest,
+          id: _id?.toString?.() ?? undefined,
+          creatorId: doc.creatorId?.toString?.() ?? undefined,
+          creatorName: rest.creatorName || creatorInfo.name || 'Unknown Creator',
+          creatorAvatar: rest.creatorAvatar || creatorInfo.avatar || '',
+          submitted: strike.createdAt ? new Date(strike.createdAt).toISOString() : '',
+        };
+      })
+    );
+    return allStrikes;
+  } catch (err) {
+    console.error('Error fetching all strikes:', err);
+    return [];
+  }
+}
+
+export async function getStrikeById(strikeId) {
+  noStore();
+  try {
+    await connectDB();
+    const doc = await Strike.findOne({ 'strikes._id': strikeId }).lean().exec();
+    if (!doc) return undefined;
+    const strike = (doc.strikes || []).find(s => s._id.toString() === strikeId);
+    if (!strike) return undefined;
+    // Deep sanitize: remove _id object, convert to string, ensure all fields are plain
+    const { _id, ...rest } = strike;
+    return {
+      ...rest,
+      id: _id?.toString?.() ?? undefined,
+      creatorId: doc.creatorId.toString(),
+    };
+  } catch (err) {
+    console.error('Error fetching strike by id:', err);
+    return undefined;
   }
 }

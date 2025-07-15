@@ -237,8 +237,15 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                   <div>
                       <p className="text-sm text-muted-foreground">Submission Date</p>
                       <p className="font-medium">
-                        <ClientFormattedDate dateString={strike.submitted} options={{ year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' }} />
+                        <ClientFormattedDate dateString={strike.submitted || strike.createdAt} options={{ year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' }} />
                       </p>
+                  </div>
+              </div>
+              <div className="flex items-center gap-4">
+                  <FileText className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <div>
+                      <p className="text-sm text-muted-foreground">Platform</p>
+                      <p className="font-medium">{strike.platform}</p>
                   </div>
               </div>
               <div className="flex items-center gap-4">
@@ -259,11 +266,11 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                       </a>
                   </div>
               </div>
-              <div className="flex items-start gap-4">
-                  <FileText className="w-5 h-5 text-muted-foreground mt-1 flex-shrink-0" />
+              <div className="flex items-center gap-4">
+                  <FileText className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   <div>
-                      <p className="text-sm text-muted-foreground">Reason for Submission</p>
-                      <p className="font-medium whitespace-pre-wrap">{strike.reason}</p>
+                      <p className="text-sm text-muted-foreground">Reason</p>
+                      <p className="font-medium">{strike.reason}</p>
                   </div>
               </div>
           </CardContent>

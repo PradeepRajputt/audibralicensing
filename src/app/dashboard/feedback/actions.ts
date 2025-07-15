@@ -22,8 +22,12 @@ export async function submitFeedbackAction(values: z.infer<typeof formSchema>, u
     await addFeedback({
       creatorEmail: userEmail,
       creatorName,
-      type: values.type,
+      title: values.title,
+      rating: values.rating,
+      tags: values.tags,
+      description: values.description,
       message: values.message || '',
+      type: values.type,
       status: 'pending',
     });
     

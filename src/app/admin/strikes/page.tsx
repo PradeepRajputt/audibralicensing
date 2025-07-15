@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { getAllReports } from '@/lib/reports-store';
+import { getAllStrikesForAdmin } from '@/lib/reports-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StrikesClientPage } from './strikes-client-page';
 import type { Report } from '@/lib/types';
@@ -13,8 +13,8 @@ export default function StrikeRequestsPage() {
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    getAllReports().then(rawStrikes => {
-      setStrikes(JSON.parse(JSON.stringify(rawStrikes)));
+    getAllStrikesForAdmin().then(rawStrikes => {
+      setStrikes(rawStrikes);
       setIsLoading(false);
     });
   }, []);

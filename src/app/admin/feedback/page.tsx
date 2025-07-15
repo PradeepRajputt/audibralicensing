@@ -115,8 +115,10 @@ export default function AdminFeedbackPage() {
     )
   }
 
+  // Defensive: ensure feedbackList is always an array
+  const safeFeedbackList = Array.isArray(feedbackList) ? feedbackList : [];
   // Filter feedbacks by type
-  const filteredFeedbackList = feedbackList.filter(item => {
+  const filteredFeedbackList = safeFeedbackList.filter(item => {
     if (filterType === 'all') return true;
     return item.type === filterType;
   });

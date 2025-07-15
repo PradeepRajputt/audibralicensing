@@ -19,7 +19,10 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
   if (!user) {
     return { success: false, message: 'Could not find user information to submit report.' };
   }
-  const { displayName, avatar, _id } = user;
+  // Fallbacks for name and avatar
+  const creatorName = user.displayName || user.name || 'Unknown Creator';
+  const creatorAvatar = user.avatar || user.image || '';
+  const { _id } = user;
   const parsed = formSchema.safeParse(values);
   if (!parsed.success) {
     const errorMessages = parsed.error.issues.map(issue => issue.message).join(', ');
@@ -31,12 +34,14 @@ export async function submitManualReportAction(values: z.infer<typeof formSchema
       return { success: false, message: "Could not find the selected original content." };
     }
     await createReport({
-      ...parsed.data,
+      platform: parsed.data.platform,
+      suspectUrl: parsed.data.suspectUrl,
+      reason: parsed.data.reason,
       originalContentUrl: originalContent.videoURL || 'N/A',
       originalContentTitle: originalContent.title,
       creatorId: _id.toString(),
-      creatorName: displayName || 'Unknown Creator',
-      creatorAvatar: avatar,
+      creatorName: creatorName,
+      creatorAvatar: creatorAvatar,
     });
   } catch (error) {
     console.error('Error submitting manual report:', error);

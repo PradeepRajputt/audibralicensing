@@ -211,7 +211,7 @@ export function StrikesClientPage({ initialStrikes }: { initialStrikes: Report[]
     );
   };
   
-  const pendingStrikes = strikes.filter(s => s.status === 'in_review');
+  const pendingStrikes = strikes.filter(s => s.status === 'in_review' || s.status === 'pending');
   const approvedStrikes = strikes.filter(s => s.status === 'approved');
   const rejectedStrikes = strikes.filter(s => s.status === 'rejected');
 

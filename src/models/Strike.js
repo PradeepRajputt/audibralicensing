@@ -5,6 +5,12 @@ const singleStrikeSchema = new mongoose.Schema({
   reason: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   resolvedAt: { type: Date },
+  platform: { type: String },
+  suspectUrl: { type: String },
+  originalContentUrl: { type: String },
+  originalContentTitle: { type: String },
+  creatorName: { type: String },
+  creatorAvatar: { type: String },
 });
 
 const strikeSchema = new mongoose.Schema({

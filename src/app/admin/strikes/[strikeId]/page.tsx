@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import StrikeDetailsClientPage from './details-client-page';
-import { getReportById } from '@/lib/reports-store';
+import { getStrikeById } from '@/lib/reports-store';
 import type { Report } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
@@ -16,9 +16,8 @@ export default function StrikeDetailsPage() {
 
   useEffect(() => {
     if (strikeId) {
-      getReportById(strikeId).then(data => {
-        const sanitizedData = data ? JSON.parse(JSON.stringify(data)) as Report : undefined;
-        setStrike(sanitizedData);
+      getStrikeById(strikeId).then(data => {
+        setStrike(data);
         setIsLoading(false);
       });
     } else {
