@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { revalidatePath } from 'next/cache';
 import { monitorWebPagesForCopyrightInfringements } from "@/ai/flows/monitor-web-pages";
-import { addScan } from "@/lib/web-scans-store";
+import { createWebScan } from "@/lib/web-scans-store";
 
 const formSchema = z.object({
   url: z.string().url(),
@@ -29,7 +29,7 @@ export async function scanPageAction(values: z.infer<typeof formSchema>) {
       videoDataUri: values.videoDataUri,
     });
 
-    await addScan({
+    await createWebScan({
         userId,
         pageUrl: values.url,
         scanType,
@@ -46,7 +46,7 @@ export async function scanPageAction(values: z.infer<typeof formSchema>) {
     };
   } catch (error) {
     console.error("Error in scanPageAction: ", error);
-    await addScan({
+    await createWebScan({
       userId,
       pageUrl: values.url,
       scanType,

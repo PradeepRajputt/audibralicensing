@@ -34,6 +34,7 @@ import { getViolationsForUser } from "@/lib/violations-store";
 import { useSearchParams } from "next/navigation";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 import { useSession } from "next-auth/react";
+import { jwtDecode } from "jwt-decode";
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -72,29 +73,45 @@ export default function SubmitReportPage() {
    const loadData = useCallback(async () => {
     setIsFetching(true);
     try {
+      let email = session?.user?.email;
+      if (!email && typeof window !== "undefined") {
+        const token = localStorage.getItem("creator_jwt");
+        if (token) {
+          try {
+            const decoded: any = jwtDecode<any>(token);
+            email = decoded.email;
+          } catch {}
+        }
+      }
       let creatorId = null;
-      if (session?.user?.email) {
-        const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+      if (email) {
+        const res = await fetch(`/api/creator-by-email?email=${email}`);
         const user = await res.json();
         creatorId = user?.id;
       }
-      if (!creatorId) throw new Error('Could not determine creator ID');
+      if (!creatorId) {
+        toast({
+          variant: "destructive",
+          title: "Could not determine creator ID",
+          description: "Please log in again or contact support."
+        });
+        setIsFetching(false);
+        return;
+      }
       const [reports, violationsData, contentData] = await Promise.all([
         getReportsForUser(creatorId),
         getViolationsForUser(creatorId),
         getAllContentForUser(creatorId),
       ]);
-      // Map reports to ensure all required fields are present
-      setSubmittedReports(reports.map((r: any) => ({
-        id: r._id ? r._id.toString() : r.id,
-        creatorName: r.creatorName || '',
-        platform: r.platform || '',
-        suspectUrl: r.suspectUrl || '',
-        status: r.status || 'in_review',
-        submitted: r.submitted || '',
-        originalContentTitle: r.originalContentTitle || '',
-        ...r,
-      })));
+      // Flatten all reports from all creator docs
+      const allReports = reports.flatMap((doc: any) =>
+        (doc.reports || []).map((rep: any) => ({
+          ...rep,
+          id: rep._id?.toString?.() ?? rep.id,
+          creatorId: doc.creatorId,
+        }))
+      );
+      setSubmittedReports(allReports);
       setViolations(violationsData);
       setProtectedContent(contentData);
     } catch (error) {
@@ -187,8 +204,17 @@ Sincerely,
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    
-    const result = await submitManualReportAction(values);
+    let email = session?.user?.email;
+    if (!email && typeof window !== "undefined") {
+      const token = localStorage.getItem("creator_jwt");
+      if (token) {
+        try {
+          const decoded: any = jwtDecode<any>(token);
+          email = decoded.email;
+        } catch {}
+      }
+    }
+    const result = await submitManualReportAction(values, email || "");
 
     if (result.success) {
       toast({
@@ -261,11 +287,9 @@ Sincerely,
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {protectedContent
-                          .filter(content => content.contentType === 'audio' || content.contentType === 'video')
-                          .map(content => (
-                            <SelectItem key={content.id} value={content.id}>{content.title}</SelectItem>
-                          ))}
+                        {protectedContent.map(content => (
+                          <SelectItem key={content.id} value={content.id}>{content.title}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormDescription>This helps us accurately file claims on your behalf.</FormDescription>

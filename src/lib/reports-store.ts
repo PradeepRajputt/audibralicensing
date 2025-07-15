@@ -29,7 +29,8 @@ export async function getAllReports(): Promise<Report[]> {
     return reports.map((r: any) => ({
       ...r,
       id: r._id?.toString?.() ?? r.id,
-      creatorId: r.creatorId,
+      _id: r._id?.toString?.() ?? r.id,
+      creatorId: r.creatorId?.toString?.() ?? r.creatorId,
       submitted: r.submitted,
       status: r.status,
       // ...add any other required fields with fallback/defaults if needed
@@ -55,7 +56,8 @@ export async function getReportsForUser(creatorId: string): Promise<Report[]> {
     return reports.map((r: any) => ({
       ...r,
       id: r._id?.toString?.() ?? r.id,
-      creatorId: r.creatorId,
+      _id: r._id?.toString?.() ?? r.id,
+      creatorId: r.creatorId?.toString?.() ?? r.creatorId,
       submitted: r.submitted,
       status: r.status,
     })) as Report[];
@@ -78,7 +80,8 @@ export async function getReportById(id: string): Promise<Report | undefined> {
     return {
       ...report,
       id: (report as any)._id?.toString?.() ?? (report as any).id,
-      creatorId: (report as any).creatorId,
+      _id: (report as any)._id?.toString?.() ?? (report as any).id,
+      creatorId: (report as any).creatorId?.toString?.() ?? (report as any).creatorId,
       submitted: (report as any).submitted,
       status: (report as any).status,
     } as Report;
@@ -93,11 +96,23 @@ export async function createReport(data: Partial<Report>): Promise<void> {
   noStore();
   try {
     await connectDB();
-    await ReportModel.create({
-      ...data,
-      submitted: new Date().toISOString(),
-      status: 'in_review',
-    });
+    await ReportModel.findOneAndUpdate(
+      { creatorId: data.creatorId },
+      {
+        $push: {
+          reports: {
+            platform: data.platform,
+            status: 'in_review',
+            reason: data.reason,
+            submitted: new Date().toISOString(),
+            originalContentUrl: data.originalContentUrl,
+            suspectUrl: data.suspectUrl,
+            // add any other fields you want to store in a single report
+          }
+        }
+      },
+      { upsert: true, new: true }
+    );
   } catch (err) {
     console.error('Error creating report:', err);
   }

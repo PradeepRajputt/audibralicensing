@@ -15,7 +15,7 @@ const formSchema = z.object({
   tags: z.string().optional(),
 });
 
-export async function addProtectedContentAction(values: z.infer<typeof formSchema>, userEmail: string) {
+export async function addProtectedContentAction(values: z.infer<typeof formSchema>, userEmail: string, skipRevalidate = false) {
   const user = await getUserByEmail(userEmail);
   if (!user) {
     return { success: false, message: 'Could not find creator.' };
@@ -41,6 +41,11 @@ export async function addProtectedContentAction(values: z.infer<typeof formSchem
     console.error('Error adding protected content:', error);
     return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
   }
-  revalidatePath('/dashboard/content');
-  redirect('/dashboard/content');
+  if (!skipRevalidate) {
+    revalidatePath('/dashboard/content');
+    redirect('/dashboard/content');
+  }
+  if (skipRevalidate) {
+    return { success: true, message: 'Content added successfully.' };
+  }
 }

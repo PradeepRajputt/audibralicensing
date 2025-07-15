@@ -17,13 +17,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
 import { addProtectedContentAction } from './actions';
 import { useSession } from "next-auth/react";
+import { jwtDecode } from "jwt-decode";
 
 const formSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -35,31 +36,49 @@ const formSchema = z.object({
 
 export default function AddContentPage() {
   const { data: session, status } = useSession();
-  // Show loading spinner until session is loaded
-  if (status === 'loading') {
-    return <div className="flex justify-center items-center h-48">Loading session...</div>;
-  }
-  if (!session || !session.user || !session.user.email) {
-    return <div className="flex justify-center items-center h-48 text-red-500">You must be logged in to add content.</div>;
-  }
-  console.log("Session in AddContentPage:", session);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      setUserEmail(session.user.email);
+    } else if (typeof window !== "undefined") {
+      const token = localStorage.getItem("creator_jwt");
+      if (token) {
+        try {
+          const decoded: any = jwtDecode(token);
+          setUserEmail(decoded.email);
+        } catch (e) {
+          setUserEmail(null);
+        }
+      } else {
+        setUserEmail(null);
+      }
+    }
+  }, [session]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-        title: "",
-        contentType: "video",
-        platform: "youtube",
-        videoURL: "",
-        tags: ""
+      title: "",
+      contentType: "video",
+      platform: "youtube",
+      videoURL: "",
+      tags: ""
     },
   });
 
+  if (status === 'loading' || userEmail === null) {
+    return <div className="flex justify-center items-center h-48">Loading session...</div>;
+  }
+  if (!userEmail) {
+    return <div className="flex justify-center items-center h-48 text-red-500">You must be logged in to add content.</div>;
+  }
+  console.log("Session or JWT userEmail in AddContentPage:", userEmail);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    const userEmail = session?.user?.email;
     if (!userEmail) {
       toast({
         variant: "destructive",

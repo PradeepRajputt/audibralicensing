@@ -56,6 +56,20 @@ const fileToDataUri = (file: File): Promise<string> => {
   });
 };
 
+function getUserEmail(session: any) {
+  let email = session?.user?.email;
+  if (!email && typeof window !== "undefined") {
+    const token = localStorage.getItem("creator_jwt");
+    if (token) {
+      try {
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        email = decoded.email;
+      } catch {}
+    }
+  }
+  return email;
+}
+
 export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle = '', defaultPublishedAt = '' }: { initialHistory: WebScan[], defaultUrl?: string, defaultTitle?: string, defaultPublishedAt?: string }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [report, setReport] = React.useState<MonitorWebPagesOutput | null>(null);
@@ -118,12 +132,13 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
     }
     setIsLoading(true);
     setReport(null);
-    if (!session?.user?.email) {
+    const email = getUserEmail(session);
+    if (!email) {
       toast({ variant: "destructive", title: "Not logged in" });
       setIsLoading(false);
       return;
     }
-    const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+    const res = await fetch(`/api/creator-by-email?email=${email}`);
     const user = await res.json();
     if (!user?.id) {
       toast({ variant: "destructive", title: "User not found" });
@@ -143,12 +158,13 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
     }
     setIsLoading(true);
     setReport(null);
-    if (!session?.user?.email) {
+    const email = getUserEmail(session);
+    if (!email) {
       toast({ variant: "destructive", title: "Not logged in" });
       setIsLoading(false);
       return;
     }
-    const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+    const res = await fetch(`/api/creator-by-email?email=${email}`);
     const user = await res.json();
     if (!user?.id) {
       toast({ variant: "destructive", title: "User not found" });

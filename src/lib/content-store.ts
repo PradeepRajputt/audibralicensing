@@ -12,7 +12,7 @@ export async function getAllContentForUser(userId: string): Promise<ProtectedCon
         const doc = await ContentModel.findOne({ creatorId: new mongoose.Types.ObjectId(userId) });
         if (!doc || !doc.contents) return [];
         // Add id field to each content object (use its _id)
-        return doc.contents.map((c: any) => ({ ...c.toObject(), id: c._id.toString() }));
+        return doc.contents.map((c: any) => ({ ...c.toObject(), id: c._id.toString(), _id: c._id.toString() }));
     } catch (err) {
         console.error('Error fetching content for user:', err);
         return [];

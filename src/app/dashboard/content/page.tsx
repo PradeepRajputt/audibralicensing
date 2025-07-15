@@ -8,6 +8,7 @@ import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ContentClientPage } from './content-client';
 import type { ProtectedContent } from '@/lib/types';
+import { jwtDecode } from "jwt-decode";
 
 export default function ProtectedContentPage() {
   const { data: session } = useSession();
@@ -18,8 +19,19 @@ export default function ProtectedContentPage() {
   useEffect(() => {
     async function fetchContent() {
       try {
-        if (session?.user?.email) {
-          const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
+        // Get email from session or JWT
+        let email = session?.user?.email;
+        if (!email && typeof window !== "undefined") {
+          const token = localStorage.getItem("creator_jwt");
+          if (token) {
+            try {
+              const decoded: any = jwtDecode(token);
+              email = decoded.email;
+            } catch {}
+          }
+        }
+        if (email) {
+          const res = await fetch(`/api/creator-by-email?email=${email}`);
           if (!res.ok) throw new Error('Failed to fetch user info');
           const user = await res.json();
           if (user?.id) {
