@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const webScanSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true },
+  userId: { type: String, required: true }, // Changed from ObjectId to String
   pageUrl: { type: String, required: true },
   scanType: { type: String, enum: ['text', 'image', 'video'], required: true },
   status: { type: String, enum: ['completed', 'failed'], required: true },

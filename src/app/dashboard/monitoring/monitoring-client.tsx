@@ -70,6 +70,22 @@ function getUserEmail(session: any) {
   return email;
 }
 
+// Add a function to upload the video file to /api/scan/upload
+async function uploadOriginalVideo(file: File, creatorId: string, title: string) {
+  const formData = new FormData();
+  formData.append('file', file);
+  // Use fetch with multipart/form-data
+  const res = await fetch('/api/scan/upload', {
+    method: 'POST',
+    body: formData, // FIXED: send as FormData
+    headers: {
+      'x-creatorid': creatorId,
+      'x-title': title || '',
+    },
+  });
+  return await res.json();
+}
+
 export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle = '', defaultPublishedAt = '' }: { initialHistory: WebScan[], defaultUrl?: string, defaultTitle?: string, defaultPublishedAt?: string }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [report, setReport] = React.useState<MonitorWebPagesOutput | null>(null);
@@ -97,7 +113,7 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
   });
   
   // Update handleFileChange to preview audio and video
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
         setFile(selectedFile);
@@ -318,7 +334,9 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
                                     {typeof creatorContent === 'string' ? (
                                         <p className="text-sm text-muted-foreground italic">&quot;{report.matchedContentSnippet}&quot;</p>
                                     ) : (
-                                        <Image src={report.matchedContentSnippet!} alt="Matched content on page" width={300} height={200} className="rounded-md" data-ai-hint="webpage content" />
+                                        report.matchedContentSnippet && typeof report.matchedContentSnippet === 'string' && report.matchedContentSnippet.trim() !== ''
+                                            ? <Image src={report.matchedContentSnippet} alt="Matched content on page" width={300} height={200} className="rounded-md" data-ai-hint="webpage content" />
+                                            : <p className="text-sm text-muted-foreground italic">No matched content image available.</p>
                                     )}
                                 </CardContent>
                             </Card>

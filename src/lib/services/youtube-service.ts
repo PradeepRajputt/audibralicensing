@@ -93,3 +93,31 @@ export async function getMostViewedVideo(channelId: string) {
         throw new Error("Failed to fetch most viewed video.");
     }
 }
+
+/**
+ * Searches YouTube for videos matching a keyword or content string.
+ * @param {string} query - The search query (keywords, title, etc.)
+ * @param {number} maxResults - Maximum number of results to return
+ * @returns {Promise<Array<{ videoId: string, title: string, url: string, channelTitle: string, channelId: string }>>}
+ */
+export async function searchYoutubeByKeyword(query: string, maxResults: number = 10) {
+    const youtube = getYouTubeClient();
+    try {
+        const response = await youtube.search.list({
+            part: ['snippet'],
+            q: query,
+            type: ['video'],
+            maxResults
+        });
+        return (response.data.items || []).map(item => ({
+            videoId: item.id?.videoId || '',
+            title: item.snippet?.title || '',
+            url: item.id?.videoId ? `https://www.youtube.com/watch?v=${item.id.videoId}` : '',
+            channelTitle: item.snippet?.channelTitle || '',
+            channelId: item.snippet?.channelId || ''
+        }));
+    } catch (error) {
+        console.error('Error searching YouTube by keyword:', error);
+        throw new Error('Failed to search YouTube.');
+    }
+}

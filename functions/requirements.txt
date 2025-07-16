@@ -1,0 +1,32 @@
+# Core audio/video tools
+ffmpeg-python
+yt-dlp
+
+# Whisper & Torch
+openai-whisper
+torch>=2.0.0
+
+# Audio Analysis
+librosa
+scipy
+numpy
+
+# Text Embedding + Semantic Search
+transformers
+sentence-transformers
+
+# Image and Frame Processing
+opencv-python
+imagehash
+
+# Audio Fingerprinting
+docopt==0.6.2
+audioread
+soundfile
+
+# Optional: FastAPI or Flask for backend APIs (if needed)
+# fastapi
+# uvicorn
+
+# Optional: Environment loader
+python-dotenv

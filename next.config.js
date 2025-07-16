@@ -1,5 +1,7 @@
 module.exports = {
-  serverActions: {
-    bodySizeLimit: '100mb',
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
   },
 }; 
