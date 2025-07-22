@@ -4,6 +4,7 @@ import { Inter, Source_Code_Pro } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Providers } from '@/components/providers';
+import Script from 'next/script';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,6 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
+      </head>
       <body className={cn("font-body antialiased", inter.variable, sourceCodePro.variable)} suppressHydrationWarning>
         <Providers>
             {children}

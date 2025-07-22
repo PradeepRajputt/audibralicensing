@@ -33,7 +33,12 @@ export async function downloadYoutubeVideo(youtubeUrl: string): Promise<string> 
 export async function extractAudio(videoPath: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const outDir = os.tmpdir();
+    // Ensure the output file has a valid .wav extension
     const outPath = path.join(outDir, `ytaudio_${uuidv4()}.wav`);
+    console.log('[extractAudio] FFmpeg output path:', outPath);
+    if (!outPath.endsWith('.wav')) {
+      return reject(new Error('Output path must have .wav extension: ' + outPath));
+    }
     ffmpeg(videoPath)
       .setFfmpegPath(ffmpegPath as string)
       .noVideo()
@@ -41,8 +46,24 @@ export async function extractAudio(videoPath: string): Promise<string> {
       .audioChannels(1)
       .audioFrequency(16000)
       .format('wav')
-      .on('end', () => resolve(outPath))
-      .on('error', reject)
+      .on('end', () => {
+        if (fs.existsSync(outPath)) {
+          resolve(outPath);
+        } else {
+          reject(new Error('FFmpeg did not create output file: ' + outPath));
+        }
+      })
+      .on('error', (err, stdout, stderr) => {
+        let details = '';
+        if (err) details += err.message + '\n';
+        if (stdout) details += 'stdout: ' + stdout + '\n';
+        if (stderr) details += 'stderr: ' + stderr + '\n';
+        // Add more context for common ffmpeg errors
+        if (details.includes('Invalid argument')) {
+          details += '\n[extractAudio] FFmpeg Invalid argument: Check output path, permissions, and disk space.';
+        }
+        reject(new Error('FFmpeg error: ' + details));
+      })
       .save(outPath);
   });
 }
@@ -72,6 +93,11 @@ async function runPythonProcessor(filePath: string, type: 'audio'|'video'|'trans
     ];
     if (language && type === 'transcript') {
       args.push('--language', language);
+    }
+    // Add --dbase for audio type
+    if (type === 'audio') {
+      const dbPath = path.join(os.tmpdir(), `audfprint_db_${uuidv4()}.afp`);
+      args.push('--dbase', dbPath);
     }
     const python = spawn('py', args);
     let stdout = '';

@@ -9,6 +9,7 @@ export async function GET(req) {
   const user = await Creator.findOne({ email }).lean();
   if (!user) return Response.json({ error: 'User not found' }, { status: 404 });
   return Response.json({
+    _id: user._id, // Add this line to return the user ID
     name: user.name,
     email: user.email,
     youtubeChannelId: user.youtubeChannelId,

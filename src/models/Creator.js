@@ -15,6 +15,11 @@ const creatorSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   twoFactorSecret: { type: String },
   twoFactorEnabled: { type: Boolean, default: false },
+  // Subscription/payment fields
+  plan: { type: String, enum: ['free', 'monthly', 'yearly', 'expired'], default: 'free' },
+  trialStart: { type: Date, default: Date.now },
+  planExpiry: { type: Date },
+  subscriptionId: { type: String }, // Razorpay subscription ID
 }, { collection: 'creators' });
 
 const Creator = (mongoose.models && mongoose.models.Creator)

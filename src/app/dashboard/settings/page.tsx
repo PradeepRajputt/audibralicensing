@@ -137,7 +137,7 @@ export default function SettingsPage() {
       <div className="max-w-3xl mx-auto pt-8 pb-4">
         {/* Profile summary card */}
         <div className="flex items-center gap-4 bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl px-8 py-7 mb-10 animate-fade-in">
-          <img src={profileAvatar} alt="Avatar" className="w-16 h-16 rounded-full border-2 border-primary/60 shadow-md" />
+          <img src={youtubeChannel && youtubeChannel.thumbnail ? youtubeChannel.thumbnail : profileAvatar} alt="Avatar" className="w-16 h-16 rounded-full border-2 border-primary/60 shadow-md" />
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl font-bold text-primary">{profileName}</span>
@@ -363,13 +363,17 @@ export default function SettingsPage() {
                     <Button
                       variant="outline"
                       onClick={async () => {
+                        if (!phone || phone.trim().length < 8) {
+                          setTwoFAError('Please provide a valid phone number before enabling 2FA.');
+                          return;
+                        }
                         setTwoFALoading(true);
                         setTwoFAError('');
                         try {
                           const res = await fetch('/api/settings/2fa/setup', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email }),
+                            body: JSON.stringify({ email, phone }),
                           });
                           const data = await res.json();
                           setTwoFAQR(data.qr);
@@ -387,6 +391,9 @@ export default function SettingsPage() {
                     >
                       Set up 2FA
                     </Button>
+                    {(!phone || phone.trim().length < 8) && (
+                      <div className="text-destructive text-sm mt-2">Please enter your phone number above before enabling 2FA.</div>
+                    )}
                     {twoFASetupMode === 'setup' && (
                       <form
                         key="setup"

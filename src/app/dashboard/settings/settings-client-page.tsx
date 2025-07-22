@@ -160,7 +160,7 @@ export default function SettingsClientPage() {
                 <CardDescription>Connect your YouTube account to fetch analytics and monitor content.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="flex items-center justify-between p-4 rounded-lg border">
+                 <div className="flex items-center justify-between p-4 md:p-6 rounded-lg border overflow-x-auto">
                     <div className="flex items-center gap-4">
                         <Youtube className="w-8 h-8 text-red-600" />
                         <div>

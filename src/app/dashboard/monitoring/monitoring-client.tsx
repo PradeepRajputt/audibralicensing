@@ -34,6 +34,7 @@ import { scanPageAction } from "./actions";
 import { getScansForUser } from "@/lib/web-scans-store";
 import { useSession } from "next-auth/react";
 
+
 // Schema for the text-based scan
 const textFormSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL." }),
@@ -74,21 +75,34 @@ function getUserEmail(session: any) {
 async function uploadOriginalVideo(file: File, creatorId: string, title: string) {
   const formData = new FormData();
   formData.append('file', file);
-  // Use fetch with multipart/form-data
-  const res = await fetch('/api/scan/upload', {
-    method: 'POST',
-    body: formData, // FIXED: send as FormData
-    headers: {
-      'x-creatorid': creatorId,
-      'x-title': title || '',
-    },
-  });
-  return await res.json();
+  formData.append('creatorId', creatorId);
+  formData.append('title', title || '');
+  try {
+    const res = await fetch('/api/scan/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: 'Network error' };
+  }
+}
+
+// Define a unified type for scan results
+interface ScanResult {
+  matchFound: boolean;
+  matchScore: number;
+  resultMessage: string;
+  transcript?: string;
+  embedding?: number[];
+  infringementReport?: string;
+  matchedContentSnippet?: string;
+  confidenceScore?: number;
 }
 
 export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle = '', defaultPublishedAt = '' }: { initialHistory: WebScan[], defaultUrl?: string, defaultTitle?: string, defaultPublishedAt?: string }) {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [report, setReport] = React.useState<MonitorWebPagesOutput | null>(null);
+  const [report, setReport] = React.useState<ScanResult | null>(null);
   const [file, setFile] = React.useState<File | null>(null);
   const [preview, setPreview] = React.useState<string | null>(null);
   const [creatorContent, setCreatorContent] = React.useState<string | { url: string; type: 'audio' | 'video' } | null>(null);
@@ -97,10 +111,18 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
   // Add state for audioUrl and videoUrl
   const [audioUrl, setAudioUrl] = React.useState('');
   const [videoUrl, setVideoUrl] = React.useState('');
+  const [scanStatus, setScanStatus] = React.useState<'idle' | 'initializing' | 'scanning'>('idle');
   const { data: session } = useSession();
 
 
   const { toast } = useToast();
+
+  // Clean up preview URLs to avoid memory leaks
+  React.useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   // 1. Remove TabsTrigger and TabsContent for 'text' and 'media' (image)
   // 2. Remove textForm, mediaForm, onTextSubmit, onMediaSubmit, and related state/logic
@@ -112,33 +134,45 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
     defaultValues: { url: defaultUrl },
   });
   
-  // Update handleFileChange to preview audio and video
+  const allowedVideoExts = ['.mp4', '.mov', '.avi', '.mkv', '.webm'];
+  const allowedAudioExts = ['.mp3', '.wav', '.aac', '.flac', '.ogg'];
+  const allowedExts = [...allowedVideoExts, ...allowedAudioExts];
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-        setFile(selectedFile);
-        if (selectedFile.type.startsWith('image/')) {
-            setPreview(URL.createObjectURL(selectedFile));
-        } else if (selectedFile.type.startsWith('audio/')) {
-            setPreview(URL.createObjectURL(selectedFile));
-        } else if (selectedFile.type.startsWith('video/')) {
-            setPreview(URL.createObjectURL(selectedFile));
-        } else {
-            setPreview(null);
-        }
+      const ext = selectedFile.name ? selectedFile.name.split('.').pop()?.toLowerCase() : '';
+      const dotExt = ext ? `.${ext}` : '';
+      const isVideo = selectedFile.type.startsWith('video/') || allowedVideoExts.includes(dotExt);
+      const isAudio = selectedFile.type.startsWith('audio/') || allowedAudioExts.includes(dotExt);
+      if (!isVideo && !isAudio) {
+        toast({ variant: 'destructive', title: 'Invalid file type', description: 'Only audio/video files are allowed (mp4, mov, avi, mkv, webm, mp3, wav, aac, flac, ogg)' });
+        setFile(null);
+        setPreview(null);
+        return;
+      }
+      setFile(selectedFile);
+      setPreview(URL.createObjectURL(selectedFile));
+    } else {
+      setFile(null);
+      setPreview(null);
     }
   };
 
   const refreshHistory = React.useCallback(async () => {
     if (session?.user?.email) {
+      try {
       const res = await fetch(`/api/creator-by-email?email=${session.user.email}`);
       const user = await res.json();
       if (user?.id) {
         const history = await getScansForUser(user.id);
         setScanHistory(history);
+        }
+      } catch (err) {
+        toast({ variant: 'destructive', title: 'Failed to refresh history' });
       }
     }
-  }, [session]);
+  }, [session, toast]);
 
 
   async function onAudioSubmit(values: z.infer<typeof mediaFormSchema>) {
@@ -163,8 +197,20 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
     }
     const dataUri = await fileToDataUri(file);
     setCreatorContent({ url: dataUri, type: file.type.startsWith('audio') ? 'audio' : 'video'});
-    const result = await scanPageAction({ url: values.url, photoDataUri: dataUri });
-    handleActionResult(result);
+    let result = await scanPageAction({ url: values.url, photoDataUri: dataUri });
+    if (result.success && result.data && !('confidenceScore' in result.data)) {
+      result.data = {
+        matchFound: (result.data as any).matchFound ?? false,
+        matchScore: 0,
+        resultMessage: '',
+        transcript: '',
+        embedding: [],
+        infringementReport: '',
+        matchedContentSnippet: '',
+        confidenceScore: 0,
+      };
+    }
+    handleActionResult(result as { success: boolean; data?: ScanResult; message?: string });
     setIsLoading(false);
   }
   async function onVideoSubmit(values: z.infer<typeof mediaFormSchema>) {
@@ -187,25 +233,73 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
       setIsLoading(false);
       return;
     }
+    // Always convert file to Data URI and send as videoDataUri
     const dataUri = await fileToDataUri(file);
-    setCreatorContent({ url: dataUri, type: 'video' });
-    const result = await scanPageAction({ url: values.url, videoDataUri: dataUri });
-    handleActionResult(result);
+    setCreatorContent({ url: dataUri, type: file.type.startsWith('audio') ? 'audio' : 'video'});
+    // Always send videoDataUri for video files
+    let result = await scanPageAction({ url: values.url, videoDataUri: dataUri });
+    if (result.success && result.data && !('confidenceScore' in result.data)) {
+      result.data = {
+        matchFound: (result.data as any).matchFound ?? false,
+        matchScore: 0,
+        resultMessage: '',
+        transcript: '',
+        embedding: [],
+        infringementReport: '',
+        matchedContentSnippet: '',
+        confidenceScore: 0,
+      };
+    }
+    handleActionResult(result as { success: boolean; data?: ScanResult; message?: string });
     setIsLoading(false);
   }
-  
-  const handleActionResult = (result: { success: boolean; data?: MonitorWebPagesOutput; message?: string }) => {
-    if (result.success && result.data) {
-        setReport(result.data);
-    } else {
-        toast({
-            variant: "destructive",
-            title: "An error occurred",
-            description: result.message || "Failed to scan the web page. Please try again.",
-        });
+
+  // Add a handler for text scan (if needed)
+  async function onTextSubmit(values: z.infer<typeof textFormSchema>) {
+    setIsLoading(true);
+    setReport(null);
+    const email = getUserEmail(session);
+    if (!email) {
+      toast({ variant: "destructive", title: "Not logged in" });
+      setIsLoading(false);
+      return;
     }
+    const res = await fetch(`/api/creator-by-email?email=${email}`);
+    const user = await res.json();
+    if (!user?.id) {
+      toast({ variant: "destructive", title: "User not found" });
+      setIsLoading(false);
+      return;
+    }
+    let result = await scanPageAction({ url: values.url, creatorContent: values.creatorContent });
+    handleActionResult(result as { success: boolean; data?: ScanResult; message?: string });
     setIsLoading(false);
-    refreshHistory();
+  }
+
+  // Update handleActionResult to always show a dialog/modal with full scan result
+  const handleActionResult = (result: { success: boolean; data?: ScanResult; message?: string }) => {
+    // Provide default values for legacy/partial scan results
+    const data: ScanResult | null = result.data
+      ? {
+          matchFound: result.data.matchFound ?? false,
+          matchScore: result.data.matchScore ?? 0,
+          resultMessage: result.data.resultMessage ?? '',
+          transcript: result.data.transcript ?? '',
+          embedding: result.data.embedding ?? [],
+          infringementReport: result.data.infringementReport ?? '',
+          matchedContentSnippet: result.data.matchedContentSnippet ?? '',
+          confidenceScore: result.data.confidenceScore ?? 0,
+        }
+      : null;
+    setReport(data);
+    refreshHistory(); // Always refresh scan history after a scan
+    if (!result.success) {
+      toast({
+        variant: 'destructive',
+        title: 'Scan Failed',
+        description: result.message || 'Unknown error',
+      });
+    }
   };
   
   const filteredHistory = React.useMemo(() => {
@@ -214,6 +308,74 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
         (historyFilter.status === 'all' || (historyFilter.status === 'found' && scan.matchFound) || (historyFilter.status === 'not_found' && !scan.matchFound))
     );
   }, [scanHistory, historyFilter]);
+
+  // Robust web scan handler
+  const handleWebScan = async (values: z.infer<typeof mediaFormSchema>) => {
+    if (!file) {
+      toast({ variant: 'destructive', title: 'No file selected' });
+      return;
+    }
+    if (scanStatus !== 'idle') return; // Prevent double submit
+    setScanStatus('initializing');
+    setIsLoading(true);
+    setReport(null);
+    try {
+      const email = getUserEmail(session);
+      if (!email) {
+        toast({ variant: 'destructive', title: 'Not logged in' });
+        setScanStatus('idle');
+        setIsLoading(false);
+        return;
+      }
+      const res = await fetch(`/api/creator-by-email?email=${email}`);
+      const user = await res.json();
+      if (!user?.id) {
+        toast({ variant: 'destructive', title: 'User not found' });
+        setScanStatus('idle');
+        setIsLoading(false);
+        return;
+      }
+      // 1. Upload video and save hash to DB
+      const uploadResult = await uploadOriginalVideo(file, user.id, file.name);
+      if (!uploadResult.success) {
+        setScanStatus('idle');
+        setIsLoading(false);
+        toast({ title: 'Upload failed', description: uploadResult.error || 'Unknown error', variant: 'destructive' });
+        return;
+      }
+      setScanStatus('scanning');
+      // 2. Trigger web scan (pass scanId from uploadResult if needed)
+      let scanResult = await scanPageAction({ url: values.url });
+      // Ensure setReport is always called with the correct type
+      if (scanResult.success && scanResult.data) {
+        const data: ScanResult = {
+          matchFound: (scanResult.data as any).matchFound ?? false,
+          matchScore: (scanResult.data as any).matchScore ?? 0,
+          resultMessage: (scanResult.data as any).resultMessage ?? '',
+          transcript: (scanResult.data as any).transcript ?? '',
+          embedding: (scanResult.data as any).embedding ?? [],
+          infringementReport: (scanResult.data as any).infringementReport ?? '',
+          matchedContentSnippet: (scanResult.data as any).matchedContentSnippet ?? '',
+          confidenceScore: (scanResult.data as any).confidenceScore ?? 0,
+        };
+        setReport(data);
+        toast({ title: 'Scan complete', variant: 'default' });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'An error occurred',
+          description: scanResult.message || 'Failed to scan the web page. Please try again.',
+        });
+      }
+      setScanStatus('idle');
+      setIsLoading(false);
+      refreshHistory();
+    } catch (err) {
+      setScanStatus('idle');
+      setIsLoading(false);
+      toast({ variant: 'destructive', title: 'Unexpected error', description: String(err) });
+    }
+  };
 
 
   return (
@@ -269,7 +431,7 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
 
             <TabsContent value="video" className="mt-6">
                  <Form {...audioForm}>
-                    <form onSubmit={audioForm.handleSubmit(onVideoSubmit)} className="space-y-8">
+                    <form onSubmit={audioForm.handleSubmit(handleWebScan)} className="space-y-8">
                         <FormField control={audioForm.control} name="url" render={({ field }) => (<FormItem><FormLabel>Web Page URL</FormLabel><FormControl><Input placeholder="https://example.com/page-with-video" {...field} /></FormControl><FormDescription>The URL of the page where you suspect your video is being used.</FormDescription><FormMessage /></FormItem>)} />
                         <FormItem>
                             <FormLabel>Your Video File</FormLabel>
@@ -297,7 +459,12 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
                             </div>
                         </div>)}
 
-                        <Button type="submit" disabled={isLoading}>{isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Scan Page</Button>
+                        <Button type="submit" disabled={isLoading || scanStatus !== 'idle'}>
+                            {scanStatus === 'initializing' && 'Initializing Scan...'}
+                            {scanStatus === 'scanning' && 'Scanning Web Page...'}
+                            {scanStatus === 'idle' && (isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null)}
+                            {scanStatus === 'idle' && 'Scan Page'}
+                        </Button>
                     </form>
                 </Form>
             </TabsContent>
@@ -317,7 +484,9 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
                             <Card>
                                 <CardHeader><CardTitle>Your Content</CardTitle></CardHeader>
                                 <CardContent>
-                                    {creatorContent && typeof creatorContent === 'object' && creatorContent.type === 'audio' ? (
+                                    {report.transcript ? (
+                                        <pre className="whitespace-pre-wrap text-sm">{report.transcript}</pre>
+                                    ) : creatorContent && typeof creatorContent === 'object' && creatorContent.type === 'audio' ? (
                                         <audio controls src={creatorContent.url} />
                                     ) : creatorContent && typeof creatorContent === 'object' && creatorContent.type === 'video' ? (
                                         <video controls src={creatorContent?.url} />
@@ -342,9 +511,9 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
                             </Card>
                         </div>
                         <div className="space-y-2">
-                             <Label>Confidence Score: {Math.round(report.confidenceScore * 100)}%</Label>
+                             <Label>Confidence Score: {Math.round((report.confidenceScore ?? 0) * 100)}%</Label>
                              <TooltipProvider><Tooltip><TooltipTrigger asChild>
-                                <Progress value={report.confidenceScore * 100} className="w-full" />
+                                <Progress value={(report.confidenceScore ?? 0) * 100} className="w-full" />
                              </TooltipTrigger><TooltipContent>
                                 <p>Based on AI analysis (cosine similarity for text, hash comparison for media).</p>
                              </TooltipContent></Tooltip></TooltipProvider>

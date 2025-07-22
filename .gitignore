@@ -47,3 +47,7 @@ node_modules
 
 .firebase/
 functions/.next/
+
+venv/
+
+

@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 
+const OriginalVideoSchema = new mongoose.Schema({
+  url: String,
+  title: String,
+  audioHash: String,
+  videoHash: String,
+  transcriptEmbedding: String,
+  submittedAt: { type: Date, default: Date.now }
+}, { _id: false });
+
 const matchSchema = new mongoose.Schema({
   matchedUrl: { type: String, required: true },
   matchedTitle: { type: String },
@@ -16,19 +25,14 @@ const singleScanSchema = new mongoose.Schema({
 });
 
 
-const scanSchema = new mongoose.Schema({
-  creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true },
-  originalVideo: {
-    url: { type: String, required: true },
-    title: { type: String },
-    audioHash: { type: String },
-    videoHash: { type: String },
-    transcriptEmbedding: { type: String },
-    submittedAt: { type: Date, default: Date.now },
-  },
-  scans: [singleScanSchema], // Each scan attempt for this original video
+const ScanSchema = new mongoose.Schema({
+  creatorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator' },
+  // Max 10 objects, enforced in logic
+  originalVideo: { type: [OriginalVideoSchema], default: [] },
+  // Max 25 objects, enforced in logic
+  scans: { type: [mongoose.Schema.Types.Mixed], default: [] }
 });
 
-const Scan = (mongoose.models && mongoose.models.Scan) || mongoose.model('Scan', scanSchema);
+const Scan = (mongoose.models && mongoose.models.Scan) || mongoose.model('Scan', ScanSchema);
 
 export default Scan; 
