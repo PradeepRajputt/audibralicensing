@@ -131,6 +131,14 @@ export default function SettingsPage() {
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const passwordInputRef = useRef(null);
   const [twoFASetupMode, setTwoFASetupMode] = useState<null | 'setup' | 'disable'>(null);
+  const [verificationStep, setVerificationStep] = useState<'email' | 'otp' | 'reset'>('email');
+  const [emailInput, setEmailInput] = useState(email || '');
+  const [otp, setOtp] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
+  const [canReset, setCanReset] = useState(false);
+  const [newPassword2, setNewPassword2] = useState('');
 
   return (
     <div className="min-h-screen w-full px-2 md:px-0">
@@ -221,64 +229,206 @@ export default function SettingsPage() {
                   <DialogTrigger asChild>
                     <Button variant="outline" className="mt-1">{t('Change Password')}</Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="max-w-md relative">
+                    {/* Stepper */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex-1 flex flex-col items-center">
+                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='email' ? 'border-blue-500 bg-blue-100 text-blue-700' : 'border-gray-300 bg-white text-gray-400'}`}>1</div>
+                        <span className="text-xs mt-1">Email</span>
+                      </div>
+                      <div className="flex-1 h-0.5 bg-gray-300 mx-1" />
+                      <div className="flex-1 flex flex-col items-center">
+                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='otp' ? 'border-blue-500 bg-blue-100 text-blue-700' : verificationStep==='reset' ? 'border-blue-500 bg-blue-100 text-blue-700' : 'border-gray-300 bg-white text-gray-400'}`}>2</div>
+                        <span className="text-xs mt-1">OTP</span>
+                      </div>
+                      <div className="flex-1 h-0.5 bg-gray-300 mx-1" />
+                      <div className="flex-1 flex flex-col items-center">
+                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='reset' ? 'border-blue-500 bg-blue-100 text-blue-700' : 'border-gray-300 bg-white text-gray-400'}`}>3</div>
+                        <span className="text-xs mt-1">New Password</span>
+                      </div>
+                    </div>
                     <DialogHeader>
-                      <DialogTitle>Change Password</DialogTitle>
+                      <DialogTitle className="flex items-center gap-2">
+                        {verificationStep === 'reset' && passwordSuccess ? (
+                          <span className="inline-flex items-center text-green-600"><svg className="w-6 h-6 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Success</span>
+                        ) : (
+                          <span>Change Password</span>
+                        )}
+                      </DialogTitle>
                       <DialogDescription>
-                        Please remember your new password. Use a strong, alphanumeric password for your security.
+                        {verificationStep === 'email' && (
+                          <span className="flex items-center gap-2 text-blue-700"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>For your security, please verify your email before changing your password.</span>
+                        )}
+                        {verificationStep === 'otp' && (
+                          <span className="flex items-center gap-2 text-blue-700"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Enter the OTP sent to your email.</span>
+                        )}
+                        {verificationStep === 'reset' && !passwordSuccess && (
+                          <span className="flex items-center gap-2 text-blue-700"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Set a new password for your account.</span>
+                        )}
+                        {verificationStep === 'reset' && passwordSuccess && (
+                          <span className="flex items-center gap-2 text-green-700">Your password has been changed successfully.</span>
+                        )}
                       </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={async e => {
-                      e.preventDefault();
-                      setPasswordLoading(true);
-                      setPasswordError('');
-                      setPasswordSuccess('');
-                      try {
-                        if (!newPassword || newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
-                          setPasswordError('Password must be at least 8 characters and alphanumeric.');
+                    {/* Step 1: Email */}
+                    {verificationStep === 'email' && (
+                      <div className="space-y-4 mt-4">
+                        <Input
+                          aria-label="Enter your email"
+                          placeholder="Enter your email"
+                          value={emailInput}
+                          onChange={e => setEmailInput(e.target.value)}
+                        />
+                        <div className="flex justify-end gap-2 mt-2">
+                          <DialogClose asChild>
+                            <Button type="button" variant="ghost" disabled={isSending}>Cancel</Button>
+                          </DialogClose>
+                          <Button
+                            onClick={async () => {
+                              setIsSending(true);
+                              setVerificationError('');
+                              try {
+                                const res = await fetch('/api/send-email-otp', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ email: emailInput }),
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setVerificationStep('otp');
+                                } else {
+                                  setVerificationError(data.error || 'Failed to send OTP.');
+                                }
+                              } catch (err) {
+                                setVerificationError('Failed to send OTP.');
+                              } finally {
+                                setIsSending(false);
+                              }
+                            }}
+                            disabled={isSending || !/^\S+@\S+\.\S+$/.test(emailInput)}
+                          >
+                            {isSending ? 'Sending...' : 'Send OTP'}
+                          </Button>
+                        </div>
+                        {verificationError && <div className="flex items-center gap-1 text-destructive text-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>{verificationError}</div>}
+                      </div>
+                    )}
+                    {/* Step 2: OTP */}
+                    {verificationStep === 'otp' && (
+                      <div className="space-y-4 mt-4">
+                        <div className="text-sm text-muted-foreground">OTP sent to {emailInput}. Enter OTP to verify.</div>
+                        <Input
+                          aria-label="Enter 6-digit OTP"
+                          placeholder="Enter 6-digit OTP"
+                          value={otp}
+                          onChange={e => setOtp(e.target.value)}
+                          maxLength={6}
+                        />
+                        <div className="flex justify-end gap-2 mt-2">
+                          <Button
+                            onClick={async () => {
+                              setIsVerifying(true);
+                              setVerificationError('');
+                              try {
+                                const res = await fetch('/api/verify-email-otp', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ email: emailInput, otp }),
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setCanReset(true);
+                                  setVerificationStep('reset');
+                                } else {
+                                  setVerificationError(data.error || 'Invalid OTP.');
+                                }
+                              } catch (err) {
+                                setVerificationError('Failed to verify OTP.');
+                              } finally {
+                                setIsVerifying(false);
+                              }
+                            }}
+                            disabled={isVerifying || otp.length !== 6}
+                          >
+                            {isVerifying ? 'Verifying...' : 'Verify OTP'}
+                          </Button>
+                        </div>
+                        {verificationError && <div className="flex items-center gap-1 text-destructive text-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>{verificationError}</div>}
+                      </div>
+                    )}
+                    {/* Step 3: New Password */}
+                    {verificationStep === 'reset' && canReset && !passwordSuccess && (
+                      <form onSubmit={async e => {
+                        e.preventDefault();
+                        setPasswordLoading(true);
+                        setPasswordError('');
+                        setPasswordSuccess('');
+                        try {
+                          if (!newPassword2 || newPassword2.length < 8 || !/[A-Za-z]/.test(newPassword2) || !/\d/.test(newPassword2)) {
+                            setPasswordError('Password must be at least 8 characters and alphanumeric.');
+                            setPasswordLoading(false);
+                            return;
+                          }
+                          const hashed = await bcrypt.hash(newPassword2, 10);
+                          const res = await fetch('/api/save-user', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: emailInput, password: hashed }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setPasswordSuccess('Password updated successfully. Please use your new password next time you log in.');
+                            setNewPassword2('');
+                          } else {
+                            setPasswordError(data.error || 'Failed to update password.');
+                          }
+                        } catch (err) {
+                          setPasswordError('Failed to update password.');
+                        } finally {
                           setPasswordLoading(false);
-                          return;
                         }
-                        const hashed = await bcrypt.hash(newPassword, 10);
-                        const res = await fetch('/api/save-user', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ email, password: hashed }),
-                        });
-                        const data = await res.json();
-                        if (data.success) {
-                          setPasswordSuccess('Password updated successfully. Please use your new password next time you log in.');
-                          setNewPassword('');
-                        } else {
-                          setPasswordError(data.error || 'Failed to update password.');
-                        }
-                      } catch (err) {
-                        setPasswordError('Failed to update password.');
-                      } finally {
-                        setPasswordLoading(false);
-                      }
-                    }}>
-                      <Input
-                        ref={passwordInputRef}
-                        type="password"
-                        placeholder="Enter new password"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        minLength={8}
-                        required
-                        className="mb-2"
-                      />
-                      {passwordError && <div className="text-destructive text-sm mb-2">{passwordError}</div>}
-                      {passwordSuccess && <div className="text-green-700 text-sm mb-2">{passwordSuccess}</div>}
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button type="button" variant="ghost" disabled={passwordLoading}>Cancel</Button>
-                        </DialogClose>
-                        <Button type="submit" disabled={passwordLoading}>
-                          {passwordLoading ? 'Saving...' : 'Save Password'}
-                        </Button>
-                      </DialogFooter>
-                    </form>
+                      }} className="space-y-4 mt-4" aria-label="Set new password">
+                        <Input
+                          type="password"
+                          aria-label="Enter new password"
+                          placeholder="Enter new password"
+                          value={newPassword2}
+                          onChange={e => setNewPassword2(e.target.value)}
+                          minLength={8}
+                          required
+                          className="mb-2"
+                        />
+                        {/* Password Strength Meter */}
+                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                          <div
+                            className={`h-full transition-all duration-300 ${newPassword2.length === 0 ? 'w-0' : newPassword2.length < 8 ? 'w-1/4 bg-red-400' : /[A-Za-z]/.test(newPassword2) && /\d/.test(newPassword2) && newPassword2.length >= 12 ? 'w-full bg-green-500' : 'w-2/3 bg-yellow-400'}`}
+                          />
+                        </div>
+                        {passwordError && <div className="flex items-center gap-1 text-destructive text-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>{passwordError}</div>}
+                        {passwordSuccess && <div className="flex items-center gap-1 text-green-700 text-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>{passwordSuccess}</div>}
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button type="button" variant="ghost" disabled={passwordLoading}>Cancel</Button>
+                          </DialogClose>
+                          <Button type="submit" disabled={passwordLoading} aria-label="Save new password">
+                            {passwordLoading ? 'Saving...' : 'Save Password'}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    )}
+                    {/* Step 3: Success State */}
+                    {verificationStep === 'reset' && passwordSuccess && (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <svg className="w-16 h-16 text-green-500 mb-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
+                        <div className="text-green-700 font-semibold text-lg mb-2">Password Changed!</div>
+                        <div className="text-muted-foreground text-sm mb-4">Your password has been updated successfully.</div>
+                        <DialogFooter>
+                          <DialogClose asChild>
+                            <Button type="button" variant="default">Close</Button>
+                          </DialogClose>
+                        </DialogFooter>
+                      </div>
+                    )}
                   </DialogContent>
                 </Dialog>
               </div>

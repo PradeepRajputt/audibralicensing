@@ -5,8 +5,8 @@ import { jwtDecode } from "jwt-decode";
 
 const PLANS = [
   { id: "free", name: "Free Trial", price: 0, period: "7 days", disabled: false },
-  { id: "plan_QvemyKdfzVGTLc", name: "Monthly", price: 4320.28, period: "per month", disabled: false },
-  { id: "plan_Qvenh9X4D8ggzw", name: "Yearly", price: 43280.54, period: "per year", disabled: false },
+  { id: "monthly", name: "Monthly", price: 50, period: "per month", disabled: false },
+  { id: "yearly", name: "Yearly", price: 400, period: "per year", disabled: false },
 ];
 
 export default function PaymentPage() {
@@ -94,6 +94,8 @@ export default function PaymentPage() {
       setLoading(false);
       return;
     }
+    // Find the selected plan object here and capture it in closure
+    const planObj = PLANS.find(p => p.id === selectedPlan);
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
       subscription_id: subscriptionId,
@@ -127,19 +129,24 @@ export default function PaymentPage() {
       },
       international: true,
       handler: function (response: any) {
-        const plan = PLANS.find(p => p.id === selectedPlan);
-        const expiryDate = new Date(Date.now() + (selectedPlan === "plan_QvemyKdfzVGTLc" ? 30 : 365) * 24 * 60 * 60 * 1000).toLocaleDateString();
+        // Use planObj instead of looking up again
+        const expiryDate = new Date(Date.now() + (planObj?.id === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000).toLocaleDateString();
 
         document.body.innerHTML = `
           <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#232946] to-[#18181b] text-white px-4">
-            <div class="flex flex-col items-center bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20 max-w-lg w-full">
-              <img src="/logo.png" alt="Creator Shield Logo" class="w-20 h-20 rounded-full shadow-lg mb-4 border-4 border-white/20 bg-white/10" />
-              <h1 class="text-3xl font-extrabold mb-2 text-white tracking-tight drop-shadow">Payment Successful!</h1>
+            <div class="fixed inset-0 z-10 pointer-events-none">
+              <canvas id="confetti-canvas"></canvas>
+            </div>
+            <div class="flex flex-col items-center bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-10 border border-white/20 max-w-lg w-full relative z-20">
+              <div class="w-24 h-24 flex items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-500 shadow-lg mb-4 border-4 border-white/20">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="#22c55e" opacity="0.2"/><path d="M7 13l3 3 7-7" stroke="#22c55e" stroke-width="2.5"/></svg>
+              </div>
+              <h1 class="text-4xl font-extrabold mb-2 text-white tracking-tight drop-shadow">Payment Successful!</h1>
               <p class="text-lg text-gray-300 mb-2 text-center max-w-xl">
-                Thank you, <b>${user?.name || "Creator"}</b>, for subscribing to the <b>${plan?.name}</b> plan.
+                Thank you, <b>${user?.name || "Creator"}</b>, for subscribing to the <b>${planObj?.name || ""}</b> plan.
               </p>
               <div class="text-lg text-gray-400 mb-2">
-                Amount Paid: <b class="text-green-400">₹${plan?.price}</b>
+                Amount Paid: <b class="text-green-400">₹${planObj?.price ? Math.round(planObj.price * 83) : ""}</b>
               </div>
               <div class="text-lg text-gray-400 mb-4">
                 Plan Expiry Date: <b class="text-blue-400">${expiryDate}</b>
@@ -164,6 +171,57 @@ export default function PaymentPage() {
               </div>
             </div>
           </div>
+          <script>
+            // Confetti effect
+            (function() {
+              var canvas = document.getElementById('confetti-canvas');
+              if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                var ctx = canvas.getContext('2d');
+                var pieces = [];
+                for (var i = 0; i < 150; i++) {
+                  pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * 50 + 50,
+                    color: 'hsl(' + Math.floor(Math.random() * 360) + ',70%,60%)',
+                    tilt: Math.random() * 10 - 10
+                  });
+                }
+                function draw() {
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  for (var i = 0; i < pieces.length; i++) {
+                    var p = pieces[i];
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2, false);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                  }
+                  update();
+                }
+                function update() {
+                  for (var i = 0; i < pieces.length; i++) {
+                    var p = pieces[i];
+                    p.y += Math.cos(p.d) + 2 + p.r / 2;
+                    p.x += Math.sin(0) * 2;
+                    if (p.y > canvas.height) {
+                      pieces[i] = {
+                        x: Math.random() * canvas.width,
+                        y: -10,
+                        r: p.r,
+                        d: p.d,
+                        color: p.color,
+                        tilt: p.tilt
+                      };
+                    }
+                  }
+                }
+                setInterval(draw, 20);
+              }
+            })();
+          </script>
         `;
         setTimeout(() => {
           window.location.href = "/auth/login";

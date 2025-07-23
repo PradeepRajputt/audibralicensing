@@ -258,7 +258,6 @@ export default function AnalyticsClientPage() {
                             <SelectValue placeholder="Group by" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="day">Daily</SelectItem>
                             <SelectItem value="week">Weekly</SelectItem>
                             <SelectItem value="month">Monthly</SelectItem>
                         </SelectContent>
