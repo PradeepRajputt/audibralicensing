@@ -5,8 +5,8 @@ import { jwtDecode } from "jwt-decode";
 
 const PLANS = [
   { id: "free", name: "Free Trial", price: 0, period: "7 days", disabled: false },
-  { id: "plan_QvemyKdfzVGTLc", name: "Monthly", price: 1000, period: "per month", disabled: false },
-  { id: "plan_Qvenh9X4D8ggzw", name: "Yearly", price: 12000, period: "per year", disabled: false },
+  { id: "plan_QvemyKdfzVGTLc", name: "Monthly", price: 4320.28, period: "per month", disabled: false },
+  { id: "plan_Qvenh9X4D8ggzw", name: "Yearly", price: 43280.54, period: "per year", disabled: false },
 ];
 
 export default function PaymentPage() {
@@ -127,10 +127,47 @@ export default function PaymentPage() {
       },
       international: true,
       handler: function (response: any) {
-        document.body.innerHTML = '<div style="color:green;text-align:center;font-size:2rem;margin-top:20vh;">Payment Successful! Redirecting...</div>';
+        const plan = PLANS.find(p => p.id === selectedPlan);
+        const expiryDate = new Date(Date.now() + (selectedPlan === "plan_QvemyKdfzVGTLc" ? 30 : 365) * 24 * 60 * 60 * 1000).toLocaleDateString();
+
+        document.body.innerHTML = `
+          <div class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#232946] to-[#18181b] text-white px-4">
+            <div class="flex flex-col items-center bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-white/20 max-w-lg w-full">
+              <img src="/logo.png" alt="Creator Shield Logo" class="w-20 h-20 rounded-full shadow-lg mb-4 border-4 border-white/20 bg-white/10" />
+              <h1 class="text-3xl font-extrabold mb-2 text-white tracking-tight drop-shadow">Payment Successful!</h1>
+              <p class="text-lg text-gray-300 mb-2 text-center max-w-xl">
+                Thank you, <b>${user?.name || "Creator"}</b>, for subscribing to the <b>${plan?.name}</b> plan.
+              </p>
+              <div class="text-lg text-gray-400 mb-2">
+                Amount Paid: <b class="text-green-400">₹${plan?.price}</b>
+              </div>
+              <div class="text-lg text-gray-400 mb-4">
+                Plan Expiry Date: <b class="text-blue-400">${expiryDate}</b>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <span class="inline-flex items-center gap-1 bg-green-700/20 text-green-300 px-3 py-1 rounded-full text-xs font-semibold">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Trusted by creators
+                </span>
+                <span class="inline-flex items-center gap-1 bg-blue-700/20 text-blue-300 px-3 py-1 rounded-full text-xs font-semibold">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 12l2 2 4-4" />
+                  </svg>
+                  Secure Payment
+                </span>
+              </div>
+              <div class="text-sm text-gray-500 mt-4">
+                Redirecting you to login...
+              </div>
+            </div>
+          </div>
+        `;
         setTimeout(() => {
-          window.location.href = "/register";
-        }, 2000);
+          window.location.href = "/auth/login";
+        }, 3000);
       },
     };
     const rzp = new (window as any).Razorpay(options);
@@ -202,4 +239,4 @@ export default function PaymentPage() {
       </div>
     </div>
   );
-} 
+}

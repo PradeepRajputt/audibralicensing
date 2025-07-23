@@ -49,7 +49,7 @@ export default function RegisterPage() {
           // If user came from plans, keep postAuthRedirect in localStorage
           // (already set by plans page)
         }
-        router.push('/auth/login');
+        router.push('/plans');
       }, 1500);
     } else {
       setError(data.error || "Registration failed");
