@@ -2,12 +2,15 @@
 'use server';
 import type { Feedback, FeedbackReply } from '@/lib/types';
 import { unstable_noStore as noStore } from 'next/cache';
+import connectToDatabase from './mongodb';
+import Creator from '../models/Creator.js';
+import mongoose from 'mongoose';
 
 // Remove mockFeedback and all in-memory logic
 
 export async function approveDisconnectForCreator(creatorId: string) {
-  // TODO: Implement this with real DB if needed
-  return;
+  // Set disconnectApproved to true for this creator
+  await Creator.updateOne({ _id: creatorId }, { $set: { disconnectApproved: true } });
 }
 
 export async function isDisconnectApproved(creatorId: string): Promise<boolean> {
@@ -53,8 +56,11 @@ export async function addReplyToFeedback(feedbackId: string, reply: Omit<Feedbac
 }
 
 export async function markFeedbackAsRead(feedbackId: string): Promise<void> {
-  // TODO: Implement this with real DB if needed
-  return;
+  // Update the status of the specific feedback to 'admin read'
+  await (await import('../models/Feedback.js')).default.updateOne(
+    { 'feedbacks._id': feedbackId },
+    { $set: { 'feedbacks.$.status': 'admin read' } }
+  );
 }
 
 export async function hasUnreadCreatorFeedback(email: string): Promise<boolean> {
@@ -72,4 +78,29 @@ export async function hasUnrepliedAdminFeedback(): Promise<boolean> {
   if (!Array.isArray(feedbacks)) return false;
   const hasUnreplied = feedbacks.some(f => f.response && f.response.length === 0);
   return hasUnreplied;
+}
+
+export async function getAllFeedbackFromDb(): Promise<any[]> {
+  await connectToDatabase();
+  // Get all feedback docs
+  const feedbackDocs = await (await import('../models/Feedback.js')).default.find({}).lean();
+  // For each feedback, get creator info and flatten feedbacks
+  let allFeedbacks = [];
+  for (const doc of feedbackDocs) {
+    const creator = await Creator.findById(doc.creatorId).lean();
+    for (const fb of doc.feedbacks) {
+      allFeedbacks.push({
+        ...fb,
+        creatorId: doc.creatorId,
+        creatorName: creator?.name || '',
+        creatorEmail: creator?.email || '',
+        avatar: creator?.avatar || '',
+        youtubeChannel: creator?.youtubeChannel || {},
+        youtubeChannelId: creator?.youtubeChannelId || '',
+      });
+    }
+  }
+  // Sort by createdAt descending
+  allFeedbacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  return allFeedbacks;
 }

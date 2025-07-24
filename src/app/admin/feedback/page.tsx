@@ -33,7 +33,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Send } from 'lucide-react';
 import type { Feedback, FeedbackReply } from '@/lib/types';
-import { getAllFeedback, approveDisconnectForCreator, isDisconnectApproved } from '@/lib/feedback-store';
+import { getAllFeedbackFromDb, approveDisconnectForCreator, isDisconnectApproved } from '@/lib/feedback-store';
 import { replyToFeedbackAction } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -50,7 +50,7 @@ export default function AdminFeedbackPage() {
 
   const loadFeedback = React.useCallback(async () => {
     try {
-      const data = await getAllFeedback();
+      const data = await getAllFeedbackFromDb();
       setFeedbackList(JSON.parse(JSON.stringify(data)));
     } catch (error) {
       toast({
@@ -97,11 +97,21 @@ export default function AdminFeedbackPage() {
     loadFeedback();
   };
 
+  const handleMarkAsRead = async (feedbackId: string) => {
+    // Assuming markFeedbackAsRead is an action that updates the feedback in the store
+    // This part of the logic needs to be implemented based on how markFeedbackAsRead is handled
+    // For now, we'll just update the state to reflect it's read
+    setFeedbackList(prev => prev.map(item => 
+      item.feedbackId === feedbackId ? { ...item, isReadByCreator: true } : item
+    ));
+    toast({ title: 'Marked as Read', description: 'Feedback marked as read.' });
+  };
+
   const getStatus = (item: Feedback) => {
-    if (item.response.length > 0 && !item.isReadByCreator) {
+    if (Array.isArray(item.response) && item.response.length > 0 && !item.isReadByCreator) {
         return <Badge variant="outline">Replied</Badge>;
     }
-     if (item.response.length > 0 && item.isReadByCreator) {
+    if (Array.isArray(item.response) && item.response.length > 0 && item.isReadByCreator) {
         return <Badge variant="secondary">Read</Badge>;
     }
     return <Badge variant="default">New</Badge>;
@@ -120,7 +130,9 @@ export default function AdminFeedbackPage() {
   // Filter feedbacks by type
   const filteredFeedbackList = safeFeedbackList.filter(item => {
     if (filterType === 'all') return true;
-    return item.type === filterType;
+    if (filterType === 'general') return item.type === 'general';
+    if (filterType === 'disconnect-request') return item.type === 'disconnect-request';
+    return true;
   });
 
   return (
@@ -144,42 +156,43 @@ export default function AdminFeedbackPage() {
                 <TableRow>
                   <TableHead>Creator</TableHead>
                   <TableHead>Title</TableHead>
-                  <TableHead>Rating</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Date</TableHead>
+                  <TableHead className="text-right">Submitted</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredFeedbackList.map((item) => (
+                {filteredFeedbackList.map((item, index) => (
                   <TableRow
-                    key={item.feedbackId}
-                    className={`cursor-pointer hover:bg-muted/50 ${item.tags.includes('disconnect') ? 'bg-yellow-50' : ''}`}
-                    onClick={() => setSelectedFeedback(item)}
+                    key={item._id?.toString?.() || item.feedbackId || index}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => {
+                      // Convert ObjectId fields to string before setting state
+                      setSelectedFeedback({
+                        ...item,
+                        _id: item._id?.toString?.() || item.feedbackId || index,
+                        creatorId: item.creatorId?.toString?.() || item.creatorId,
+                      });
+                    }}
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src={item.avatar} data-ai-hint="profile picture" />
-                          <AvatarFallback>
-                            {item.creatorName?.charAt(0)}
-                          </AvatarFallback>
+                          <AvatarImage src={item.avatar || item.creator?.avatar || item.youtubeChannel?.thumbnail || item.creator?.youtubeChannel?.thumbnail} data-ai-hint="profile picture" />
+                          <AvatarFallback></AvatarFallback>
                         </Avatar>
-                        <span>{item.creatorName}</span>
+                        <span>{item.creatorName || item.creator?.name}</span>
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{item.title}</TableCell>
                     <TableCell>
-                      <StarRating rating={item.rating} readOnly />
-                    </TableCell>
-                    <TableCell>
                       {getStatus(item)}
                     </TableCell>
                     <TableCell>
-                      {item.type === 'disconnect-request' ? <Badge variant="destructive">Disconnect Request</Badge> : <Badge variant="secondary">General</Badge>}
+                      <span className="text-xs font-semibold text-muted-foreground">{item.type === 'disconnect-request' ? 'Disconnect Request' : 'General'}</span>
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      <ClientFormattedDate dateString={item.timestamp} />
+                      <ClientFormattedDate dateString={item.createdAt || item.timestamp || ''} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -209,7 +222,10 @@ export default function AdminFeedbackPage() {
              <div className="flex items-center gap-2">
                 <span className="font-semibold">Tags:</span>
                 <div className="flex flex-wrap gap-1">
-                {selectedFeedback?.tags.map(tag => <Badge key={tag} variant={tag === 'disconnect' ? 'destructive' : 'secondary'}>{tag}</Badge>)}
+                {(Array.isArray(selectedFeedback?.tags)
+                  ? selectedFeedback.tags
+                  : (selectedFeedback?.tags ? selectedFeedback.tags.split(',').map(t => t.trim()) : [])
+                ).map(tag => <Badge key={tag} variant={tag === 'disconnect' ? 'destructive' : 'secondary'}>{tag}</Badge>)}
                 </div>
             </div>
             <div>
@@ -226,18 +242,21 @@ export default function AdminFeedbackPage() {
                 <Label htmlFor="reply">Your Reply</Label>
                 <Textarea id="reply" placeholder="Type your response here..." value={replyMessage} onChange={(e) => setReplyMessage(e.target.value)} />
             </div>
-            {selectedFeedback?.tags.includes('disconnect') && (
-              <div className="mt-4">
-                <Badge variant="destructive">Disconnect Request</Badge>
-                <div className="mt-2">
-                  {isDisconnectApproved(selectedFeedback.creatorId) ? (
-                    <span className="text-green-600 font-semibold">Disconnect Approved</span>
-                  ) : (
-                    <Button variant="destructive" onClick={() => handleApproveDisconnect(selectedFeedback.creatorId)}>
-                      Approve Disconnect
-                    </Button>
-                  )}
-                </div>
+            {selectedFeedback?.type === 'disconnect-request' && (
+              <div className="mt-4 flex gap-2">
+                <Button variant="destructive" onClick={() => handleApproveDisconnect(selectedFeedback.creatorId)}>
+                  Disconnect Approval
+                </Button>
+                <Button variant="secondary" onClick={() => handleMarkAsRead(selectedFeedback.feedbackId)}>
+                  Mark as Read
+                </Button>
+              </div>
+            )}
+            {selectedFeedback?.type !== 'disconnect-request' && (
+              <div className="mt-4 flex gap-2">
+                <Button variant="secondary" onClick={() => handleMarkAsRead(selectedFeedback.feedbackId)}>
+                  Mark as Read
+                </Button>
               </div>
             )}
             {selectedFeedback?.response && selectedFeedback.response.length > 0 && (

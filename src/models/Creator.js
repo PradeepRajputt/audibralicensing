@@ -15,6 +15,7 @@ const creatorSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   twoFactorSecret: { type: String },
   twoFactorEnabled: { type: Boolean, default: false },
+  disconnectApproved: { type: Boolean, default: false },
   // Subscription/payment fields
   plan: { type: String, enum: ['free', 'monthly', 'yearly', 'expired'] },
   trialStart: { type: Date, default: Date.now },
