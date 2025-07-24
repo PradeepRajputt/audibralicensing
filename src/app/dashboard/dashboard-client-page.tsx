@@ -12,6 +12,7 @@ import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 import { useAuth } from '@/context/auth-context';
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from '@/lib/firebase';
+import { InteractiveLoader } from '@/components/ui/loader';
 
 export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
     const { user, loading: authLoading } = useAuth();
@@ -20,14 +21,7 @@ export default function DashboardClientPage({ initialData }: { initialData: Dash
 
 
   if (isLoading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <Card>
-          <CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-full max-w-md mt-2" /></CardHeader>
-          <CardContent><div className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div></CardContent>
-        </Card>
-      </div>
-    );
+    return <InteractiveLoader show={true} />;
   }
   
   if (!user) {

@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { Shield, Users, Gavel, Settings, UserCheck, BarChart, MessageSquareQuote } from 'lucide-react';
+import { Shield, Users, Gavel, Settings, UserCheck, BarChart, MessageSquareQuote, PieChart } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import React from 'react';
@@ -20,6 +20,7 @@ import { useAdminProfile } from '@/app/admin/profile-context';
 
 const menuItems = [
   { href: '/admin/overview', label: 'Overview', icon: BarChart },
+  { href: '/admin/analytics', label: 'Analytics', icon: PieChart }, // Changed to PieChart for Analytics
   { href: '/admin/users', label: 'Creator Management', icon: Users },
   { href: '/admin/strikes', label: 'Strike Requests', icon: Gavel },
   { href: '/admin/reactivations', label: 'Reactivation Requests', icon: UserCheck },

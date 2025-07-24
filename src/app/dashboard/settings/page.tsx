@@ -229,26 +229,26 @@ export default function SettingsPage() {
                   <DialogTrigger asChild>
                     <Button variant="outline" className="mt-1">{t('Change Password')}</Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md relative">
+                  <DialogContent className="bg-card shadow-2xl border border-border rounded-2xl p-0 max-w-md animate-fade-in">
                     {/* Stepper */}
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between px-8 pt-8 pb-2">
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='email' ? 'border-blue-500 bg-blue-100 text-blue-700' : 'border-gray-300 bg-white text-gray-400'}`}>1</div>
+                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='email' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>1</div>
                         <span className="text-xs mt-1">Email</span>
                       </div>
-                      <div className="flex-1 h-0.5 bg-gray-300 mx-1" />
+                      <div className="flex-1 h-0.5 bg-border mx-1" />
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='otp' ? 'border-blue-500 bg-blue-100 text-blue-700' : verificationStep==='reset' ? 'border-blue-500 bg-blue-100 text-blue-700' : 'border-gray-300 bg-white text-gray-400'}`}>2</div>
+                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='otp' ? 'border-primary bg-primary/10 text-primary' : verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>2</div>
                         <span className="text-xs mt-1">OTP</span>
                       </div>
-                      <div className="flex-1 h-0.5 bg-gray-300 mx-1" />
+                      <div className="flex-1 h-0.5 bg-border mx-1" />
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='reset' ? 'border-blue-500 bg-blue-100 text-blue-700' : 'border-gray-300 bg-white text-gray-400'}`}>3</div>
+                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>3</div>
                         <span className="text-xs mt-1">New Password</span>
                       </div>
                     </div>
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
+                    <DialogHeader className="px-8 pt-2 pb-0">
+                      <DialogTitle className="flex items-center gap-2 text-lg">
                         {verificationStep === 'reset' && passwordSuccess ? (
                           <span className="inline-flex items-center text-green-600"><svg className="w-6 h-6 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Success</span>
                         ) : (
@@ -257,13 +257,13 @@ export default function SettingsPage() {
                       </DialogTitle>
                       <DialogDescription>
                         {verificationStep === 'email' && (
-                          <span className="flex items-center gap-2 text-blue-700"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>For your security, please verify your email before changing your password.</span>
+                          <span className="flex items-center gap-2 text-primary"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>For your security, please verify your email before changing your password.</span>
                         )}
                         {verificationStep === 'otp' && (
-                          <span className="flex items-center gap-2 text-blue-700"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Enter the OTP sent to your email.</span>
+                          <span className="flex items-center gap-2 text-primary"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Enter the OTP sent to your email.</span>
                         )}
                         {verificationStep === 'reset' && !passwordSuccess && (
-                          <span className="flex items-center gap-2 text-blue-700"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Set a new password for your account.</span>
+                          <span className="flex items-center gap-2 text-primary"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Set a new password for your account.</span>
                         )}
                         {verificationStep === 'reset' && passwordSuccess && (
                           <span className="flex items-center gap-2 text-green-700">Your password has been changed successfully.</span>
@@ -272,16 +272,19 @@ export default function SettingsPage() {
                     </DialogHeader>
                     {/* Step 1: Email */}
                     {verificationStep === 'email' && (
-                      <div className="space-y-4 mt-4">
+                      <div className="space-y-4 px-8 py-6 animate-fade-in">
+                        <label className="block text-sm font-medium mb-1" htmlFor="change-email"><span className="inline-flex items-center gap-1"><svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 12H8m8 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>Email Address</span></label>
                         <Input
+                          id="change-email"
                           aria-label="Enter your email"
                           placeholder="Enter your email"
                           value={emailInput}
                           onChange={e => setEmailInput(e.target.value)}
+                          className="bg-background border-border focus:border-primary"
                         />
                         <div className="flex justify-end gap-2 mt-2">
                           <DialogClose asChild>
-                            <Button type="button" variant="ghost" disabled={isSending}>Cancel</Button>
+                            <Button type="button" variant="ghost" className="rounded-md" disabled={isSending}>Cancel</Button>
                           </DialogClose>
                           <Button
                             onClick={async () => {
@@ -306,6 +309,7 @@ export default function SettingsPage() {
                               }
                             }}
                             disabled={isSending || !/^\S+@\S+\.\S+$/.test(emailInput)}
+                            className="rounded-md"
                           >
                             {isSending ? 'Sending...' : 'Send OTP'}
                           </Button>
@@ -315,14 +319,16 @@ export default function SettingsPage() {
                     )}
                     {/* Step 2: OTP */}
                     {verificationStep === 'otp' && (
-                      <div className="space-y-4 mt-4">
-                        <div className="text-sm text-muted-foreground">OTP sent to {emailInput}. Enter OTP to verify.</div>
+                      <div className="space-y-4 px-8 py-6 animate-fade-in">
+                        <label className="block text-sm font-medium mb-1" htmlFor="change-otp"><span className="inline-flex items-center gap-1"><svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>OTP</span></label>
                         <Input
+                          id="change-otp"
                           aria-label="Enter 6-digit OTP"
                           placeholder="Enter 6-digit OTP"
                           value={otp}
                           onChange={e => setOtp(e.target.value)}
                           maxLength={6}
+                          className="bg-background border-border focus:border-primary tracking-widest text-lg text-center"
                         />
                         <div className="flex justify-end gap-2 mt-2">
                           <Button
@@ -349,6 +355,7 @@ export default function SettingsPage() {
                               }
                             }}
                             disabled={isVerifying || otp.length !== 6}
+                            className="rounded-md"
                           >
                             {isVerifying ? 'Verifying...' : 'Verify OTP'}
                           </Button>
@@ -387,8 +394,10 @@ export default function SettingsPage() {
                         } finally {
                           setPasswordLoading(false);
                         }
-                      }} className="space-y-4 mt-4" aria-label="Set new password">
+                      }} className="space-y-4 px-8 py-6 animate-fade-in" aria-label="Set new password">
+                        <label className="block text-sm font-medium mb-1" htmlFor="change-password"><span className="inline-flex items-center gap-1"><svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 17v-6m0 0V7m0 4h.01" /></svg>New Password</span></label>
                         <Input
+                          id="change-password"
                           type="password"
                           aria-label="Enter new password"
                           placeholder="Enter new password"
@@ -396,21 +405,21 @@ export default function SettingsPage() {
                           onChange={e => setNewPassword2(e.target.value)}
                           minLength={8}
                           required
-                          className="mb-2"
+                          className="bg-background border-border focus:border-primary"
                         />
                         {/* Password Strength Meter */}
-                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-2">
                           <div
-                            className={`h-full transition-all duration-300 ${newPassword2.length === 0 ? 'w-0' : newPassword2.length < 8 ? 'w-1/4 bg-red-400' : /[A-Za-z]/.test(newPassword2) && /\d/.test(newPassword2) && newPassword2.length >= 12 ? 'w-full bg-green-500' : 'w-2/3 bg-yellow-400'}`}
+                            className={`h-full transition-all duration-300 ${newPassword2.length === 0 ? 'w-0' : newPassword2.length < 8 ? 'w-1/4 bg-destructive' : /[A-Za-z]/.test(newPassword2) && /\d/.test(newPassword2) && newPassword2.length >= 12 ? 'w-full bg-green-500' : 'w-2/3 bg-yellow-400'}`}
                           />
                         </div>
                         {passwordError && <div className="flex items-center gap-1 text-destructive text-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>{passwordError}</div>}
                         {passwordSuccess && <div className="flex items-center gap-1 text-green-700 text-sm"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>{passwordSuccess}</div>}
                         <DialogFooter>
                           <DialogClose asChild>
-                            <Button type="button" variant="ghost" disabled={passwordLoading}>Cancel</Button>
+                            <Button type="button" variant="ghost" className="rounded-md" disabled={passwordLoading}>Cancel</Button>
                           </DialogClose>
-                          <Button type="submit" disabled={passwordLoading} aria-label="Save new password">
+                          <Button type="submit" disabled={passwordLoading} aria-label="Save new password" className="rounded-md">
                             {passwordLoading ? 'Saving...' : 'Save Password'}
                           </Button>
                         </DialogFooter>
@@ -418,13 +427,13 @@ export default function SettingsPage() {
                     )}
                     {/* Step 3: Success State */}
                     {verificationStep === 'reset' && passwordSuccess && (
-                      <div className="flex flex-col items-center justify-center py-8">
+                      <div className="flex flex-col items-center justify-center py-8 animate-fade-in">
                         <svg className="w-16 h-16 text-green-500 mb-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
                         <div className="text-green-700 font-semibold text-lg mb-2">Password Changed!</div>
                         <div className="text-muted-foreground text-sm mb-4">Your password has been updated successfully.</div>
                         <DialogFooter>
                           <DialogClose asChild>
-                            <Button type="button" variant="default">Close</Button>
+                            <Button type="button" variant="default" className="rounded-md">Close</Button>
                           </DialogClose>
                         </DialogFooter>
                       </div>

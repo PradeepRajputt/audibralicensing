@@ -1,8 +1,17 @@
 import dotenv from 'dotenv';
 import path from 'path';
-import mongoose from 'mongoose';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+let mongoose = require('mongoose');
 
-const MONGODB_URI ="mongodb+srv://creators_shield:Creatorshield%40005@cluster0.gvezzd8.mongodb.net/creator_shield_db?retryWrites=true&w=majority&appName=Cluster0";
+// Debug: check what is imported
+// console.log('Mongoose import:', mongoose);
+
+// Handle ESM/CJS interop: get .default if present
+if (mongoose && typeof mongoose.connect !== 'function' && mongoose.default && typeof mongoose.default.connect === 'function') {
+  mongoose = mongoose.default;
+}
+
+const MONGODB_URI = "mongodb+srv://creators_shield:Creatorshield%40005@cluster0.gvezzd8.mongodb.net/creator_shield_db?retryWrites=true&w=majority&appName=Cluster0";
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env or .env.local')
@@ -19,7 +28,10 @@ async function connectToDatabase() {
     return cached.conn;
   }
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI as string, {
+    if (typeof mongoose.connect !== 'function') {
+      throw new Error('mongoose.connect is not a function. Mongoose import problem.');
+    }
+    cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
     });
   }

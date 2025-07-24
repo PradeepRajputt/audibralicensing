@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useDashboardData } from '../dashboard-context';
 import { useEffect, useRef, useState } from 'react';
+import { InteractiveLoader } from '@/components/ui/loader';
 
 function OverviewLoadingSkeleton() {
     return (
@@ -120,7 +121,7 @@ export default function OverviewPage() {
     const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
     if(isLoading) {
-       return <OverviewLoadingSkeleton />;
+       return <InteractiveLoader show={true} />;
     }
     
     if (!isYouTubeConnected) {

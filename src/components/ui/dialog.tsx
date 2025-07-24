@@ -39,16 +39,13 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Redesigned, robust, always-visible dialog styles:
-        "fixed left-1/2 top-1/2 z-[1000] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 bg-white border border-gray-200 shadow-2xl rounded-xl p-8 flex flex-col gap-4",
+        "fixed left-1/2 top-1/2 z-[1000] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 bg-card border border-border shadow-2xl rounded-xl p-8 flex flex-col gap-4",
         className
       )}
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full bg-gray-100 p-1 opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <X className="h-5 w-5" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
+      {/* Removed DialogPrimitive.Close cross button */}
     </DialogPrimitive.Content>
   </DialogPortal>
 ))

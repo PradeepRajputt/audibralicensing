@@ -19,6 +19,25 @@ const AdminProfileContext = createContext<AdminProfileContextType | undefined>(u
 
 export function AdminProfileProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<AdminProfile>(mockAdminUser);
+
+  React.useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch('/api/settings/admin-profile');
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        setProfile({
+          displayName: data.name || 'Admin User',
+          avatar: data.avatar || mockAdminUser.avatar,
+        });
+      } catch {
+        // fallback to mock
+        setProfile(mockAdminUser);
+      }
+    }
+    fetchProfile();
+  }, []);
+
   return (
     <AdminProfileContext.Provider value={{ profile, setProfile }}>
       {children}
