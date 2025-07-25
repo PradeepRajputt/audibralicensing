@@ -1,0 +1,13 @@
+# This file tells Netlify how to build and deploy your Next.js site.
+
+[build]
+  # Command to build your site
+  command = "npm run build"
+  # Directory where the build output is stored
+  publish = ".next"
+
+# This plugin is essential for enabling Next.js features like server-side rendering,
+# image optimization, and middleware on Netlify.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
